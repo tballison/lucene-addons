@@ -41,6 +41,7 @@
   <modules>
     <module>tallison-lucene-addons-parent</module>
     <module>lucene-5205</module>
+    <module>solr-5410</module>
   </modules>
 
   <build>

@@ -36,8 +36,11 @@ import java.util.regex.Pattern;
  * To set different analyzers per field, use PerFieldAnalyzerWrapper.
  * This class also has hooks to allow subclassing to enable different
  * strategies of per field analyzer handling.
+ * <p>
+ * This needs to be public (vs. package private) for Solr integration.
+ * </p>
  */
-abstract class AnalyzingQueryParserBase extends QueryParserBase {
+public abstract class AnalyzingQueryParserBase extends QueryParserBase {
 
   public enum NORM_MULTI_TERMS {
     ANALYZE,

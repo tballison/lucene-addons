@@ -12,7 +12,7 @@
         <relativePath>../tallison-lucene-addons-parent/pom.xml</relativePath>
     </parent>
 
-    <artifactId>lucene-5205</artifactId>
+    <artifactId>solr-5410</artifactId>
 
     <version>1.0</version>
 
@@ -23,6 +23,12 @@
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-test-framework</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-test-framework</artifactId>
+            <version>${lucene.version}</version>
         </dependency>
 
         <dependency>
@@ -46,10 +52,35 @@
         </dependency>
 
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-5205</artifactId>
+            <version>1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-core</artifactId>
+            <version>${lucene.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.solr</groupId>
+            <artifactId>solr-solrj</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+
+        <dependency>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
+            <version>1.2</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
