@@ -60,12 +60,6 @@
 
         <dependency>
             <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-queries</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
             <version>${lucene.version}</version>
         </dependency>
@@ -75,6 +69,7 @@
             <artifactId>lucene-queries</artifactId>
             <version>${lucene.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-sandbox</artifactId>
@@ -95,6 +90,7 @@
 
 
   <build>
+      <pluginManagement>
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -103,9 +99,6 @@
           <target>${maven.compile.target}</target>
         </configuration>
       </plugin>
-    </plugins>
-    <pluginManagement>
-      <plugins>
         <plugin>
           <groupId>org.apache.felix</groupId>
           <artifactId>maven-bundle-plugin</artifactId>
