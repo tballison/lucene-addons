@@ -36,8 +36,8 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
    * <p>
    * This assumes that there are no FIELD tokens and no BOOLEAN operators
    */
-  protected SpanQuery _parsePureSpanClause(final List<SQPToken> tokens, 
-      String field, SQPClause parentClause) 
+  protected SpanQuery _parsePureSpanClause(final List<SQPToken> tokens,
+      String field, SQPClause parentClause)
           throws ParseException {
 
     int start = parentClause.getTokenOffsetStart();
@@ -77,24 +77,19 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
       } else {
         throw new ParseException("Can't process field, boolean operators or a match all docs query in a pure span.");
       }
-      if (q != null) {
-        queries.add(q);
-      }
-    }
-    if (queries == null || queries.size() == 0) {
-      return getEmptySpanQuery();
+      queries.add(q);
     }
     return buildSpanQueryClause(queries, parentClause);
   }   
 
-  private SpanQuery trySpecialHandlingForSpanNearWithOneComponent(String field, 
-      SQPTerm token, SQPNearClause clause) 
+  private SpanQuery trySpecialHandlingForSpanNearWithOneComponent(String field,
+      SQPTerm token, SQPNearClause clause)
           throws ParseException {
 
     int slop = (clause.getSlop() == SpanQueryParserBase.UNSPECIFIED_SLOP) ? getPhraseSlop() : clause.getSlop();
     boolean order = clause.getInOrder() == null ? true : clause.getInOrder().booleanValue();
 
-    SpanQuery ret = (SpanQuery)specialHandlingForSpanNearWithOneComponent(field, 
+    SpanQuery ret = (SpanQuery)specialHandlingForSpanNearWithOneComponent(field,
         token.getString(), slop, order);
     return ret;
 
@@ -123,8 +118,15 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
     return null;
   }
 
-  private SpanQuery buildSpanQueryClause(List<SpanQuery> queries, SQPClause clause) 
+  private SpanQuery buildSpanQueryClause(List<SpanQuery> queries, SQPClause clause)
       throws ParseException {
+    //queries can be null
+    //queries can contain null elements
+
+    if (queries == null) {
+      return getEmptySpanQuery();
+    }
+
     SpanQuery q = null;
     if (clause instanceof SQPOrClause) {
       q = buildSpanOrQuery(queries);
@@ -146,7 +148,7 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
           slop, order);
     } else if (clause instanceof SQPNotNearClause) {
       q = buildSpanNotNearQuery(queries, 
-          ((SQPNotNearClause)clause).getNotPre(), 
+          ((SQPNotNearClause)clause).getNotPre(),
           ((SQPNotNearClause)clause).getNotPost());
 
     } else {

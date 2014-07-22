@@ -78,9 +78,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
   private int spanNearMaxDistance = 100;
   private int spanNotNearMaxDistance = 50;
-  //if a full term is analyzed and the analyzer returns nothing, 
-  //should a ParseException be thrown or should I just ignore the full token.
-  private boolean throwExceptionForEmptyTerm = false;
 
   ////////
   //Unsupported operations
@@ -187,7 +184,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @return Resulting {@link org.apache.lucene.search.Query} built for the term
    * @exception org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
    */
-  protected Query getFuzzyQuery(String field, String termStr, 
+  protected Query getFuzzyQuery(String field, String termStr,
       float minSimilarity, int prefixLength) throws ParseException {
     return getFuzzyQuery(field, termStr, minSimilarity, prefixLength, FuzzyQuery.defaultTranspositions);
   }
@@ -195,7 +192,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   /**
    * nocommit
    * @return query
-   * @throws ParseException, RuntimeException if there was an IOException from the analysis process
+   * @throws org.apache.lucene.queryparser.classic.ParseException, RuntimeException if there was an IOException from the analysis process
    */
   protected Query getFuzzyQuery(String field, String termStr,
       float minSimilarity, int prefixLength, boolean transpositions) throws ParseException {
@@ -209,8 +206,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * Creates a new fuzzy term. 
-   * 
+   * Creates a new fuzzy term.
+   *
    * @return fuzzy query
    */
   protected Query newFuzzyQuery(Term t, float minimumSimilarity, int prefixLength,
@@ -266,13 +263,13 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     }
   }
 
-  @Override 
+  @Override
   protected Query newPrefixQuery(Term t) {
     PrefixQuery q = new PrefixQuery(t);
     q.setRewriteMethod(getMultiTermRewriteMethod(t.field()));
     return new SpanMultiTermQueryWrapper<PrefixQuery>(q);
   }
-  
+
   /**
    * Factory method for generating a query (similar to
    * {@link #getWildcardQuery}). Called when parser parses an input term
@@ -315,7 +312,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     q.setRewriteMethod(getMultiTermRewriteMethod(t.field()));
     return new SpanMultiTermQueryWrapper<WildcardQuery>(q);
   }
-  
+
   /**
    * Factory method for generating a query. Called when parser
    * parses an input term token that contains one or more wildcard
@@ -357,20 +354,20 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * Builds a new {@link TermRangeQuery} instance.
+   * Builds a new {@link org.apache.lucene.search.TermRangeQuery} instance.
    * Will convert to lowercase if {@link #getLowercaseExpandedTerms()} == true.
    * Will analyze terms if {@link #getAnalyzeRangeTerms()} == true.
-   * 
-   * 
+   *
+   *
    * @param field Field
    * @param part1 min
    * @param part2 max
    * @param startInclusive true if the start of the range is inclusive
    * @param endInclusive true if the end of the range is inclusive
-   * @return new {@link TermRangeQuery} instance
+   * @return new {@link org.apache.lucene.search.TermRangeQuery} instance
    */
   @Override
-  protected Query newRangeQuery(String field, String part1, String part2, 
+  protected Query newRangeQuery(String field, String part1, String part2,
       boolean startInclusive, boolean endInclusive) {
     //TODO: modify newRangeQuery in QueryParserBase to throw ParseException for failure of analysis
     //need to copy and paste this until we can change analyzeMultiterm(String field, String part) to protected
@@ -630,9 +627,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     BytesRef bytes = termAtt == null ? null : termAtt.getBytesRef();
 
     if (numTokens == 0) {
-      if (throwExceptionForEmptyTerm) {
-        throw new ParseException("Couldn't find any content term in: "+ termText);
-      }
       return null;
     } else if (numTokens == 1) {
       try {
@@ -664,9 +658,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       for (SpanQuery piece : queries) {
         if (piece != null) {
           nonEmpties.add(piece);
-        } else if (piece == null && throwExceptionForEmptyTerm) {
-          throw new ParseException("Stop word found in " + termText);
-        }
+        } 
       }
 
       if (nonEmpties.size() == 0) {
@@ -742,8 +734,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   private void analyzeComplexSingleTerm(String fieldName,
-      CachingTokenFilter ts, TermToBytesRefAttribute termAtt, BytesRef bytes, 
-      PositionIncrementAttribute posAtt, 
+      CachingTokenFilter ts, TermToBytesRefAttribute termAtt, BytesRef bytes,
+      PositionIncrementAttribute posAtt,
       List<SpanQuery> queries) throws IOException {
     while (ts.incrementToken()) {
       termAtt.fillBytesRef();
@@ -794,7 +786,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @return {@link org.apache.lucene.search.spans.SpanOrQuery} might be empty if clauses is null or contains
    *         only empty queries
    */   
-  protected SpanQuery buildSpanOrQuery(List<SpanQuery> clauses) 
+  protected SpanQuery buildSpanOrQuery(List<SpanQuery> clauses)
       throws ParseException {
     if (clauses == null || clauses.size() == 0)
       return getEmptySpanQuery();
@@ -816,7 +808,34 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     if (clauses == null || clauses.size() == 0)
       return getEmptySpanQuery();
 
-    List<SpanQuery> nonEmpties = removeEmpties(clauses);
+    List<SpanQuery> nonEmpties = new LinkedList<SpanQuery>();
+    //find first non-null and last non-null entry
+    int start = 0;
+    int end = clauses.size();
+    for (int i = 0; i < clauses.size(); i++) {
+      if (! isEmptyQuery(clauses.get(i))) {
+        start = i;
+        break;
+      }
+    }
+    for (int i = clauses.size()-1; i >= 0; i--) {
+      if (! isEmptyQuery(clauses.get(i))) {
+        end = i+1;
+        break;
+      }
+    }
+    
+    //now count the stop words that occur
+    //between the first and last non-null
+    int numIntermedStops = 0;
+    for (int i = start; i < end; i++) {
+      SpanQuery clause = clauses.get(i);
+      if (!isEmptyQuery(clause)){
+        nonEmpties.add(clause);
+      } else {
+        numIntermedStops++;
+      }
+    }
 
     if (nonEmpties.size() == 0) {
       return getEmptySpanQuery();
@@ -832,7 +851,13 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
     if (slop == UNSPECIFIED_SLOP) {
       slop = getPhraseSlop();
-    } else if  (spanNearMaxDistance > -1 && slop > spanNearMaxDistance) {
+    }
+   
+    //adjust slop to handle intermediate stops that
+    //were removed
+    slop += numIntermedStops;
+
+    if  (spanNearMaxDistance > -1 && slop > spanNearMaxDistance) {
       slop = spanNearMaxDistance;
     }
 
@@ -900,16 +925,14 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
 
-  private List<SpanQuery> removeEmpties(List<SpanQuery> queries) 
+  private List<SpanQuery> removeEmpties(List<SpanQuery> queries)
       throws ParseException {
 
     List<SpanQuery> nonEmpties = new ArrayList<SpanQuery>();
     for (SpanQuery q : queries) {
       if (!isEmptyQuery(q)) {
         nonEmpties.add(q);
-      } else if (throwExceptionForEmptyTerm) {
-        throw new ParseException("Stop word or unparseable term found");
-      }
+      } 
     }
     return nonEmpties;
   }
@@ -987,31 +1010,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    */
   public void setSpanNotNearMaxDistance(int spanNotNearMaxDistance) {
     this.spanNotNearMaxDistance = spanNotNearMaxDistance;
-  }
-
-  /**
-   * If the a term passes through the analyzer and nothing comes out,
-   * throw an exception or silently ignore the missing term.  This can
-   * happen with stop words or with other strings that the analyzer
-   * ignores.
-   * 
-   * <p>
-   * This is applied only at the full term level.
-   * <p>
-   * Currently, a parseException is thrown no matter the setting on this
-   * whenever an analyzer can't return a value for a multiterm query.
-   *  
-   * @return throw exception if analyzer yields empty term
-   */
-  public boolean getThrowExceptionForEmptyTerm() {
-    return throwExceptionForEmptyTerm;
-  }
-
-  /**
-   * @see #getThrowExceptionForEmptyTerm()
-   */
-  public void setThrowExceptionForEmptyTerm(boolean throwExceptionForEmptyTerm) {
-    this.throwExceptionForEmptyTerm = throwExceptionForEmptyTerm;
   }
 
   protected static boolean isCharEscaped(String s, int i) {

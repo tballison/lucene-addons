@@ -18,8 +18,9 @@ package org.apache.lucene.queryparser.spans;
  */
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.MockAnalyzer;
+import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.analysis.MockTokenizer;
-import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.IndexReader;
@@ -36,7 +37,6 @@ import org.apache.lucene.util.TestUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import java.io.Reader;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,19 +52,16 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
   @BeforeClass
   public static void beforeClass() throws Exception {
-    analyzer = new Analyzer() {
-      @Override
-      public TokenStreamComponents createComponents(String fieldName, Reader r) {
-        Tokenizer tokenizer = new MockTokenizer(r, MockTokenizer.WHITESPACE,
-            false);
-        return new TokenStreamComponents(tokenizer, tokenizer);
-      }
-    };
+
+    analyzer = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, true);
+
     directory = newDirectory();
+
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
         newIndexWriterConfig(TEST_VERSION_CURRENT, analyzer)
         .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
         .setMergePolicy(newLogMergePolicy()));
+
     String[] f1Docs = new String[] { 
         "quick brown AND fox",//0
         "quick brown AND dog", //1
@@ -306,5 +303,62 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
     q = parser.parse("abc\\\\*d");
     assertTrue(q.toString(), q instanceof SpanMultiTermQueryWrapper);
+  }
+
+  public void testStops() throws Exception {
+    Analyzer stopsAnalyzer = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, true,
+        MockTokenFilter.ENGLISH_STOPSET);
+    Directory dir = newDirectory();
+    RandomIndexWriter w = new RandomIndexWriter(random(), dir,
+        newIndexWriterConfig(TEST_VERSION_CURRENT, stopsAnalyzer)
+        .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
+        .setMergePolicy(newLogMergePolicy()));
+    String[] docs = new String[] { 
+        "ab the the cd the the the ef the gh",
+        "ab cd",
+        "ab the ef"
+    };
+    
+    for (int i = 0; i < docs.length; i++) {
+      Document doc = new Document();
+      doc.add(newTextField(FIELD1, docs[i], Field.Store.YES));
+      w.addDocument(doc);
+    }
+    IndexReader r = w.getReader();
+    IndexSearcher s = newSearcher(r);
+    w.close();
+    SpanQueryParser p = new SpanQueryParser(TEST_VERSION_CURRENT, FIELD1, stopsAnalyzer);
+    assertHits( "-ab +the +cd", p, s, 0);
+    assertHits( "+ab +the +cd", p, s, 2);
+    assertHits( "+the", p, s, 0);
+    assertHits( "ab AND CD", p, s, 2);
+    assertHits( "ab AND the", p, s, 3);
+    assertHits( "ab OR the", p, s, 3);
+    assertHits( "(ab the cd)~2", p, s, 2);
+    assertHits( "(ab the cd)~3", p, s, 0);
+    assertHits( "ab AND (the OR cd)", p, s, 2);
+    assertHits( "ab AND (the AND cd)", p, s, 2);
+    assertHits( "cd OR (the OR ef)", p, s, 3);
+    assertHits( "cd AND (the AND ef)", p, s, 1);
+    //do we want this behavior?
+    assertHits( "-the", p, s, 0);
+    
+    assertHits ("\"ab cd\"", p, s, 1);
+    assertHits ("\"ab a a cd\"", p, s, 2);
+    assertHits ("\"ab a cd\"~1", p, s, 2);
+    assertHits ("\"ab a cd\"~>1", p, s, 2);
+    assertHits ("\"cd a a ab\"", p, s, 0);
+    assertHits ("\"cd a ab\"~1", p, s, 2);
+    
+    r.close();
+    dir.close();
+  }
+  
+  private void assertHits(String qString, SpanQueryParser p, IndexSearcher s, int expected) throws Exception {
+    Query q = p.parse(qString);
+    TopScoreDocCollector results = TopScoreDocCollector.create(1000, true);
+    s.search(q, results);
+    ScoreDoc[] scoreDocs = results.topDocs().scoreDocs;
+    assertEquals(qString, expected, scoreDocs.length);
   }
 }

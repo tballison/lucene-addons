@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <p>This parser leverages the power of SpanQuery and can combine them with
+ * This parser leverages the power of SpanQuery and can combine them with
  * traditional boolean logic and multiple field information.
  * This parser includes functionality from:
  * <ul>
@@ -44,14 +44,11 @@ import java.util.List;
  * <li> {@link org.apache.lucene.queryparser.analyzing.AnalyzingQueryParser}: has an option to analyze multiterms.</li>
  * </ul>
  * 
- * </p>
- * 
- * <p>
+ * <p> 
  * <b>Background</b>
  * This parser is designed to expose as much of the sophistication as is available within the Query/SpanQuery components.
  * The basic approach of this parser is to build BooleanQueries comprised of SpanQueries.  The parser recursively works 
  * through boolean/fielded chunks and then recursively works through SpanQueries.
- * </p>
  * 
  * <p>
  * Goals for this parser:
@@ -62,8 +59,7 @@ import java.util.List;
  * <li>Make analysis of multiterms a fundamental part of the parser 
  * {@link AnalyzingQueryParserBase}.</li>
  * </ul>
- * </p>
- * <p><b>Similarities and Differences</b></p>
+ * <p><b>Similarities and Differences</b>
  * 
  * <p> Same as classic syntax:
  * <ul>
@@ -80,7 +76,6 @@ import java.util.List;
  * <li> required/not required operators: +lucene +apache -jakarta</li>
  * <li> boolean with field:(author:hatcher AND author:gospodnetic) AND title:lucene</li>
  * </ul>
- * </p>
  * <p> Main additions in SpanQueryParser syntax vs. classic:
  * <ul>
  * <li> Can require "in order" for phrases with slop with the ~> operator: &quot;jakarta apache&quot;~>3</li>
@@ -103,7 +98,6 @@ import java.util.List;
  * <li> Can require at least x number of hits at boolean level: "apache AND (lucene solr tika)~2</li>
  * <li> Can have a negative query: -jakarta will return all documents that do not contain jakarta</li>
  * </ul>
- * </p>
  * <p>
  * Trivial additions:
  * <ul>
@@ -115,7 +109,6 @@ import java.util.List;
  * <p> <b>Analysis</b>
  * You can specify different analyzers
  * to handle whole term versus multiterm components.
- * </p>
  * 
  * <p>
  * <b>Using quotes for a single term</b>
@@ -124,37 +117,42 @@ import java.util.List;
  * Remember to use quotes or use escapes for anything with backslashes or hyphens:
  * 12/02/04 (is broken into a term "12", a regex "/02/" and a term "04")
  * '12/02/04' is treated a a single token.
- * </p>
+ * 
+ * 
  * <p> <b>Stop word handling</b>
- * </p>
- * <p>The user can choose to throw a {@link org.apache.lucene.queryparser.classic.ParseException} if a stop word is encountered.
- * If SpanQueryParserBase.throwExceptionForEmptyTerm is set to false (default), the following should happen.
- * </p>
+ * <p>The parser tries to replicate the behavior of the Classic QueryParser.  Stop words
+ * are generally ignored.
+ * <p>  However, in a "near" query, extra slop is added for each stop word that
+ * occurs after the first non-stop word and before the last non-stop word (or, initial and trailing stop words 
+ * are ignored in the additions to slop).
+ * For example, "walked the dog" is converted to "walked dog"~>1 behind the scenes.  Like the Classic
+ * QueryParser this will lead to false positives with any word between "walked" and "dog".  Unlike
+ * Classic QueryParser, this will also lead to false positives of "walked dog".
+ * <p>
+ * Examples
  * <p>
  * <ul>
  * <li>Term: "the" will return an empty SpanQuery (similar to classic queryparser)</li>
  * <li>BooleanOr: (the apache jakarta) will drop the stop word and return a 
  * {@link org.apache.lucene.search.spans.SpanOrQuery} for &quot;apache&quot; 
  * or &quot;jakarta&quot;
- * <li>SpanNear: "apache and jakarta" will drop the "and" and match on only "apache jakarta"<li>
- * </ul></p>
+ * <li>SpanNear: "apache and jakarta" will drop the "and", add one to the slop and match on 
+ * any occurrence of "apache" followed by "jakarta" and zero or one words intervening.<li>
+ * </ul>
+ * 
  * <p>A parse exception is currently always thrown if the parser analyzes a multiterm, and a subcomponent of the
  * multiterm has a stopword: the*tre
- * </p>
  * <p> Expert: Other subtle differences between SpanQueryParser and classic QueryParser.
  * <ul>
  * <li>Fuzzy queries with slop > 2 are handled by SlowFuzzyQuery.  The developer can set the minFuzzySim to limit
  * the maximum edit distance (i.e. turn off SlowFuzzyQuery by setting fuzzyMinSim = 2.0f.</li>
  * <li>Fuzzy queries with edit distance >=1 are rounded so that an exception is not thrown.</li>
  * </ul>
- * </p>
  * <p> Truly Expert: there are a few other very subtle differences that are documented in comments
  * in the sourcecode in the header of SpanQueryParser.
- * </p>
  * <p>
  * <b>NOTE</b> You must add the sandbox jar to your class path to include 
  * the currently deprecated {@link org.apache.lucene.sandbox.queries.SlowFuzzyQuery}.
- * </p>
  * <p> Limitations of SpanQueryParser compared with classic QueryParser:
  * <ol>
  * <li> There is some learning curve to figure out the subtle differences in syntax between
@@ -169,8 +167,8 @@ import java.util.List;
  * Regrettably, because it is generating a {@link org.apache.lucene.search.spans.SpanQuery},
  * it can't use all of the generalizable queryparser infrastructure that was added with Lucene 4.+.</li>
  * </ol>
- * </p>
  */
+
 public class SpanQueryParser extends AbstractSpanQueryParser {
 
   /*
@@ -257,8 +255,8 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
     return parseRecursively(tokens, getField(), overallClause);
   }
 
-  private Query parseRecursively(final List<SQPToken> tokens, 
-      String field, SQPClause clause) 
+  private Query parseRecursively(final List<SQPToken> tokens,
+      String field, SQPClause clause)
           throws ParseException {
     int start = clause.getTokenOffsetStart();
     int end = clause.getTokenOffsetEnd();
@@ -298,7 +296,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
           ((BooleanQuery)q).setMinimumNumberShouldMatch(tmpOr.getMinimumNumberShouldMatch());
         }
         if (q.getBoost() == 1.0f
-            &&  tmpOr.getBoost() != UNSPECIFIED_BOOST) {
+            &&  tmpOr.getBoost() != SpanQueryParserBase.UNSPECIFIED_BOOST) {
           q.setBoost(tmpOr.getBoost());
         }
         i = tmpOr.getTokenOffsetEnd();
@@ -326,7 +324,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
                   r.getStartInclusive(), r.getEndInclusive()); 
             } else {
               String t = tmpTerm.getString();
-              if (testWildCardOrPrefix(t) == PREFIX && t.length() > 0) {
+              if (testWildCardOrPrefix(t) == SpanQueryParserBase.PREFIX && t.length() > 0) {
                 q = handleNullAnalyzerPrefix(tmpField, t.substring(0, t.length()-1));
               } else {
                 q = handleNullAnalyzer(tmpField, tmpTerm.getString());
@@ -389,11 +387,11 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
 
   private Query testAllDocs(String tmpField, SQPTerminal tmpTerm) {
     if (tmpField.equals("*") && 
-        tmpTerm instanceof SQPTerm && 
+        tmpTerm instanceof SQPTerm &&
         ((SQPTerm)tmpTerm).getString().equals("*")) {
       Query q = new MatchAllDocsQuery();
       float boost = ((SQPBoostableToken)tmpTerm).getBoost();
-      if (boost != UNSPECIFIED_BOOST){
+      if (boost != SpanQueryParserBase.UNSPECIFIED_BOOST){
         q.setBoost(((SQPBoostableToken)tmpTerm).getBoost());
       }
       return q;

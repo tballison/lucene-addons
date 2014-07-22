@@ -339,8 +339,6 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
   public void testStopWords() throws Exception {
     // Stop word handling has some room for improvement with SpanQuery
-    // These tests codify the expectations (for regular behavior,
-    // parse exceptions and false hits) as of this writing.
 
     SpanOnlyParser p = new SpanOnlyParser(TEST_VERSION_CURRENT, FIELD, stopAnalyzer);
 
@@ -351,37 +349,35 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
     countSpansDocs(p, "(the brown)", 3, 2);
 
-    testException(p, "[brown the]!~5,5");
-
-    // this will not match because "the" is silently dropped from the query
-    countSpansDocs(p, "[over the lazy]", 0, 0);
-
-    // this will get one right hit, but incorrectly match "over green lazy"
-    countSpansDocs(p, "[over the lazy]~1", 2, 2);
-
-    // test throw exception
-    p.setThrowExceptionForEmptyTerm(true);
-    p.setNormMultiTerms(NORM_MULTI_TERMS.ANALYZE);
-
-    String[] stopExs = new String[]{
-        "the",
-        "[the brown]",
-        "the brown",
-        "(the brown)",
-        "\"the brown\"",
-        "\"the\"",
-        "[the brown]!~2,2",
-        "[brown the]!~2,2",
-        "the*ter",
-        "the?ter"
-    };
+    countSpansDocs(p, "[brown the]!~5,5", 3, 2);
+ 
     
-    for (String ex : stopExs) {
-      testException(p, ex);
-    }
+    //this tests that slop is really converted to 2 because of stop word
+    countSpansDocs(p, "[over the brown]~1", 1, 1);
 
+    //this tests that slop is really converted to 2, not 3 because of stop word
+    countSpansDocs(p, "[over the dog]~1", 0, 0);
+
+    // this matches both "over the lazy" and "over green lazy"
+    countSpansDocs(p, "[over the lazy]", 2, 2);
+
+    //this matches "over" or "lazy"
+    countSpansDocs(p, "(over the lazy)", 4, 2);
+    countSpansDocs(p, "(over the)", 2, 2);
+    countSpansDocs(p, "(the and and the)", 0, 0);
+    
+    //this tests that slop is really converted to 3 because of stop words
+    countSpansDocs(p, "[over the the dog]~1", 1, 1);
+
+    //this tests that slop is not augmented for stops before first non-stop
+    //and after last non-stop
+    countSpansDocs(p, "[the the the the brown (dog cat) the the the the]", 1, 1);
+
+    //ditto
+    countSpansDocs(p, "[the the the the jumped the cat the the the the]~1", 0, 0);
+    countSpansDocs(p, "[the the the the over the brown the the the the]~1", 1, 1);
+    
     // add tests for surprise phrasal with stopword!!! chinese
-
     SpanOnlyParser noStopsParser = new SpanOnlyParser(TEST_VERSION_CURRENT, FIELD, noStopAnalyzer);
     noStopsParser.setAutoGeneratePhraseQueries(true);
     // won't match because stop word was dropped in index
@@ -392,6 +388,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
     testOffsetForSingleSpanMatch(noStopsParser,
         "[\u666E \u6797 \u65AF \u987F \u5B66]~2", 6, 0, 6);
+        
   }
 
   public void testNonWhiteSpaceLanguage() throws Exception {
@@ -454,16 +451,6 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     SpanOnlyParser stopsParser = new SpanOnlyParser(TEST_VERSION_CURRENT, FIELD, stopAnalyzer);
     stopsParser.setAutoGeneratePhraseQueries(true);
     countSpansDocs(stopsParser, "\u666E\u6797\u65AF\u987F\u5927\u5B66", 0, 0);
-
-    // now test for throwing of exception
-    stopsParser.setThrowExceptionForEmptyTerm(true);
-    boolean exc = false;
-    try {
-      countSpansDocs(stopsParser, "\u666E\u6797\u65AF\u987F\u5927\u5B66", 0, 0);
-    } catch (ParseException e) {
-      exc = true;
-    }
-    assertEquals(true, exc);
   }
 
   public void testQuotedSingleTerm() throws Exception {

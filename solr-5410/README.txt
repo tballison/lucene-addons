@@ -6,7 +6,7 @@ To get this to work in Solr:
 4) add the following line to your solrconfig.xml file:
 
   <queryParser name="span" class="solr.search.SpanQParserPlugin"/>
-5) at search type, add defType=span to your query string OR &q={!span}quick
+5) at search time, add defType=span to your query string OR &q={!span}quick
 
 **Note that in the example directory, one folder that is already in the Solr classpath is:
 example/solr-webapp/webapp/WEB_INF/lib

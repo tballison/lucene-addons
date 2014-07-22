@@ -42,7 +42,6 @@ public class SpanQParser extends QParser
   private final String NORMMULTITERMS = "nmt";
   private final String NEAR_MAX = "nmax";
   private final String NOT_NEAR_MAX = "nnmax";
-  private final String EXCEPTION_FOR_EMPTY_TERM = "exempty";
   private final String ALLOW_LEADING_WILDCARD = "ldwc";
   private final String ANALYZE_RANGE_TERMS = "art";
   private final String AUTO_GENERATE_PHRASE = "ap";
@@ -87,7 +86,6 @@ public class SpanQParser extends QParser
     parser.setPhraseSlop(solrParams.getInt(PHRASE_SLOP, 0));
     parser.setSpanNearMaxDistance(solrParams.getInt(NEAR_MAX, -1));
     parser.setSpanNotNearMaxDistance(solrParams.getInt(NOT_NEAR_MAX, -1));
-    parser.setThrowExceptionForEmptyTerm(solrParams.getBool(EXCEPTION_FOR_EMPTY_TERM, false));
 
   }
 
