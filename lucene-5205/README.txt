@@ -1,5 +1,4 @@
-TODO:
+To use the SpanQueryParser, you'll need to add Lucene's sandbox-XXX.jar to your class path!
 
-1) Need to check whether the improved stop word handling from LUCENE-5205 was ever added
-to this version.
-2) Potentially add FieldMaskingSpanQuery
+TODO:
+1) Add FieldMaskingSpanQuery?

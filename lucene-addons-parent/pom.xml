@@ -30,14 +30,19 @@
   </parent> -->
 
   <groupId>org.apache.lucene</groupId>
-  <artifactId>tallison-addons-parent</artifactId>
+  <artifactId>lucene-addons-parent</artifactId>
   <version>1.0</version>
   <packaging>pom</packaging>
 
-  <name>tallison lucene addons parent</name>
+  <name>lucene addons parent</name>
   <description>
   </description>
     <properties>
+<!--
+        Use this if you want to add a timestamp to the jars
+        <timestamp>${maven.build.timestamp}</timestamp>
+        <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
+-->
         <maven.compile.source>1.6</maven.compile.source>
         <maven.compile.target>1.6</maven.compile.target>
         <lucene.version>4.9.0</lucene.version>

@@ -9,7 +9,7 @@
         <groupId>org.apache.lucene</groupId>
         <artifactId>tallison-addons-parent</artifactId>
         <version>1.0</version>
-        <relativePath>../tallison-lucene-addons-parent/pom.xml</relativePath>
+        <relativePath>../lucene-addons-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>solr-5410</artifactId>
