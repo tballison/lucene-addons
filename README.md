@@ -15,8 +15,12 @@ for the latest stable version of Lucene/Solr.
 
 ACKNOWLEDGEMENTS
 
+Thank you to Todd Hay and David Smiley for encouraging me to start contributing to
+open source projects.  David has been extremely generous in helping with technical
+details of development generally and Lucene/Solr in particular.  Thank you, David!
+
 Many thanks to Robert Muir for creating the lucene5205 branch from trunk and
-for dramatically cleaning up my clutter in the SpanQueryParser.
+for dramatically cleaning up my clutter in the original SpanQueryParser contribution.
 
 Thank you to Jason Robinson for encouraging me to progress into grown up development
 tools and for his work on the Solr wrappers for the initial Lucene components.
