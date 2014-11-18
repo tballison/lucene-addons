@@ -17,11 +17,12 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.List;
+
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
 import org.apache.lucene.util.LuceneTestCase;
-
-import java.util.List;
+import org.junit.Test;
 
 /**
  * Low level tests of the lexer.
@@ -753,6 +754,18 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         new SQPTerm(s, false)
         );
   }
+
+  @Test(timeout=1000)
+  public void testSingleQuoteWithinDouble() throws Exception {
+      //test there isn't a permanent hang triggered by the non matching '
+      String s = "SEARCH TOOL'S SOLUTION PROVIDER TECHNOLOGY CO., LTD";
+      executeSingleTokenTest(
+              s,
+              0,
+              new SQPTerm("SEARCH", false)
+      );
+  }
+
 
   private void executeSingleTokenTest(String q, int targetOffset, SQPToken truth)
       throws ParseException {

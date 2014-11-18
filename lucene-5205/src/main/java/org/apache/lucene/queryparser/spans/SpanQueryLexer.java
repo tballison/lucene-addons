@@ -17,15 +17,15 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
-import org.apache.lucene.util.mutable.MutableValueInt;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
+import org.apache.lucene.util.mutable.MutableValueInt;
 
 /**
  * Tokenizer that returns a list of tokens of types:
@@ -99,7 +99,7 @@ class SpanQueryLexer {
   private final static String FIELD_END_STRING = ("(:)");
   private final static String REGEX_STRING = "(?s)(?:/((?:\\\\.|[^/\\\\])+?)/)";
 
-  private final static String SINGLE_QUOTE_STRING = "'((?:''|[^']+)+)'";
+  private final static String SINGLE_QUOTE_STRING = "'((?:''|[^'])+)'";
 
   private final static String BOOST_STRING = "\\^((?:\\d*\\.)?\\d+)";
   private final static Pattern BOOST_PATTERN = Pattern.compile(BOOST_STRING);
