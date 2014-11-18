@@ -17,12 +17,34 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-import org.apache.lucene.analysis.*;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.MockTokenFilter;
+import org.apache.lucene.analysis.MockTokenizer;
+import org.apache.lucene.analysis.TokenFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.index.*;
+import org.apache.lucene.index.AtomicReaderContext;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexReaderContext;
+import org.apache.lucene.index.RandomIndexWriter;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.index.TermContext;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.spans.AnalyzingQueryParserBase.NORM_MULTI_TERMS;
 import org.apache.lucene.search.IndexSearcher;
@@ -35,18 +57,12 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.OpenBitSet;
 import org.apache.lucene.util.TestUtil;
-import org.apache.lucene.util.automaton.BasicOperations;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
+import org.apache.lucene.util.automaton.Operations;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static org.apache.lucene.util.automaton.BasicAutomata.makeString;
+import static org.apache.lucene.util.automaton.Automata.makeString;
 
 public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
@@ -58,18 +74,18 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
   private static final String FIELD = "f1";
 
   private static final CharacterRunAutomaton STOP_WORDS = new CharacterRunAutomaton(
-      BasicOperations.union(Arrays.asList(makeString("a"), makeString("an"),
-          makeString("and"), makeString("are"), makeString("as"),
-          makeString("at"), makeString("be"), makeString("but"),
-          makeString("by"), makeString("for"), makeString("if"),
-          makeString("in"), makeString("into"), makeString("is"),
-          makeString("it"), makeString("no"), makeString("not"),
-          makeString("of"), makeString("on"), makeString("or"),
-          makeString("such"), makeString("that"), makeString("the"),
-          makeString("their"), makeString("then"), makeString("there"),
-          makeString("these"), makeString("they"), makeString("this"),
-          makeString("to"), makeString("was"), makeString("will"),
-          makeString("with"), makeString("\u5927"))));
+      Operations.union(Arrays.asList(makeString("a"), makeString("an"),
+              makeString("and"), makeString("are"), makeString("as"),
+              makeString("at"), makeString("be"), makeString("but"),
+              makeString("by"), makeString("for"), makeString("if"),
+              makeString("in"), makeString("into"), makeString("is"),
+              makeString("it"), makeString("no"), makeString("not"),
+              makeString("of"), makeString("on"), makeString("or"),
+              makeString("such"), makeString("that"), makeString("the"),
+              makeString("their"), makeString("then"), makeString("there"),
+              makeString("these"), makeString("they"), makeString("this"),
+              makeString("to"), makeString("was"), makeString("will"),
+              makeString("with"), makeString("\u5927"))));
 
   @BeforeClass
   public static void beforeClass() throws Exception {
@@ -97,7 +113,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
     directory = newDirectory();
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
-        newIndexWriterConfig(TEST_VERSION_CURRENT, stopAnalyzer)
+        newIndexWriterConfig(stopAnalyzer)
         .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
         .setMergePolicy(newLogMergePolicy()));
     String[] docs = new String[] {

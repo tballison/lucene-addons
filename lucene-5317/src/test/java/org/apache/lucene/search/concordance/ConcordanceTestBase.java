@@ -30,9 +30,9 @@ import org.apache.lucene.codecs.asserting.AssertingCodec;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
+import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.RandomIndexWriter;
-import org.apache.lucene.index.FieldInfo.IndexOptions;
 import org.apache.lucene.search.concordance.charoffsets.SimpleAnalyzerUtil;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
@@ -47,7 +47,7 @@ public class ConcordanceTestBase extends LuceneTestCase {
       throws IOException {
     Directory directory = newDirectory();
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
-        newIndexWriterConfig(random(), TEST_VERSION_CURRENT, analyzer)
+        newIndexWriterConfig(analyzer)
             .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
             .setMergePolicy(newLogMergePolicy()));
 
@@ -65,7 +65,7 @@ public class ConcordanceTestBase extends LuceneTestCase {
 
     Directory directory = newDirectory();
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
-        newIndexWriterConfig(random(), TEST_VERSION_CURRENT, analyzer)
+        newIndexWriterConfig(analyzer)
             .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
             .setMergePolicy(newLogMergePolicy()));
     

@@ -17,6 +17,10 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
@@ -27,8 +31,13 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.store.Directory;
@@ -36,10 +45,6 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 public class TestOverallSpanQueryParser extends LuceneTestCase {
   private final static String FIELD1 = "f1";
@@ -58,7 +63,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     directory = newDirectory();
 
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
-        newIndexWriterConfig(TEST_VERSION_CURRENT, analyzer)
+        newIndexWriterConfig(analyzer)
         .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
         .setMergePolicy(newLogMergePolicy()));
 
@@ -310,7 +315,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
         MockTokenFilter.ENGLISH_STOPSET);
     Directory dir = newDirectory();
     RandomIndexWriter w = new RandomIndexWriter(random(), dir,
-        newIndexWriterConfig(TEST_VERSION_CURRENT, stopsAnalyzer)
+        newIndexWriterConfig(stopsAnalyzer)
         .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
         .setMergePolicy(newLogMergePolicy()));
     String[] docs = new String[] { 

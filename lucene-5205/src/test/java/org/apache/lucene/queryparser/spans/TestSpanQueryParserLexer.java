@@ -756,8 +756,9 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
   }
 
   @Test(timeout=1000)
-  public void testSingleQuoteWithinDouble() throws Exception {
+  public void testNonMatchingSingleQuote() throws Exception {
       //test there isn't a permanent hang triggered by the non matching '
+      //Thanks to Modassar Ather for finding this!
       String s = "SEARCH TOOL'S SOLUTION PROVIDER TECHNOLOGY CO., LTD";
       executeSingleTokenTest(
               s,
@@ -765,7 +766,6 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
               new SQPTerm("SEARCH", false)
       );
   }
-
 
   private void executeSingleTokenTest(String q, int targetOffset, SQPToken truth)
       throws ParseException {

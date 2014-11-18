@@ -17,6 +17,8 @@ package org.apache.lucene.queryparser.tmpspans.complexPhrase;
  * limitations under the License.
  */
 
+import java.util.HashSet;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.document.Document;
@@ -32,8 +34,6 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
-
-import java.util.HashSet;
 
 public class TestComplexPhraseQuery extends LuceneTestCase {
   Directory rd;
@@ -164,7 +164,7 @@ public class TestComplexPhraseQuery extends LuceneTestCase {
     
     analyzer = new MockAnalyzer(random());
     rd = newDirectory();
-    IndexWriter w = new IndexWriter(rd, newIndexWriterConfig(TEST_VERSION_CURRENT, analyzer));
+    IndexWriter w = new IndexWriter(rd, newIndexWriterConfig(analyzer));
     for (int i = 0; i < docsContent.length; i++) {
       Document doc = new Document();
       doc.add(newTextField("name", docsContent[i].name, Field.Store.YES));
