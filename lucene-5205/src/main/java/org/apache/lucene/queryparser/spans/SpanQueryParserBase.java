@@ -446,7 +446,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     // is this a fuzzy term?
     Matcher m = FUZZY_PATTERN.matcher(termText);
 
-    if (m.find() && ! isCharEscaped(termText, m.start())) {
+    if (m.find() && ! SpanQueryParserUtil.isCharEscaped(termText, m.start())) {
       String term = termText.substring(0, m.start());
       String transposString = m.group(1);
       String minSimilarityString = m.group(2);
@@ -508,7 +508,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     Matcher m = WILDCARD_PATTERN.matcher(termText);
     Set<Integer> ws = new HashSet<Integer>();
     while (m.find()) {
-      if (! isCharEscaped(termText, m.start())) {
+      if (! SpanQueryParserUtil.isCharEscaped(termText, m.start())) {
         ws.add(m.start());
       }
     }
@@ -1012,19 +1012,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     this.spanNotNearMaxDistance = spanNotNearMaxDistance;
   }
 
-  protected static boolean isCharEscaped(String s, int i) {
-    int j = i;
-    int esc = 0;
-    while (--j >=0 && s.charAt(j) == '\\') {
-      esc++;
-    }
-    if (esc % 2 == 0) {
-      return false;
-    }
-    return true;
-  }
-  
-  /**
+    /**
    * Copied nearly exactly from FuzzyQuery's floatToEdits because
    * FuzzyQuery's floatToEdits requires that the return value 
    * be <= LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE

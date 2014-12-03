@@ -17,15 +17,15 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
+import org.apache.lucene.util.mutable.MutableValueInt;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
-import org.apache.lucene.util.mutable.MutableValueInt;
 
 /**
  * Tokenizer that returns a list of tokens of types:
@@ -89,7 +89,6 @@ class SpanQueryLexer {
   //  private final static String TERMINAL_STRING = 
   //"((?:\\\\.|(?:[-+](?![/\\(\\[\"]))|[^-+\\\\\\(\\)\\[\\]\\p{Z}\"/:\\^])+)(?:(:)|"+BOOST+")?";
 
-  private final static Pattern ILLEGAL_END = Pattern.compile("^((?:\\\\.)|[^\\\\])*\\\\$");
   private final static Pattern ILLEGAL_UNICODE_ESCAPE = Pattern.compile("\\\\u([0-9a-fA-F]{0,4})");
 
   //need (?s) in case \n is escaped
@@ -128,28 +127,33 @@ class SpanQueryLexer {
       REGEX_STRING +"|"+CLOSING_STRING+")(?:"+BOOST_STRING + ")?|"+OPENING);
 
   public List<SQPToken> getTokens(String s) throws ParseException {
+    //k, now let's go
+    List<SQPToken> tokens = new ArrayList<SQPToken>();
 
-    //initial validation tests
-    Matcher m = ILLEGAL_END.matcher(s);
-    if (m.find()) {
-      throw new ParseException("Can't end query with unescaped backslash character");
+    if (s.length() == 0) {
+      return tokens;
     }
-    m = ILLEGAL_UNICODE_ESCAPE.matcher(s);
+    //initial validation tests
+    //does the string end with an unescaped \\
+    if (s.endsWith("\\")) {
+        if (! SpanQueryParserUtil.isCharEscaped(s, s.length()-1)) {
+            throw new ParseException("Can't end query with unescaped backslash character");
+        }
+    }
+
+    Matcher m = ILLEGAL_UNICODE_ESCAPE.matcher(s);
     while (m.find()) {
       if (m.group(1).length() != 4) {
         throw new ParseException ("Illegal escaped unicode character: "+m.group(1));
       }
     }
 
-    //k, now let's go
-    List<SQPToken> tokens = new ArrayList<SQPToken>();
 
     Stack<SQPOpenClause> stack = new Stack<SQPOpenClause>();
     MutableValueInt nearDepth = new MutableValueInt();
     nearDepth.value = 0;
 
     m = TOKENIZER.matcher(s);
-
     int last = 0;
     while (m.find()) {
       if (m.group(G.SPACE.ordinal()) != null) {

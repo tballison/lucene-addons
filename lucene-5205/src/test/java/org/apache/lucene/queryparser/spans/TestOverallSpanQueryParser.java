@@ -17,10 +17,6 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
@@ -45,6 +41,10 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class TestOverallSpanQueryParser extends LuceneTestCase {
   private final static String FIELD1 = "f1";
@@ -283,14 +283,14 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
         "a\\\\d",
     };
     for (String s : notEscaped) {
-      assertFalse(s, SpanQueryParserBase.isCharEscaped(s, 3));
+      assertFalse(s, SpanQueryParserUtil.isCharEscaped(s, 3));
     }
     String[] escaped = new String[]{
         "ab\\d",
         "\\\\\\d",
     };
     for (String s : escaped) {
-      assertTrue(s, SpanQueryParserBase.isCharEscaped(s, 3));
+      assertTrue(s, SpanQueryParserUtil.isCharEscaped(s, 3));
     }
 
     Query q = parser.parse("abc\\~2.0");
