@@ -249,7 +249,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
     if (queryString == null || queryString.equals("")) {
       return getEmptySpanQuery();
     }
-    SpanQueryLexer lexer = new SpanQueryLexer();
+    OldSpanQueryLexer lexer = new OldSpanQueryLexer();
     List<SQPToken> tokens = lexer.getTokens(queryString);
     SQPClause overallClause = new SQPOrClause(0, tokens.size());
     return parseRecursively(tokens, getField(), overallClause);

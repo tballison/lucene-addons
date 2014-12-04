@@ -17,18 +17,208 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
-import org.apache.lucene.util.LuceneTestCase;
-import org.junit.Test;
-
+import java.util.Date;
 import java.util.List;
+
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.util.LuceneTestCase;
 
 /**
  * Low level tests of the lexer.
  */
 public class TestSpanQueryParserLexer extends LuceneTestCase {
+
   SpanQueryLexer lexer = new SpanQueryLexer();
+
+  public void testSimple() throws ParseException {
+    testParseException("the [quick (brown fox)~23 jumped]");
+    testParseException("the [quick (brown fox)~ jumped]");
+    testParseException("the \"quick (brown fox)~23 jumped\"");
+    testParseException("the \"quick (brown fox)~ jumped\"");
+
+  }
+
+  public void testSingleDebug() throws Exception {
+    String s = "apache^-4";
+    List<SQPToken> tokens = lexer.getTokens(s);
+    for (SQPToken t : tokens) {
+      System.out.println(t);
+    }
+  }
+  public void testLargeNumberOfORs() throws Exception {
+    //Thanks to Modassar Ather for finding this!
+    StringBuilder sb = new StringBuilder();
+    sb.append("(");
+    for (int i = 0; i < 10000; i++) {
+
+      if (i > 0) {
+        sb.append(" OR ");
+      }
+      sb.append("TERM_" + i);
+    }
+    sb.append(")");
+    long start = new Date().getTime();
+    lexer.getTokens(sb.toString());
+  }
+  public void testSingleQuoteExceptions() throws ParseException {
+    testParseException("the'quick");
+    testParseException("quick'");
+    testParseException("'quick");
+    testParseException("'");
+    testParseException("  '");
+    testParseException("'  ");
+
+    //need to have something between single quotes
+    testParseException("the '' quick");
+  }
+
+
+  public void testSingleQuotes() throws ParseException {
+
+    executeSingleTokenTest(
+        "       'the''quick' fox",
+        0,
+        new SQPTerm("the'quick", true)
+    );
+
+    executeSingleTokenTest(
+        "       'the quick' fox",
+        0,
+        new SQPTerm("the quick", true)
+    );
+
+    executeSingleTokenTest(
+        "       'the quick' fox  'brown fox'   ",
+        0,
+        new SQPTerm("the quick", true)
+    );
+
+    executeSingleTokenTest(
+        "       'the quick' fox  'brown fox' ran  ",
+        2,
+        new SQPTerm("brown fox", true)
+    );
+
+    executeSingleTokenTest(
+        "       'the quick' fox  'brown fox' ran  ",
+        3,
+        new SQPTerm("ran", false)
+    );
+
+    executeSingleTokenTest(
+        "   abc    '/some/pa''th/or/other.txt' fox  'brown fox' ran  ",
+        1,
+        new SQPTerm("/some/pa'th/or/other.txt", true)
+    );
+
+    //apostrophes
+    executeSingleTokenTest(
+        "   john\\'s tiger  ",
+        0,
+        new SQPTerm("john\\'s", false)
+    );
+  }
+
+  public void testEscapedUnicodeChars() throws ParseException {
+    //copied from QueryParserTestBase
+    //TODO: get rid of this once new lexer is built
+    executeSingleTokenTest(
+        "\\\\\\u0028\\u0062\\\"",
+        0,
+        new SQPTerm("\\\\(b\\\"", false)
+    );
+
+    executeSingleTokenTest(
+        "\\\\\\u0028\\u0062\\\"",
+        0,
+        new SQPTerm("\\\\(b\\\"", false)
+    );
+
+    //test escape beyond bmp
+    String stagDouble = "\\uD800\\uDC82";
+    String stagSimple = new StringBuilder().appendCodePoint(0x10082).toString();
+
+    executeSingleTokenTest(
+        stagDouble,
+        0,
+        new SQPTerm(stagSimple, false)
+    );
+
+    //too short
+    testParseException("\\u002");
+    //not hex
+    testParseException("\\u002k");
+
+
+  }
+
+  public void testRegexes() throws ParseException {
+
+    executeSingleTokenTest(
+        "the quick /rabb.?t/ /f?x/",
+        2,
+        new SQPRegexTerm("rabb.?t")
+    );
+
+    executeSingleTokenTest(
+        "the quick /rab//b.?t/ /f?x/",
+        2,
+        new SQPRegexTerm("rab/b.?t")
+    );
+
+    executeSingleTokenTest(
+        "the quick /rabb///b.?/ /f?x",
+        2,
+        new SQPRegexTerm("rabb/")
+    );
+
+    executeSingleTokenTest(
+        "the quick /rabb///b.?/ /f?x",
+        3,
+        new SQPTerm("b.?", false)
+    );
+
+    executeSingleTokenTest(
+        "the quick /rabb///b.?/ /f?x",
+        4,
+        new SQPRegexTerm(" ")
+    );
+
+
+    executeSingleTokenTest(
+        "the quick [brown (/rabb.?t/ /f?x/)]",
+        5,
+        new SQPRegexTerm("rabb.?t")
+    );
+
+    executeSingleTokenTest(
+        "the quick [brown (ab/rabb.?t/cd /f?x/)]",
+        6,
+        new SQPRegexTerm("rabb.?t")
+    );
+
+    //test regex unescape
+    executeSingleTokenTest(
+        "the quick [brown (/ra\\wb\\db//t/ /f?x/)]",
+        5,
+        new SQPRegexTerm("ra\\wb\\db/t")
+    );
+
+    //test operators within regex
+    executeSingleTokenTest(
+        "the quick [brown (/(?i)a(b)+[c-e]*(f|g){0,3}/ /f?x/)]",
+        5,
+        new SQPRegexTerm("(?i)a(b)+[c-e]*(f|g){0,3}")
+    );
+
+    //test non-regex
+    executeSingleTokenTest(
+        "'/quick/'",
+        0,
+        new SQPTerm("/quick/", true)
+    );
+
+  }
 
   public void testFields() throws ParseException {
     executeSingleTokenTest(
@@ -60,6 +250,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         3,
         new SQPTerm("brown", false)
     );
+
     executeSingleTokenTest(
         "the quick f1\\ f2: brown fox",
         2,
@@ -80,45 +271,14 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         new SQPField("f1")
     );
 
+    //can't have field definitions within near or range
     testParseException("the quick \"f1: brown fox\"");
     testParseException("the quick [f1: brown fox]");
+    testParseException("the quick [f1: brown TO fox]");
+    testParseException("the quick [f1: TO fox]");
 
   }
 
-  public void testRegexes() throws ParseException {
-    executeSingleTokenTest(
-        "the quick [brown (/rabb.?t/ /f?x/)]",
-        5,
-        new SQPRegexTerm("rabb.?t")
-    );
-
-    executeSingleTokenTest(
-        "the quick [brown (ab/rabb.?t/cd /f?x/)]",
-        6,
-        new SQPRegexTerm("rabb.?t")
-    );
-
-    //test regex unescape
-    executeSingleTokenTest(
-        "the quick [brown (/ra\\wb\\db\\/t/ /f?x/)]",
-        5,
-        new SQPRegexTerm("ra\\wb\\db/t")
-    );
-
-    //test operators within regex
-    executeSingleTokenTest(
-        "the quick [brown (/(?i)a(b)+[c-e]*(f|g){0,3}/ /f?x/)]",
-        5,
-        new SQPRegexTerm("(?i)a(b)+[c-e]*(f|g){0,3}")
-    );
-
-    //test non-regex
-    executeSingleTokenTest(
-        "'/quick/'",
-        0,
-        new SQPTerm("/quick/", true)
-    );
-  }
 
   public void testOr() throws ParseException {
     SQPOrClause truth = new SQPOrClause(2, 5);
@@ -151,9 +311,29 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     testParseException("the \"quick (brown fox)~ jumped\"");
   }
 
+  public void testOneOffs() throws ParseException {
+    String s = "the \"quick brown\"";
+    List<SQPToken> tokens = lexer.getTokens(s);
+    for (SQPToken t : tokens) {
+      if (t != null) {
+        System.out.println(t.toString());
+      } else {
+        System.out.println("NULL");
+      }
+    }
+    //now test crazy apparent mods on first dquote
+    SQPTerm tTerm = new SQPTerm("~2", false);
+
+    executeSingleTokenTest(
+        "the \"~2 quick brown\"",
+        2,
+        tTerm
+    );
+
+  }
   public void testNear() throws ParseException {
 
-    SQPNearClause truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, false,
+    SQPNearClause truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, false,
         SQPNearClause.UNSPECIFIED_IN_ORDER,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     executeSingleTokenTest(
@@ -162,7 +342,8 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, true,
+
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, true,
         false,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     executeSingleTokenTest(
@@ -171,7 +352,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, true,
         true,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     executeSingleTokenTest(
@@ -180,7 +361,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, true,
         false,
         3);
     executeSingleTokenTest(
@@ -189,7 +370,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, true,
         true,
         3);
     executeSingleTokenTest(
@@ -199,7 +380,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     //now try with boosts
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, false,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, false,
         SQPNearClause.UNSPECIFIED_IN_ORDER,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -210,7 +391,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, true,
         false,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -221,7 +402,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, true,
         true,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -233,7 +414,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, true,
         false,
         3);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -245,7 +426,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.QUOTE, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.QUOTE, true,
         true,
         3);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -257,7 +438,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     //now test brackets
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, false,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, false,
         SQPNearClause.UNSPECIFIED_IN_ORDER,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
 
@@ -268,7 +449,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, true,
         false,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     executeSingleTokenTest(
@@ -277,7 +458,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, true,
         true,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
 
@@ -287,7 +468,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, true,
         false,
         3);
 
@@ -297,7 +478,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, true,
         true,
         3);
 
@@ -308,7 +489,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     //now brackets with boosts
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, false,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, false,
         SQPNearClause.UNSPECIFIED_IN_ORDER,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -319,7 +500,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, true,
         false,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -330,7 +511,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, true,
         true,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -341,7 +522,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, true,
         false,
         3);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -352,7 +533,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNearClause(3, 5, 0, 0, TYPE.BRACKET, true,
+    truth = new SQPNearClause(3, 5, 0, 0, SQPClause.TYPE.BRACKET, true,
         true,
         3);
     ((SQPBoostableToken) truth).setBoost(2.5f);
@@ -445,7 +626,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
   }
 
   public void testNotNear() throws ParseException {
-    SQPNotNearClause truth = new SQPNotNearClause(3, 5, TYPE.QUOTE,
+    SQPNotNearClause truth = new SQPNotNearClause(3, 5, SQPClause.TYPE.QUOTE,
         SQPNotNearClause.NOT_DEFAULT, SQPNotNearClause.NOT_DEFAULT);
 
     executeSingleTokenTest(
@@ -454,7 +635,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNotNearClause(3, 5, TYPE.QUOTE,
+    truth = new SQPNotNearClause(3, 5, SQPClause.TYPE.QUOTE,
         3, 3);
     executeSingleTokenTest(
         "the quick \"brown fox\"!~3 jumped",
@@ -462,7 +643,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNotNearClause(3, 5, TYPE.QUOTE,
+    truth = new SQPNotNearClause(3, 5, SQPClause.TYPE.QUOTE,
         3, 4);
     executeSingleTokenTest(
         "the quick \"brown fox\"!~3,4 jumped",
@@ -470,7 +651,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNotNearClause(3, 5, TYPE.BRACKET,
+    truth = new SQPNotNearClause(3, 5, SQPClause.TYPE.BRACKET,
         SQPNotNearClause.NOT_DEFAULT,
         SQPNotNearClause.NOT_DEFAULT);
 
@@ -480,7 +661,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNotNearClause(3, 5, TYPE.BRACKET,
+    truth = new SQPNotNearClause(3, 5, SQPClause.TYPE.BRACKET,
         3,
         3);
     executeSingleTokenTest(
@@ -489,7 +670,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         truth
     );
 
-    truth = new SQPNotNearClause(3, 5, TYPE.BRACKET,
+    truth = new SQPNotNearClause(3, 5, SQPClause.TYPE.BRACKET,
         3,
         4);
     executeSingleTokenTest(
@@ -647,7 +828,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     SQPNearClause nearClause = new SQPNearClause(2, 5,
-        0, 0, TYPE.BRACKET, false,
+        0, 0, SQPClause.TYPE.BRACKET, false,
         SQPNearClause.UNSPECIFIED_IN_ORDER,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
 
@@ -665,7 +846,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     nearClause = new SQPNearClause(1, 4,
-        0, 0, TYPE.BRACKET, false,
+        0, 0, SQPClause.TYPE.BRACKET, false,
         SQPNearClause.UNSPECIFIED_IN_ORDER,
         SpanQueryParserBase.UNSPECIFIED_SLOP);
     executeSingleTokenTest(
@@ -676,7 +857,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
     //not ranges
     nearClause = new SQPNearClause(2, 5,
-        0, 0, TYPE.BRACKET, true,
+        0, 0, SQPClause.TYPE.BRACKET, true,
         false,
         3);
 
@@ -693,7 +874,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     SQPNotNearClause notNear = new SQPNotNearClause(2,
-        5, TYPE.BRACKET,
+        5, SQPClause.TYPE.BRACKET,
         1,
         2);
 
@@ -754,7 +935,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         new SQPTerm(s, false)
     );
   }
-
+/*
   @Test(timeout = 1000)
   public void testNonMatchingSingleQuote() throws Exception {
     //test there isn't a permanent hang triggered by the non matching '
@@ -767,25 +948,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
   }
 
-  public void testLargeNumberOfORs() throws Exception {
-    //Thanks to Modassar Ather for finding this!
-    StringBuilder sb = new StringBuilder();
-    sb.append("(");
-    for (int i = 0; i < 1000; i++) {
 
-      if (i > 0) {
-        sb.append(" OR ");
-      }
-      sb.append("TERM_" + i);
-    }
-    sb.append(")");
-    executeSingleTokenTest(
-        sb.toString(),
-        0,
-        new SQPOrClause(1, 2000)
-    );
-
-  }
 
   public void testQueryEndsInEscape() throws ParseException {
     //Again, thanks to Modassar Ather for finding this!
@@ -800,6 +963,8 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
   }
+*/
+
 
   private void executeSingleTokenTest(String q, int targetOffset, SQPToken truth)
       throws ParseException {

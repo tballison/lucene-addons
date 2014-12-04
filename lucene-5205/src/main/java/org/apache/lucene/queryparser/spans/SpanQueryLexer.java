@@ -1,5 +1,4 @@
 package org.apache.lucene.queryparser.spans;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,281 +16,312 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
-import org.apache.lucene.util.mutable.MutableValueInt;
-
+import java.io.IOException;
+import java.io.PushbackReader;
+import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Tokenizer that returns a list of tokens of types:
- * Term, RegexTerm, RangeTerm
- * Boolean AND, NOT, etc
- * Field
- * <p>
- * A clause is represented as a node in the list where the clause started.
- * The clause includes offsets into the list for where its contents start and end.
- * <p>
- * Unescapes field and boolean operator tokens, but nothing else
- * 
- * <p>
- * Identifies the following types of exceptions:
- * mismatching/unmatched () "" []
- * bad unicode escape sequences
- * some illegal conj and mods (and and)
- * illegal (for this parser) boosts: term^0.6^2
- * 
- */
+import org.apache.lucene.queryparser.classic.ParseException;
+
 class SpanQueryLexer {
 
-  private final static String AND = "AND";
-  private final static String NOT = "NOT";
-  private final static String OR = "OR"; //silently removed from queries...beware!
+  private static final int DEFAULT_MIN_REQUIRED_IN_OR = 2;
 
-  private final static int DEFAULT_MIN_REQUIRED_IN_OR = 2;
+  private static final String AND = "AND";
+  private static final String NOT = "NOT";
+  private static final String OR = "OR"; //silently removed from queries...beware!
 
-  private final static Pattern UNESCAPE_REGEX = Pattern.compile("\\\\(.)");
+  private static final int DQUOTE = (int) '"';
+  private static final int SQUOTE = (int) '\'';
+  private static final int OPEN_PAREN = (int) '(';
+  private static final int CLOSE_PAREN = (int) ')';
+  private static final int OPEN_SQUARE = (int) '[';
+  private static final int CLOSE_SQUARE = (int) ']';
+  private static final int OPEN_CURLY = (int) '{';
+  private static final int CLOSE_CURLY = (int) '}';
+  private static final int TILDE = (int) '~';
+  private static final int GT = (int) '>';
+  private static final int U = (int) 'u';
+  private static final int CARET = (int) '^';
+  private static final int FORWARD_SLASH = (int) '/';
+  private static final int BACK_SLASH = (int) '\\';
+  private static final int COLON = (int) ':';
+  private static final int PLUS = (int) '+';
+  private static final int MINUS = (int) '-';
+  private static final int EXCLAMATION = (int) '!';
+  private static final int COMMA = (int) ',';
+  private static final int GREATER_THAN = (int) '>';
+  private static final int DECIMAL = (int)'.';
 
-  private final static String OPEN_PAREN = "(";
-  private final static String OPEN_BRACKET = "[";
-  private final static String OPEN_CURLY = "{";
-  private final static String CLOSE_BRACKET = "]";
-  private final static String CLOSE_CURLY = "}";
-  private final static String DQUOTE = "\"";
+  private static final Pattern BOOST_PATTERN = Pattern.compile("\\^((?:\\d*\\.)?\\d+)");
 
-  //Groups
-  public enum G {
-    WHOLE,
-    ESCAPE,
-    SPACE,
-    PLUS_MINUS,
-    FIELD,
-    SINGLE_QUOTED,
-    REGEX,
-    CLOSE_PAREN,
-    CLOSE_PAREN_DIGITS,
-    QUOTE_OR_CLOSING_BRACKET,
-    NEAR_PARAM,
-    NEAR_IN_ORDER,
-    NEAR_SLOP,
-    NOT_NEAR_PRE,
-    NOT_NEAR_POST,
-    BOOST,
-    OPEN_PAREN_OR_BRACKET,
-  };
 
-  //using \\p{Z} to capture wider variety of Unicode whitespace than \\s
-  //DO NOT DO THIS!!! Blew heap when a string had a character beyond bmp.
-  //  private final static String TERMINAL_STRING = 
-  //"((?:\\\\.|(?:[-+](?![/\\(\\[\"]))|[^-+\\\\\\(\\)\\[\\]\\p{Z}\"/:\\^])+)(?:(:)|"+BOOST+")?";
-
-  private final static Pattern ILLEGAL_UNICODE_ESCAPE = Pattern.compile("\\\\u([0-9a-fA-F]{0,4})");
-
-  //need (?s) in case \n is escaped
-  private final static String ESCAPE_STRING = "(?s)((?:\\\\.)+)";
-  private final static String NO_CAPTURE_SPACE = "[\t-\r\u0085\\p{Z}]+";
-  private final static String SPACE_STRING = "("+NO_CAPTURE_SPACE+")";
-  private final static String FIELD_END_STRING = ("(:)");
-  private final static String REGEX_STRING = "(?s)(?:/((?:\\\\.|[^/\\\\])+?)/)";
-
-  private final static String SINGLE_QUOTE_STRING = "'((?:''|[^'])+)'";
-
-  private final static String BOOST_STRING = "\\^((?:\\d*\\.)?\\d+)";
-  private final static Pattern BOOST_PATTERN = Pattern.compile(BOOST_STRING);
-
-  //plus/minus must not be followed by a space (to be boolean op)
-  //it must be preceded by space or start of string.  The current
-  //regex doesn't take into consideration an escaped space before the +-
-  private final static String PLUS_MINUS_STRING = "(?<=(?:^|"+NO_CAPTURE_SPACE+"))([-+])(?!"+NO_CAPTURE_SPACE+")";
-  private final static String OPENING = "([\\(\\[{])";
-
-  private final static String NEAR_MODIFIERS = "~(?:(>)?(\\d+)?)?";
-  private final static String NOT_NEAR_MODIFIERS = "!~(?:(\\d+)(?:,(\\d+))?)?";
-
-  private final static String NEAR_CLOSING_MODIFIERS = "("+NEAR_MODIFIERS+"|"+NOT_NEAR_MODIFIERS+")?";
-
-  private final static String OR_CLOSING_MODIFIER = "(?:~(\\d*))?";
-  private final static String CLOSING_STRING = "(?:(\\))"+OR_CLOSING_MODIFIER+")|(?:([\\]\"}])"+NEAR_CLOSING_MODIFIERS+")";
-
-  private final static Pattern TOKENIZER = Pattern.compile(
-      ESCAPE_STRING + "|" +
-          SPACE_STRING + "|"+  
-          PLUS_MINUS_STRING+"|"+
-          FIELD_END_STRING+"|"+
-          "(?:"+SINGLE_QUOTE_STRING + "|"+
-
-      REGEX_STRING +"|"+CLOSING_STRING+")(?:"+BOOST_STRING + ")?|"+OPENING);
+  boolean inDQuote = false;
+  int nearDepth = 0;
+  PushbackReader reader;
+  StringBuilder tokenBuffer = new StringBuilder();
+  List<SQPToken> tokens = new ArrayList<>();
+  Stack<SQPOpenClause> stack = new Stack();
 
   public List<SQPToken> getTokens(String s) throws ParseException {
-    //k, now let's go
-    List<SQPToken> tokens = new ArrayList<SQPToken>();
-
-    if (s.length() == 0) {
+    if (s.trim().length() == 0) {
       return tokens;
     }
-    //initial validation tests
-    //does the string end with an unescaped \\
-    if (s.endsWith("\\")) {
-        if (! SpanQueryParserUtil.isCharEscaped(s, s.length()-1)) {
-            throw new ParseException("Can't end query with unescaped backslash character");
-        }
-    }
-
-    Matcher m = ILLEGAL_UNICODE_ESCAPE.matcher(s);
-    while (m.find()) {
-      if (m.group(1).length() != 4) {
-        throw new ParseException ("Illegal escaped unicode character: "+m.group(1));
+    //TODO: no need to init if initialize lexer w string and change to getTokens()
+    tokens.clear();
+    stack.clear();
+    tokenBuffer.setLength(0);
+    nearDepth = 0;
+    inDQuote = false;
+    reader = new PushbackReader(new StringReader(s));
+    try {
+      while (nextToken()) {
+        //do nothing;
       }
+    } catch (IOException e) {
+      throw new ParseException(e.getMessage());
     }
-
-
-    Stack<SQPOpenClause> stack = new Stack<SQPOpenClause>();
-    MutableValueInt nearDepth = new MutableValueInt();
-    nearDepth.value = 0;
-
-    m = TOKENIZER.matcher(s);
-    int last = 0;
-    while (m.find()) {
-      if (m.group(G.SPACE.ordinal()) != null) {
-        //space
-        if (m.start() > last) {
-          String term = s.substring(last, m.start());
-          addRawTerm(term, nearDepth.value, tokens);
-        }
-        last = m.end();
-      } else if (m.group(G.ESCAPE.ordinal()) != null) {
-        //don't set last; keep going
-      } else if (m.group(G.FIELD.ordinal()) != null) {
-
-        if (m.start() > 0 && m.start() > last) {
-          String term = s.substring(last, m.start());
-          addField(term, nearDepth.value, tokens);
-          last = m.end();
-        }
-      } else if (m.group(G.SINGLE_QUOTED.ordinal()) != null) {
-        String term = m.group(G.SINGLE_QUOTED.ordinal());
-        addSingleQuotedTerm(term, nearDepth.value, tokens, m);
-        last = m.end();
-      } else {
-        if (m.start() > last) {
-          String term = s.substring(last, m.start());
-          addRawTerm(term, nearDepth.value, tokens);
-        }
-        addOpTokens(m, tokens, stack, nearDepth);
-        last = m.end();
-      }
-
-    }
-    if (last < s.length()) {
-      String term = s.substring(last);
-      addRawTerm(term, nearDepth.value, tokens);
-    }
-
-    if (stack.size() != 0) {
-      //TODO add more info
-      throw new ParseException("unmatched bracket");
-    } else if (nearDepth.value != 0) {
-      throw new ParseException("error in nearDepth calc");
-    }
-
-    testSingle(tokens);
     return tokens;
   }
 
-
-  private void addSingleQuotedTerm(String term, int value, List<SQPToken> tokens,
-      Matcher m) {
-    SQPTerm t = new SQPTerm(unescapeSingleQuoted(term), true);
-    tryToAddBoost((SQPBoostableToken)t, m);
-    tokens.add(t);
-  }
-
-
-  private void addOpTokens(Matcher m,  
-      List<SQPToken> tokens, Stack<SQPOpenClause> stack, MutableValueInt nearDepth) 
-          throws ParseException{
-
-    //these return early
-    //perhaps rearrange to more closely align with operator frequency
-    if (m.group(G.CLOSE_PAREN.ordinal()) != null) {
-      processCloseParen(m, tokens, stack, nearDepth.value);
-      return;
-    } else if (m.group(G.QUOTE_OR_CLOSING_BRACKET.ordinal()) != null) {
-      processCloseBracketOrQuote(m, tokens, stack, nearDepth);
-      return;
+  boolean nextToken() throws IOException, ParseException {
+    int c = reader.read();
+    //slurp leading whitespace
+    while (isWhitespace(c)) {
+      c = reader.read();
     }
 
-    SQPToken token = null;
+    boolean keepGoing = true;
+    while (true) {
+      if (isWhitespace(c)) {
+        flushBuffer(false, false);
+        return true;
+      }
+      switch (c) {
+        case -1:
+          flushBuffer(false, false);
+          return false;
 
-    if (m.group(G.OPEN_PAREN_OR_BRACKET.ordinal()) != null) {
-      //open paren or open bracket
-      String open = m.group(G.OPEN_PAREN_OR_BRACKET.ordinal());
-      if (open.equals(OPEN_PAREN)) {
-        token = new SQPOpenClause(tokens.size(), m.start()+1, TYPE.PAREN);
-      } else if (open.equals(OPEN_BRACKET)) {
-        token = new SQPOpenClause(tokens.size(), m.start()+1, TYPE.BRACKET);
-        nearDepth.value++;
-      } else if (open.equals(OPEN_CURLY)) {
-        token = new SQPOpenClause(tokens.size(), m.start()+1, TYPE.CURLY);
-        nearDepth.value++;
+        case SQUOTE :                           //single quote
+          flushBuffer(false, false);
+          return readToMatchingEndToken(SQUOTE);
+
+        case FORWARD_SLASH :                    //regex
+          flushBuffer(false, false);
+          return readToMatchingEndToken(FORWARD_SLASH);
+
+        case BACK_SLASH:
+          int next = reader.read();
+          if (next == -1) {
+            throw new ParseException("Can't end string with \\");
+          } else if (next == U) {
+            tryToReadEscapedUnicode();
+          } else {
+            tokenBuffer.appendCodePoint(BACK_SLASH);
+            tokenBuffer.appendCodePoint(next);
+          }
+          c = reader.read();
+          continue;
+
+        case COLON:
+          String fieldName = tokenBuffer.toString();
+          tokenBuffer.setLength(0);
+          tryToAddField(fieldName);
+          return true;
+
+        case OPEN_PAREN:
+          flushBuffer(false, false);
+          handleOpenClause(SQPClause.TYPE.PAREN);
+          return true;
+
+        case OPEN_SQUARE:
+          flushBuffer(false, false);
+          handleOpenClause(SQPClause.TYPE.BRACKET);
+          return true;
+
+        case OPEN_CURLY:
+          flushBuffer(false, false);
+          handleOpenClause(SQPClause.TYPE.CURLY);
+          return true;
+
+        case DQUOTE:
+          flushBuffer(false, false);
+          handleDQuote();
+          return true;
+
+        case CLOSE_PAREN :
+          flushBuffer(false, false);
+          handleCloseClause(SQPClause.TYPE.PAREN);
+          return true;
+
+        case CLOSE_CURLY :
+          flushBuffer(false, false);
+          handleCloseClause(SQPClause.TYPE.CURLY);
+          return true;
+
+        case CLOSE_SQUARE :
+          flushBuffer(false, false);
+          handleCloseClause(SQPClause.TYPE.BRACKET);
+          return true;
+
+        case PLUS :
+          if (tokenBuffer.length() == 0) {
+            flushBuffer(false, false);
+            SQPBooleanOpToken plusToken = new SQPBooleanOpToken(SpanQueryParserBase.MOD_REQ);
+            testBooleanTokens(tokens, plusToken);
+            tokens.add(plusToken);
+            return true;
+          }
+          break;
+
+
+        case MINUS :
+          if (tokenBuffer.length() == 0) {
+            flushBuffer(false, false);
+            SQPBooleanOpToken minusToken = new SQPBooleanOpToken(SpanQueryParserBase.MOD_NOT);
+            testBooleanTokens(tokens, minusToken);
+            tokens.add(minusToken);
+            return true;
+          }
+          break;
+      }
+      tokenBuffer.appendCodePoint(c);
+
+      c = reader.read();
+    }
+  }
+
+  private void handleDQuote() throws IOException, ParseException {
+    if (inDQuote) {
+      inDQuote = false;
+      handleCloseClause(SQPClause.TYPE.QUOTE);
+    } else {
+      inDQuote = true;
+      handleOpenClause(SQPClause.TYPE.QUOTE);
+    }
+  }
+
+  private void handleCloseClause(SQPClause.TYPE closeType) throws IOException, ParseException {
+    SQPOpenClause open = null;
+    try {
+      open = stack.pop();
+    } catch (EmptyStackException e) {
+      throw new ParseException("Unable to find starting clause marker for this end: " + closeType.name());
+    }
+    testMatchingOpenClose(open, closeType);
+    SQPClause newClause = null;
+
+    if (closeType == SQPClause.TYPE.PAREN) {
+      int next = reader.read();
+      int minMatch = -1;
+      if (next == TILDE) {
+        if (nearDepth > 0) {
+          throw new ParseException("Can't specify minimumNumberShouldMatch within a \"near\" clause");
+        }
+        minMatch = tryToReadInteger();
+        if (minMatch < 0) {
+          minMatch = DEFAULT_MIN_REQUIRED_IN_OR;
+        }
       } else {
-        //uh, should never happen
+        tryToUnread(next);
       }
-      stack.push((SQPOpenClause)token);
-    } else if (m.group(G.PLUS_MINUS.ordinal()) != null) {
-      String pm = m.group(G.PLUS_MINUS.ordinal());
-      if (pm.equals("+")) {
-        token = new SQPBooleanOpToken(SpanQueryParserBase.MOD_REQ);
-        testBooleanTokens(tokens, (SQPBooleanOpToken)token);
-      } else if (pm.equals("-")) {
-        token = new SQPBooleanOpToken(SpanQueryParserBase.MOD_NOT);
-        testBooleanTokens(tokens, (SQPBooleanOpToken)token);
+      newClause = new SQPOrClause(open.getTokenOffsetStart() + 1, tokens.size());
+      if (minMatch > -1) {
+        ((SQPOrClause) newClause).setMinimumNumberShouldMatch(minMatch);
       }
-    } else if (m.group(G.REGEX.ordinal()) != null) {
-      token = new SQPRegexTerm(unescapeRegex(m.group(G.REGEX.ordinal())));
-      tryToAddBoost((SQPBoostableToken)token, m);
-    } 
+    } else {
+      nearDepth--;
+      //next0
+      int n0 = reader.read();
 
-    if (token != null) {
-      tokens.add(token);
+      if (n0 == EXCLAMATION) { //span not
+        int n1 = reader.read();
+        if (n1 == TILDE) {
+          int notPost = Integer.MIN_VALUE;
+          int notPre = SQPNotNearClause.NOT_DEFAULT;
+          int tmpNotPre = tryToReadInteger();
+          notPre = (tmpNotPre > -1) ? tmpNotPre : notPre;
+
+          int n2 = reader.read();
+          if (n2 == COMMA) {
+            notPost = tryToReadInteger();
+          } else {
+            tryToUnread(n2);
+          }
+          if (notPost == Integer.MIN_VALUE) {
+            notPost = notPre;
+          }
+          newClause = new SQPNotNearClause(open.getTokenOffsetStart()+1, tokens.size(), closeType, notPre, notPost);
+        } else {
+          throw new ParseException("Not near query must be followed by ~");
+        }
+      } else if (n0 == TILDE) { //span
+        boolean inOrder = false;
+        int slop = AbstractSpanQueryParser.UNSPECIFIED_SLOP;
+        int n1 = reader.read();
+        if (n1 == GREATER_THAN) {
+          inOrder = true;
+        } else {
+          tryToUnread(n1);
+        }
+        int tmpSlop = tryToReadInteger();
+        if (tmpSlop > -1) {
+          slop = tmpSlop;
+        }
+        newClause = new SQPNearClause(open.getTokenOffsetStart() + 1, tokens.size(),
+            open.getStartCharOffset(), -1,
+            open.getType(), true, inOrder, slop);
+
+      } else { // no special marker at end of near phrase
+        tryToUnread(n0);
+        newClause = new SQPNearClause(open.getTokenOffsetStart() + 1, tokens.size(),
+            open.getStartCharOffset(), -1,
+            open.getType(), false, SQPNearClause.UNSPECIFIED_IN_ORDER, AbstractSpanQueryParser.UNSPECIFIED_SLOP);
+      }
     }
-  }
 
-  private void processCloseBracketOrQuote(Matcher m, List<SQPToken> tokens,
-      Stack<SQPOpenClause> stack, MutableValueInt nearDepth) throws ParseException {
-    //open or close quote or closing bracket
-    //let's start with quote
-    String close = m.group(G.QUOTE_OR_CLOSING_BRACKET.ordinal());
-    if (close.equals(DQUOTE)) {
-      processDQuote(m, tokens, stack, nearDepth); 
+    Float boost = tryToReadBoost();
+    if (boost != null) {
+      ((SQPBoostableToken) newClause).setBoost(boost);
+    }
+
+    if (testForRangeQuery(open, newClause, closeType)) {
       return;
     }
-    //from here on out, must be close bracket
-    //test for mismatched
-    if (stack.isEmpty()) {
-      throw new ParseException("Couldn't find matching open bracket/quote.");
-    }
-
-    SQPOpenClause open = stack.pop();
-    boolean isRange = tryToProcessRange(open, m, tokens, nearDepth, close);
-
-    if (isRange) {
-      return;
-    }
-
-    SQPClause clause = buildNearOrNotNear(m, tokens, open);
-
-    nearDepth.value--;
-    tokens.set(open.getTokenOffsetStart(), clause);
+    tokens.set(open.getTokenOffsetStart(), newClause);
   }
 
+  //tries to read a boost if it is there
+  //returns null if no parseable boost
+  private Float tryToReadBoost() throws IOException {
+    int c = reader.read();
+    if (c == CARET) {
+      return tryToReadFloat();
+    } else {
+      tryToUnread(c);
+    }
+    return null;
+  }
 
-  private boolean tryToProcessRange(SQPOpenClause open, Matcher m, List<SQPToken> tokens,
-      MutableValueInt nearDepth, String close) throws ParseException {
+  //After a closeClause is built, this tests to see if it is
+  //actually a range query.  If it is, then this replaces the clause
+  //with a SQPRangeTerm and returns true
+  private boolean testForRangeQuery(SQPOpenClause openClause, SQPClause closeClause, SQPClause.TYPE closeType) throws ParseException {
+
+    //if paren or quote clause, not a range query
+    if (openClause.getType() == SQPClause.TYPE.PAREN ||
+        openClause.getType() == SQPClause.TYPE.QUOTE) {
+      return false;
+    }
+    if (closeClause instanceof SQPNotNearClause) {
+      return false;
+    }
+    SQPNearClause clause = (SQPNearClause)closeClause;
 
     //test to see if this looks like a range
     //does it contain three items; are they all terms, is the middle one "TO"
@@ -299,23 +329,23 @@ class SpanQueryLexer {
 
     //if there's a curly bracket to start or end, then it
     //must be a compliant range query or else throw parse exception
-    boolean hasCurly = (open.getType() == SQPClause.TYPE.CURLY ||
-        close.equals(CLOSE_CURLY)) ? true : false;
+    boolean hasCurly = (openClause.getType() == SQPClause.TYPE.CURLY ||
+        closeType == SQPClause.TYPE.CURLY) ? true : false;
 
     //if there are any modifiers on the close bracket
-    if (m.group(G.NEAR_PARAM.ordinal()) != null) {
+    if (clause.hasParams()) {
       if (hasCurly) {
-        throw new ParseException("Can't have modifiers on a range query. "+
+        throw new ParseException("Can't have modifiers on a range query. " +
             "Or, you can't use curly brackets for a phrase/near query");
       }
       return false;
     }
 
-    if (open.getTokenOffsetStart() == tokens.size()-4) {
+    if (openClause.getTokenOffsetStart() == tokens.size() - 4) {
       for (int i = 1; i < 4; i++) {
-        SQPToken t = tokens.get(tokens.size()-i);
+        SQPToken t = tokens.get(tokens.size() - i);
         if (t instanceof SQPTerm) {
-          if (i == 2 && !((SQPTerm)t).getString().equals("TO")) {
+          if (i == 2 && !((SQPTerm) t).getString().equals("TO")) {
             return testBadRange(hasCurly);
           }
         } else {
@@ -325,9 +355,9 @@ class SpanQueryLexer {
     } else {
       return testBadRange(hasCurly);
     }
-    boolean startInclusive = (open.getType() == SQPClause.TYPE.BRACKET) ? true : false;
-    boolean endInclusive = (close.equals(CLOSE_BRACKET))?true:false;
-    SQPTerm startTerm = (SQPTerm)tokens.get(tokens.size()-3);
+    boolean startInclusive = (openClause.getType() == SQPClause.TYPE.BRACKET) ? true : false;
+    boolean endInclusive = (clause.getType() == SQPClause.TYPE.BRACKET) ? true : false;
+    SQPTerm startTerm = (SQPTerm) tokens.get(tokens.size() - 3);
     String startString = startTerm.getString();
     if (startString.equals("*")) {
       if (startTerm.isQuoted()) {
@@ -336,7 +366,7 @@ class SpanQueryLexer {
         startString = null;
       }
     }
-    SQPTerm endTerm = (SQPTerm)tokens.get(tokens.size()-1);
+    SQPTerm endTerm = (SQPTerm) tokens.get(tokens.size() - 1);
     String endString = endTerm.getString();
     if (endString.equals("*")) {
       if (endTerm.isQuoted()) {
@@ -348,184 +378,128 @@ class SpanQueryLexer {
     SQPToken range = new SQPRangeTerm(startString, endString, startInclusive, endInclusive);
 
     //remove last term
-    tokens.remove(tokens.size()-1);
+    tokens.remove(tokens.size() - 1);
     //remove TO
-    tokens.remove(tokens.size()-1);
+    tokens.remove(tokens.size() - 1);
     //remove first term
-    tokens.remove(tokens.size()-1);
+    tokens.remove(tokens.size() - 1);
     //remove start clause marker
-    tokens.remove(tokens.size()-1);
+    tokens.remove(tokens.size() - 1);
     tokens.add(range);
-    tryToAddBoost((SQPBoostableToken)range, m);
-    nearDepth.value--;
+    Float boost = clause.getBoost();
+    if (boost != null) {
+      ((SQPBoostableToken)range).setBoost(boost);
+    }
     return true;
   }
 
-  private boolean testBadRange(boolean hasCurly) throws ParseException{
+  private boolean testBadRange(boolean hasCurly) throws ParseException {
     if (hasCurly == true) {
       throw new ParseException("Curly brackets should only be used in range queries");
     }
     return false;
   }
-  private void processDQuote(Matcher m, List<SQPToken> tokens,
-      Stack<SQPOpenClause> stack, MutableValueInt nearDepth) throws ParseException {
-    //If a double-quote, don't know if open or closing yet
-    //first test to see if there's a matching open quote on the stack
-    //if there is, this must be a closing quote
-    //if there isn't, push whatever was on the stack back and
-    //treat this as an opening quote
-    if (stack.size() > 0) {
-      SQPOpenClause openCand = stack.pop();
-      if (openCand.getType() == TYPE.QUOTE) {
-        processDQuoteClose(m, tokens, openCand, nearDepth);
-        return;
 
-      }
-      //put candidate back on the stack
-      stack.push(openCand);
-    }
-    //by this point, we know that this double quote must be an opener
-    SQPOpenClause token = new SQPOpenClause(tokens.size(), m.start()+1, TYPE.QUOTE);
-
-    stack.push(token);
-    nearDepth.value++;
-    tokens.add(token);
-
-    //if for some crazy reason there are ending-like modifiers on an opening quote
-    //treat those mods as a plain sqpterm:
-    //the "~2 quick brown fox"
-    if (m.group(G.NEAR_PARAM.ordinal())!= null) {
-      tokens.add(new SQPTerm(m.group(G.NEAR_PARAM.ordinal()), false));
-    }
-  }
-
-  private void processDQuoteClose(Matcher m, List<SQPToken> tokens,
-      SQPOpenClause open, MutableValueInt nearDepth) throws ParseException {
-    SQPClause clause = buildNearOrNotNear(m, tokens, open);
-    //special handling if a single term between double quotes
-    //and the double quotes don't have any parameters
-    if (clause instanceof SQPNearClause &&
-        ! ((SQPNearClause)clause).hasParams() &&
-        open.getTokenOffsetStart() == tokens.size()-2 &&
-        tokens.size()-2 >=0) {
-      boolean abort = false;
-      SQPToken content = tokens.get(tokens.size()-1);
-      if (content instanceof SQPRegexTerm) {
-        //add back in the original / and /
-        content = new SQPTerm(escapeDQuote("/"+((SQPRegexTerm)content).getString())+"/", false);
-      } else if (content instanceof SQPTerm) {
-        content = new SQPTerm(escapeDQuote(((SQPTerm)content).getString()), true);
-      } else {
-        abort = true;
-      }
-      if (abort == false) {
-        //remove the last content token
-        tokens.remove(tokens.size()-1);
-        //remove the opening clause marker
-        tokens.remove(tokens.size()-1);
-        tryToAddBoost((SQPBoostableToken)content, m);
-        tokens.add(content);
-        ((SQPTerm)content).setIsQuoted(true);
-        nearDepth.value--;
-        return;
-      }
-    }
-
-    nearDepth.value--;
-    tryToAddBoost((SQPBoostableToken)open, m);
-    tokens.set(open.getTokenOffsetStart(), clause);
-  }
-
-  private SQPClause buildNearOrNotNear(Matcher m, List<SQPToken> tokens, SQPOpenClause open) 
+  //tests that open and closing clause markers match
+  //throws parse exception if not
+  private void testMatchingOpenClose(SQPOpenClause open, SQPClause.TYPE closeType)
       throws ParseException {
-    //try for not near first, return early
-    if (m.group(G.NEAR_PARAM.ordinal()) != null && m.group(G.NEAR_PARAM.ordinal()).startsWith("!")) {
-      int notPre = SQPNotNearClause.NOT_DEFAULT;
-      int notPost = SQPNotNearClause.NOT_DEFAULT;
-      if (m.group(G.NOT_NEAR_PRE.ordinal()) != null) {
-        notPre = Integer.parseInt(m.group(G.NOT_NEAR_PRE.ordinal()));
-        notPost = notPre;
+    SQPClause.TYPE openType = open.getType();
+    if (openType == closeType) {
+      //no op
+    } else if (openType == SQPClause.TYPE.BRACKET) {
+      if (closeType != SQPClause.TYPE.BRACKET &&
+          closeType != SQPClause.TYPE.CURLY) {
+        throw new ParseException("Mismatching phrasal elements:" +
+            openType.name() + " and " + closeType.name());
       }
-      if (m.group(G.NOT_NEAR_POST.ordinal()) != null) {
-        notPost = Integer.parseInt(m.group(G.NOT_NEAR_POST.ordinal()));
+    } else if (openType == SQPOpenClause.TYPE.CURLY) {
+      if (closeType != SQPClause.TYPE.BRACKET &&
+          closeType != SQPClause.TYPE.CURLY) {
+        throw new ParseException("Mismatching phrasal elements:" +
+            openType.name() + " and " + closeType.name());
       }
-      //contents of this clause start at 1 after tokenOffsetStart 
-      SQPNotNearClause clause = new SQPNotNearClause(open.getTokenOffsetStart()+1, tokens.size(), 
-          open.getType(), notPre, notPost);
-      tryToAddBoost((SQPBoostableToken)clause, m);
-      return clause;
-    }
 
-    //must be near
-    //if nothing is specified, inOrder == true
-    Boolean inOrder = SQPNearClause.UNSPECIFIED_IN_ORDER;
-    int slop = AbstractSpanQueryParser.UNSPECIFIED_SLOP;
-    boolean hasParams = false;
-    if (m.group(G.NEAR_PARAM.ordinal()) != null) {
-      hasParams = true;
-      inOrder = new Boolean(false);
     }
-
-    if (m.group(G.NEAR_SLOP.ordinal()) != null) {
-      slop = Integer.parseInt(m.group(G.NEAR_SLOP.ordinal()));
-    }
-
-    if (m.group(G.NEAR_IN_ORDER.ordinal()) != null) {
-      inOrder = new Boolean(true);    
-    }
-    SQPNearClause clause = new SQPNearClause(open.getTokenOffsetStart()+1, tokens.size(),
-        open.getStartCharOffset(), m.start(),
-        open.getType(), hasParams, inOrder, slop);
-    tryToAddBoost((SQPBoostableToken)clause, m);
-    return clause;
   }
 
-
-  private void processCloseParen(Matcher m, List<SQPToken> tokens,
-      Stack<SQPOpenClause> stack, int nearDepth) throws ParseException {
-    if (stack.isEmpty()) {
-      throw new ParseException("Mismatched closing paren");
+  private void handleOpenClause(SQPClause.TYPE type) {
+    SQPOpenClause open = new SQPOpenClause(tokens.size(), -1, type);
+    stack.push(open);
+    tokens.add(open);
+    if (type != SQPClause.TYPE.PAREN) {
+      nearDepth++;
     }
-    SQPOpenClause openCand = stack.pop();
-    if (openCand.getType() == TYPE.PAREN) {
-      SQPOrClause clause = new SQPOrClause(openCand.getTokenOffsetStart()+1,
-          tokens.size());
-      if (m.group(G.CLOSE_PAREN_DIGITS.ordinal()) != null) {
-        throwIfNear(nearDepth,
-            "Can't specify minimum number of terms for an 'or' clause within a 'near' clause");
+  }
 
-        if (m.group(G.CLOSE_PAREN_DIGITS.ordinal()).length() > 0) {
-          clause.setMinimumNumberShouldMatch(Integer.parseInt(m.group(G.CLOSE_PAREN_DIGITS.ordinal())));
+  private boolean readToMatchingEndToken(int targChar) throws ParseException, IOException {
+    int c = reader.read();
+    boolean hitEndOfString = false;
+    while (true) {
+      if (c == -1) {
+        //won't work with bmp targChar!
+        throw new ParseException("Didn't find matching: " + (char) targChar);
+      } else if (c == targChar) {
+        int next = reader.read();
+        if (next == -1) {
+          hitEndOfString = true;
+          break;
+        } else if (next == targChar) {
+          tokenBuffer.appendCodePoint(targChar);
+          c = reader.read();
+          continue;
         } else {
-          clause.setMinimumNumberShouldMatch(DEFAULT_MIN_REQUIRED_IN_OR);
+          reader.unread(next);
+          break;
         }
       }
-      tryToAddBoost((SQPBoostableToken)clause, m);
-      tokens.set(openCand.getTokenOffsetStart(), clause);
+
+      tokenBuffer.appendCodePoint(c);
+      c = reader.read();
+    }
+    if (tokenBuffer.length() == 0) {
+      throw new ParseException("must have some content between " + (char) targChar + "s");
+    }
+    String contents = tokenBuffer.toString();
+    tokenBuffer.setLength(0);
+
+    SQPToken token = null;
+    if (targChar == FORWARD_SLASH) {
+      token = new SQPRegexTerm(contents);
+    } else if (targChar == SQUOTE) {
+      token = new SQPTerm(contents, true);
+    } else {
+      throw new IllegalArgumentException("Don't know how to handle: "+targChar+" while building tokens");
+    }
+    c = reader.read();
+    Float boost = null;
+    if (c == CARET) {
+      int next = reader.read();
+      if (next == MINUS) {
+        //can't have MINUS!!!
+        tryToUnread(next);
+        tryToUnread(c);
+      } else {
+        tryToUnread(next);
+        boost = tryToReadFloat();
+      }
+    } else {
+      tryToUnread(c);
+    }
+    if (boost != null) {
+      ((SQPBoostableToken)token).setBoost(boost);
+    }
+    tokens.add(token);
+    return !hitEndOfString;
+  }
+
+  void flushBuffer(boolean isQuoted, boolean isRegex) throws ParseException {
+    if (tokenBuffer.length() == 0) {
       return;
     }
-    throw new ParseException("Was expecting \")\" but found " + openCand.getType());
-  }
+    String term = tokenBuffer.toString();
+    tokenBuffer.setLength(0);
 
-  private void throwIfNear(int nearDepth, String string) throws ParseException {
-    if (nearDepth != 0) {
-      throw new ParseException(string);
-    }
-  }
-
-  private void addField(String term, int nearDepth, List<SQPToken> tokens) throws ParseException {
-    if (nearDepth != 0) {
-      throw new ParseException("Can't specify a field within a \"Near\" clause");
-    }
-    if (tokens.size() > 0 && tokens.get(tokens.size()-1) instanceof SQPField) {
-      throw new ParseException("A field must contain a terminal");
-    }
-    SQPToken token = new SQPField(SpanQueryParserBase.unescape(term));
-    tokens.add(token);
-  } 
-
-  private void addRawTerm(String term, int nearDepth, List<SQPToken> tokens)
-      throws ParseException {
     //The regex over-captures on a term...Term could be:
     //AND or NOT boolean operator; and term could have boost
 
@@ -569,31 +543,66 @@ class SpanQueryLexer {
       }
       term = term.substring(0, boostStart);
     }
-    SQPToken token = new SQPTerm(unescape(term), false);
+    SQPToken token = null;
+    if (isRegex) {
+      token = new SQPRegexTerm(term);
+    } else {
+      token = new SQPTerm(unescapeBooleanOperators(term), isQuoted);
+    }
     if (boost != SpanQueryParserBase.UNSPECIFIED_BOOST) {
       ((SQPBoostableToken)token).setBoost(boost);
     }
-
     tokens.add(token);
   }
 
-  private void tryToAddBoost(SQPBoostableToken t, Matcher m) {
-    if (m.group(G.BOOST.ordinal()) != null) {
-      try {
-        t.setBoost(Float.parseFloat(m.group(G.BOOST.ordinal())));
-      } catch (NumberFormatException e) {
-      }
+  boolean isWhitespace(int c) {
+    //TODO: add more whitespace code points
+    switch (c) {
+      case 32:
+        return true;
     }
+    ;
+    return false;
   }
 
+  String unescapeBooleanOperators(String s) {
+
+    if (s.equals("\\AND")) {
+      return "AND";
+    }
+    if (s.equals("\\NOT")) {
+      return "NOT";
+    }
+    if (s.equals("\\OR")) {
+      return "OR";
+    }
+    return s;
+  }
+
+  private void tryToAddField(String term) throws ParseException {
+
+    if (term.length() == 0) {
+      throw new ParseException("Field name must have length > 0");
+    }
+    if (nearDepth != 0) {
+      throw new ParseException("Can't specify a field within a \"Near\" clause");
+    }
+
+    if (tokens.size() > 0 && tokens.get(tokens.size()-1) instanceof SQPField) {
+      throw new ParseException("A field must contain a terminal");
+    }
+
+    SQPToken token = new SQPField(SpanQueryParserBase.unescape(term));
+    tokens.add(token);
+  }
   /**
    * Test whether this token can be added to the list of tokens
    * based on classic queryparser rules
    */
-  private void testBooleanTokens(List<SQPToken> tokens, SQPBooleanOpToken token) 
+  private void testBooleanTokens(List<SQPToken> tokens, SQPBooleanOpToken token)
       throws ParseException {
     //there are possible exceptions with tokens.size()==0, but they
-    //are the same exceptions as at clause beginning.  
+    //are the same exceptions as at clause beginning.
     //Need to test elsewhere for start of clause issues.
     if (tokens.size() == 0) {
       return;
@@ -620,76 +629,81 @@ class SpanQueryLexer {
     }
   }
 
-  private void testSingle(List<SQPToken> tokens) throws ParseException {
-    if (tokens.size() == 0) {
-      return;
-    }
-    if (tokens.size() == 1) {
-      SQPToken t = tokens.get(0);
-      if (t instanceof SQPTerminal) { 
-      } else {
-        throw new ParseException("Must have at least one terminal:" + tokens.get(0).toString());
-      }
+  void tryToUnread(int c) throws IOException {
+    if (c != -1) {
+      reader.unread(c);
     }
   }
 
-  private String unescapeSingleQuoted(String s) {
-    if (s == null) {
-      return "";
-    }
-    return s.replaceAll("''", "'");     
-  }
-
-  private String unescape(String s) {
-
-    if (s.equals("\\AND")) {
-      return "AND";
-    } 
-    if (s.equals("\\NOT")) {
-      return "NOT";
-    }
-    if (s.equals("\\OR")) {
-      return "OR";
-    }
-    return s;
-  }
-
-  private String unescapeRegex(String s) {
-
-    Matcher m = UNESCAPE_REGEX.matcher(s);
+  int tryToReadInteger() throws IOException {
     StringBuilder sb = new StringBuilder();
-    int last = 0;
-    while (m.find()) {
-      sb.append(s.substring(last, m.start(0)));
-      if (m.group(1).equals("/")) {
-        sb.append("/");
+    while (true) {
+      int c = reader.read();
+      int val = c-48;
+      if (val >= 0 && val <= 9) {
+        sb.append(val);
       } else {
-        sb.append("\\").append(m.group(1));
+        tryToUnread(c);
+        break;
       }
-
-      last = m.end(1);
     }
-    if (last == 0) {
-      return s;
+    if (sb.length() == 0) {
+      return -1;
     }
-    sb.append(s.substring(last));
-    return sb.toString();
+    return Integer.parseInt(sb.toString());
   }
 
-  private String escapeDQuote(String s) {
-    //copied from escape in QueryParserBase.  Had to remove \\
-    //to handle quoted single terms.
+  Float tryToReadFloat() throws IOException {
     StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < s.length(); i++) {
-      char c = s.charAt(i);
-      // These characters are part of the query syntax and must be escaped
-      if (c == '+' || c == '-' || c == '!' || c == '(' || c == ')' || c == ':'
-          || c == '^' || c == '[' || c == ']' || c == '\"' || c == '{' || c == '}' || c == '~'
-          || c == '*' || c == '?' || c == '|' || c == '&' || c == '/') {
-        sb.append('\\');
+    boolean seenDecimal = false;
+    while (true) {
+      int c = reader.read();
+      int val = c-48;
+      if (c == DECIMAL) {
+        if (seenDecimal) {
+          tryToUnread(c);
+          break;
+        } else {
+          seenDecimal = true;
+          sb.appendCodePoint(DECIMAL);
+        }
+      } else if (val >= 0 && val <= 9) {
+        sb.append(val);
+      } else {
+        tryToUnread(c);
+        break;
       }
-      sb.append(c);
     }
-    return sb.toString();
+    if (sb.length() == 0) {
+      return null;
+    }
+    return Float.parseFloat(sb.toString());
+  }
+
+  void tryToReadEscapedUnicode() throws ParseException, IOException {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < 4; i++) {
+      int c = reader.read();
+      if (c == -1) {
+        throw new ParseException("Invalid escaped unicode character. >"+sb.toString()+"< and the end of the query string");
+      }
+      if (isHex(c)){
+        sb.appendCodePoint(c);
+      } else {
+        throw new ParseException("Invalid escaped unicode character. >"+sb.toString()+"< and " +new String(Character.toChars(c)));
+      }
+    }
+    tokenBuffer.appendCodePoint(Integer.parseInt(sb.toString(), 16));
+  }
+
+  boolean isHex(int c) {
+    if (c >= 48 && c <= 57) {
+      return true;
+    } else if (c >= 65 && c <= 70) {
+      return true;
+    } else if (c >= 97 && c <= 102) {
+      return true;
+    }
+    return false;
   }
 }

@@ -93,7 +93,7 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
 
 
   protected Query _parsePureSpan(String field, String queryString) throws ParseException {
-    SpanQueryLexer lexer = new SpanQueryLexer();
+    OldSpanQueryLexer lexer = new OldSpanQueryLexer();
     List<SQPToken> tokens = lexer.getTokens(queryString);
     SQPClause overallClause = new SQPOrClause(0, tokens.size());
     return _parsePureSpanClause(tokens, field, overallClause);

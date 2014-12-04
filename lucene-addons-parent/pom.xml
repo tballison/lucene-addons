@@ -43,8 +43,8 @@
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
 -->
-        <maven.compile.source>1.7</maven.compile.source>
-        <maven.compile.target>1.7</maven.compile.target>
+        <maven.compile.source>1.7src</maven.compile.source>
+        <maven.compile.target>1.7targ</maven.compile.target>
         <lucene.version>4.10.2</lucene.version>
     </properties>
 
