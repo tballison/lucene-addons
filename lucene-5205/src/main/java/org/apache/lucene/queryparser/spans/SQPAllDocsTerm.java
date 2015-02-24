@@ -17,39 +17,12 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-
-class SQPBoostableToken implements SQPToken {
-  private Float boost = null;
-
-  public void setBoost(Float boost) {
-    this.boost = boost;
-  }
-  
-  public Float getBoost() {
-    return boost;
-  }
+public class SQPAllDocsTerm extends SQPTerminal {
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
-    SQPBoostableToken that = (SQPBoostableToken) o;
-
-    if (boost != null ? !boost.equals(that.boost) : that.boost != null) return false;
-
-    return true;
+  public String getString() {
+    return "*";
   }
 
-  @Override
-  public int hashCode() {
-    return boost != null ? boost.hashCode() : 0;
-  }
 
-  @Override
-  public String toString() {
-    return "SQPBoostableToken{" +
-        "boost=" + boost +
-        '}';
-  }
 }

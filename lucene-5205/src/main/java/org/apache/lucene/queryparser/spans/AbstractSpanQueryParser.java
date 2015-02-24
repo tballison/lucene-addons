@@ -17,24 +17,33 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 
-import java.util.ArrayList;
-import java.util.List;
-
 abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
 
-  @Override
+  private String defaultField;
+
+  public AbstractSpanQueryParser(String field, Analyzer analyzer, Analyzer multiTermAnalyzer) {
+    super(analyzer, multiTermAnalyzer);
+    this.defaultField = field;
+  }
+
   abstract public Query parse(String s) throws ParseException;
 
   /**
    * Recursively called to parse a span query
    * <p>
-   * This assumes that there are no FIELD tokens and no BOOLEAN operators
+   * This assumes that there are no FIELD tokens, no BOOLEAN operators,
+   * no MatchAllDocsQueries and that {@link #getAnalyzer(String)}
+   * will return a non-null value.
    */
   protected SpanQuery _parsePureSpanClause(final List<SQPToken> tokens,
       String field, SQPClause parentClause)
@@ -53,7 +62,7 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
 
           SpanQuery ret = trySpecialHandlingForSpanNearWithOneComponent(field, (SQPTerm)t, nc);
           if (ret != null) {
-            if (parentClause.getBoost() != SpanQueryParserBase.UNSPECIFIED_BOOST) {
+            if (parentClause.getBoost() != null) {
               ret.setBoost(parentClause.getBoost());
             }
             return ret;
@@ -86,36 +95,16 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
       SQPTerm token, SQPNearClause clause)
           throws ParseException {
 
-    int slop = (clause.getSlop() == SpanQueryParserBase.UNSPECIFIED_SLOP) ? getPhraseSlop() : clause.getSlop();
-    boolean order = clause.getInOrder() == null ? true : clause.getInOrder().booleanValue();
+    int slop = (clause.getSlop() == null) ? getPhraseSlop() : clause.getSlop();
+    boolean order = true;
+    if (clause.getInOrder() != null) {
+      order = clause.getInOrder();
+    }
 
     SpanQuery ret = (SpanQuery)specialHandlingForSpanNearWithOneComponent(field,
         token.getString(), slop, order);
     return ret;
 
-  }
-
-  protected SpanQuery buildSpanTerminal(String field, SQPTerminal token) throws ParseException {
-    Query q = null;
-    if (token instanceof SQPRegexTerm) {
-      q = getRegexpQuery(field, ((SQPRegexTerm)token).getString());
-    } else if (token instanceof SQPTerm) {
-      q = buildAnySingleTermQuery(field, ((SQPTerm)token).getString(), ((SQPTerm)token).isQuoted());
-    } else if (token instanceof SQPRangeTerm) {
-      SQPRangeTerm rt = (SQPRangeTerm)token;
-      q = getRangeQuery(field, rt.getStart(), rt.getEnd(), 
-          rt.getStartInclusive(), rt.getEndInclusive());
-    }
-    if (q != null && token instanceof SQPBoostableToken) {
-      float boost = ((SQPBoostableToken)token).getBoost();
-      if (boost != SpanQueryParserBase.UNSPECIFIED_BOOST) {
-        q.setBoost(boost);
-      } 
-    }
-    if (q != null && q instanceof SpanQuery) {
-      return (SpanQuery)q;
-    }
-    return null;
   }
 
   private SpanQuery buildSpanQueryClause(List<SpanQuery> queries, SQPClause clause)
@@ -132,10 +121,8 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
       q = buildSpanOrQuery(queries);
     } else if (clause instanceof SQPNearClause) {
 
-      int slop = ((SQPNearClause)clause).getSlop();
-      if (slop == UNSPECIFIED_SLOP) {
-        slop = getPhraseSlop();
-      }
+      int slop = ((SQPNearClause)clause).getSlop() == null ? getPhraseSlop() :
+          ((SQPNearClause)clause).getSlop();
 
       Boolean inOrder = ((SQPNearClause)clause).getInOrder();
       boolean order = false;
@@ -150,23 +137,25 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
       q = buildSpanNotNearQuery(queries, 
           ((SQPNotNearClause)clause).getNotPre(),
           ((SQPNotNearClause)clause).getNotPost());
-
     } else {
       //throw early and loudly. This should never happen.
       throw new IllegalArgumentException("clause not recognized: "+clause.getClass());
     }
 
-    if (clause.getBoost() != UNSPECIFIED_BOOST) {
+    if (clause.getBoost() != null) {
       q.setBoost(clause.getBoost());      
     }
     //now update boost if clause only had one child
-    if (q.getBoost() == UNSPECIFIED_BOOST && 
-        clause.getBoost() != UNSPECIFIED_BOOST && (
+    if (clause.getBoost() != null && (
             q instanceof SpanTermQuery ||
             q instanceof SpanMultiTermQueryWrapper)) {
       q.setBoost(clause.getBoost());
     }
 
     return q;
+  }
+
+  public String getField() {
+    return defaultField;
   }
 }

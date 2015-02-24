@@ -18,7 +18,7 @@ package org.apache.lucene.queryparser.spans;
  */
 
 /**
- * stub interface to gather SQPTerm, SQPRegexTerm and SQPRangeTerm 
+ * stub interface to gather SQPTerm, SQPRegexTerm and SQPRangeTerm, SQPPrefixTerm
  *  under the same umbrella
  */
 abstract class SQPTerminal extends SQPBoostableToken {

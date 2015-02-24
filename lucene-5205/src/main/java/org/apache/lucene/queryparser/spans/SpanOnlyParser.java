@@ -16,14 +16,12 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.List;
+
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.queryparser.classic.CharStream;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.spans.SpanQuery;
-import org.apache.lucene.util.Version;
-
-import java.util.List;
 
 /**
  * This is a toy class that enables easy testing of the span only
@@ -40,14 +38,6 @@ import java.util.List;
  */
 public class SpanOnlyParser extends AbstractSpanQueryParser {
 
-  /**
-   * Initializes the SpanOnlyParser.
-   * @param f default field
-   * @param a analyzer to use
-   */
-  public SpanOnlyParser(Version matchVersion, String f, Analyzer a) {
-    init(matchVersion, f, a);
-  }
 
   /**
    * Initializes SpanOnlyParser.
@@ -55,8 +45,8 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
    * @param a analyzer to use for full terms
    * @param multitermAnalyzer analyzer to use for multiterm analysis
    */
-  public SpanOnlyParser(Version matchVersion, String f, Analyzer a, Analyzer multitermAnalyzer) {
-    init(matchVersion, f, a, multitermAnalyzer);
+  public SpanOnlyParser(String f, Analyzer a, Analyzer multitermAnalyzer) {
+    super(f, a, multitermAnalyzer);
   }
 
   @Override
@@ -66,34 +56,8 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
     return q;
   }
 
-  /**
-   * This is an artifact of extending QueryParserBase. 
-   * Do not use this.  It will always assert(false) and fail to set the stream.
-   * Instead, set the default field in the initializer and 
-   * use {@link #parse(String)}.
-   */
-  @Deprecated
-  @Override
-  public void ReInit(CharStream stream) {
-    assert(false);
-  }
-
-  /**
-   * This is an artifact of extending QueryParserBase. 
-   * Do not use this.  It will always assert(false) and return null.
-   * Instead, set the default field in the initializer and 
-   * use {@link #parse(String)}.
-   */
-  @Deprecated
-  @Override
-  public Query TopLevelQuery(String field) throws ParseException {
-    assert(false);
-    return null;
-  }
-
-
   protected Query _parsePureSpan(String field, String queryString) throws ParseException {
-    OldSpanQueryLexer lexer = new OldSpanQueryLexer();
+    SpanQueryLexer lexer = new SpanQueryLexer();
     List<SQPToken> tokens = lexer.getTokens(queryString);
     SQPClause overallClause = new SQPOrClause(0, tokens.size());
     return _parsePureSpanClause(tokens, field, overallClause);

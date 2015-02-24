@@ -19,15 +19,13 @@ package org.apache.lucene.queryparser.spans;
 
 class SQPNotNearClause extends SQPClause {
   
-  public static final int NOT_DEFAULT = 0;
-
   private final TYPE type;
   
-  private final int notPre;
-  private final int notPost;
+  private final Integer notPre;
+  private final Integer notPost;
   
   public SQPNotNearClause(int tokenStartOffset, int tokenEndOffset, TYPE type, 
-      int notPre, int notPost) {
+      Integer notPre, Integer notPost) {
     super(tokenStartOffset, tokenEndOffset);
     this.type = type;
     this.notPre = notPre;
@@ -38,59 +36,35 @@ class SQPNotNearClause extends SQPClause {
     return type;
   }
 
-  public int getNotPre() {
+  public Integer getNotPre() {
     return notPre;
   }
 
-  public int getNotPost() {
+  public Integer getNotPost() {
     return notPost;
   }
 
   @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = super.hashCode();
-    result = prime * result + notPost;
-    result = prime * result + notPre;
-    result = prime * result + ((type == null) ? 0 : type.hashCode());
-    return result;
-  }
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
 
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (!super.equals(obj)) {
-      return false;
-    }
-    if (!(obj instanceof SQPNotNearClause)) {
-      return false;
-    }
-    SQPNotNearClause other = (SQPNotNearClause) obj;
-    if (notPost != other.notPost) {
-      return false;
-    }
-    if (notPre != other.notPre) {
-      return false;
-    }
-    if (type != other.type) {
-      return false;
-    }
+    SQPNotNearClause that = (SQPNotNearClause) o;
+
+    if (notPost != null ? !notPost.equals(that.notPost) : that.notPost != null) return false;
+    if (notPre != null ? !notPre.equals(that.notPre) : that.notPre != null) return false;
+    if (type != that.type) return false;
+
     return true;
   }
 
   @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SQPNotNearClause [type=");
-    builder.append(type);
-    builder.append(", notPre=");
-    builder.append(notPre);
-    builder.append(", notPost=");
-    builder.append(notPost);
-    builder.append("]");
-    builder.append( getTokenOffsetStart()).append(": ").append(getTokenOffsetEnd());
-    return builder.toString();
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (type != null ? type.hashCode() : 0);
+    result = 31 * result + (notPre != null ? notPre.hashCode() : 0);
+    result = 31 * result + (notPost != null ? notPost.hashCode() : 0);
+    return result;
   }
 }

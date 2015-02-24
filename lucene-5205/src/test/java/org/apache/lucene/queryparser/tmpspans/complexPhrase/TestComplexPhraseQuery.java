@@ -43,7 +43,8 @@ public class TestComplexPhraseQuery extends LuceneTestCase {
     new DocData("john smith", "1", "developer"),
     new DocData("johathon smith", "2", "developer"),
     new DocData("john percival smith", "3", "designer"),
-    new DocData("jackson waits tom", "4", "project manager") 
+    new DocData("jackson waits tom", "4", "project manager"),
+          new DocData("5206 7922 9499 8422", "5", "master card")
   };
 
   private IndexSearcher searcher;
@@ -51,6 +52,10 @@ public class TestComplexPhraseQuery extends LuceneTestCase {
 
   protected String defaultFieldName = "name";
 
+  public void testTmp() throws Exception {
+    checkMatches("\"/5{1}<1-5>{1}<0-9>{2}/ /<0-9>{4}/ /<0-9>{4}/ /<0-9>{4}/\"", "5");
+
+  }
   public void testComplexPhrases() throws Exception {
     checkMatches("\"john smith\"", "1"); // Simple multi-term still works
     checkMatches("\"j*   smyth~\"", "1,2"); // wildcards and fuzzies are OK in

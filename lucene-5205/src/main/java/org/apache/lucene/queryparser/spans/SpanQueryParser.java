@@ -17,19 +17,18 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.queryparser.classic.CharStream;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParserConstants;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.spans.SpanQuery;
-import org.apache.lucene.util.Version;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * This parser leverages the power of SpanQuery and can combine them with
@@ -78,7 +77,7 @@ import java.util.List;
  * </ul>
  * <p> Main additions in SpanQueryParser syntax vs. classic:
  * <ul>
- * <li> Can require "in order" for phrases with slop with the ~> operator: &quot;jakarta apache&quot;~>3</li>
+ * <li> Can require "in order" for phrases with slop with the ~> defaultOperator: &quot;jakarta apache&quot;~>3</li>
  * <li> Can specify "not near" &quot;bieber fever&quot;!~3,10 ::
  * find &quot;bieber&quot; but not if &quot;fever&quot; appears within 3 words before or
  * 10 words after it.</li>
@@ -169,7 +168,7 @@ import java.util.List;
  * </ol>
  */
 
-public class SpanQueryParser extends AbstractSpanQueryParser {
+public class SpanQueryParser extends AbstractSpanQueryParser implements QueryParserConstants {
 
   /*
    *  Some subtle differences between classic QueryParser and SpanQueryParser
@@ -200,41 +199,14 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
    *  
    *  8) SpanQueryParser does not convert regexes to lowercase as a default.  There is a
    *  separate parameter for whether or not to do this.  
-   */  
+   */
+
 
   private String topLevelQueryString;
 
-  public SpanQueryParser(Version matchVersion, String f, Analyzer a) {
-    init(matchVersion, f, a);
-  }
 
-  public SpanQueryParser(Version matchVersion, String f, Analyzer a, Analyzer multitermAnalyzer) {
-    init(matchVersion, f, a, multitermAnalyzer);
-  }
-
-  /**
-   * This is an artifact of extending QueryParserBase. 
-   * Do not use this.  It will always assert(false) and fail to set the stream.
-   * Instead, set the default field in the initializer and 
-   * use {@link #parse(String)}.
-   */
-  @Deprecated
-  @Override
-  public void ReInit(CharStream stream) {
-    assert(false);
-  }
-
-  /**
-   * This is an artifact of extending QueryParserBase. 
-   * Do not use this.  It will always assert(false) and return null.
-   * Instead, set the default field in the initializer and 
-   * use {@link #parse(String)}.
-   */
-  @Deprecated
-  @Override
-  public Query TopLevelQuery(String field) throws ParseException {
-    assert(false);
-    return null;
+  public SpanQueryParser(String f, Analyzer a, Analyzer multitermAnalyzer) {
+    super(f, a, multitermAnalyzer);
   }
 
   @Override
@@ -249,7 +221,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
     if (queryString == null || queryString.equals("")) {
       return getEmptySpanQuery();
     }
-    OldSpanQueryLexer lexer = new OldSpanQueryLexer();
+    SpanQueryLexer lexer = new SpanQueryLexer();
     List<SQPToken> tokens = lexer.getTokens(queryString);
     SQPClause overallClause = new SQPOrClause(0, tokens.size());
     return parseRecursively(tokens, getField(), overallClause);
@@ -261,16 +233,16 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
     int start = clause.getTokenOffsetStart();
     int end = clause.getTokenOffsetEnd();
     testStartEnd(tokens, start, end);
-    List<BooleanClause> clauses = new ArrayList<BooleanClause>();
+    List<BooleanClause> clauses = new ArrayList<>();
     int conj = CONJ_NONE;
     int mods = MOD_NONE;
-    String tmpField = field;
+    String currField = field;
     int i = start;
     while (i < end) {
       Query q = null;
       SQPToken token = tokens.get(i);
 
-      //if boolean operator or field, update local buffers and continue
+      //if boolean defaultOperator or field, update local buffers and continue
       if (token instanceof SQPBooleanOpToken) {
         SQPBooleanOpToken t = (SQPBooleanOpToken)token;
         if (t.isConj()) {
@@ -282,57 +254,38 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
         i++;
         continue;
       } else if (token instanceof SQPField) {
-        tmpField = ((SQPField)token).getField();
+        currField = ((SQPField)token).getField();
         i++;
         continue;
       }
-      //if or clause, recur through tokens
+      //if or clause, recurse through tokens
       if (token instanceof SQPOrClause) {
-        //recur!
+        //recurse!
         SQPOrClause tmpOr = (SQPOrClause)token;
-        q = parseRecursively(tokens, tmpField, tmpOr);
+        q = parseRecursively(tokens, currField, tmpOr);
 
-        if (q instanceof BooleanQuery && tmpOr.getMinimumNumberShouldMatch() > 1) {
+        if (q instanceof BooleanQuery && tmpOr.getMinimumNumberShouldMatch() != null) {
           ((BooleanQuery)q).setMinimumNumberShouldMatch(tmpOr.getMinimumNumberShouldMatch());
         }
         if (q.getBoost() == 1.0f
-            &&  tmpOr.getBoost() != SpanQueryParserBase.UNSPECIFIED_BOOST) {
+            &&  tmpOr.getBoost() != null) {
           q.setBoost(tmpOr.getBoost());
         }
         i = tmpOr.getTokenOffsetEnd();
       } else if (token instanceof SQPNearClause) {
         SQPNearClause tmpNear = (SQPNearClause)token;
-        if (getAnalyzer(tmpField) == null) {
-          q = parseNullAnalyzer(tmpField, tmpNear);
-        } else {
-          q = _parsePureSpanClause(tokens, tmpField, tmpNear);
-        }
+        q = _parsePureSpanClause(tokens, currField, tmpNear);
         i = tmpNear.getTokenOffsetEnd();
       } else if (token instanceof SQPNotNearClause) {
         SQPNotNearClause tmpNotNear = (SQPNotNearClause)token;
-        q = _parsePureSpanClause(tokens, tmpField, tmpNotNear);
+        q = _parsePureSpanClause(tokens, currField, tmpNotNear);
         i = tmpNotNear.getTokenOffsetEnd();
       } else if (token instanceof SQPTerminal) {
-
         SQPTerminal tmpTerm = (SQPTerminal)token;
-        q = testAllDocs(tmpField, tmpTerm);
-        if (q == null) {
-          if (getAnalyzer(tmpField) == null) {
-            if (tmpTerm instanceof SQPRangeTerm) {
-              SQPRangeTerm r = (SQPRangeTerm)tmpTerm;
-              q = handleNullAnalyzerRange(tmpField, r.getStart(), r.getEnd(), 
-                  r.getStartInclusive(), r.getEndInclusive()); 
-            } else {
-              String t = tmpTerm.getString();
-              if (testWildCardOrPrefix(t) == SpanQueryParserBase.PREFIX && t.length() > 0) {
-                q = handleNullAnalyzerPrefix(tmpField, t.substring(0, t.length()-1));
-              } else {
-                q = handleNullAnalyzer(tmpField, tmpTerm.getString());
-              }
-            }
-          } else {
-            q = buildSpanTerminal(tmpField, tmpTerm);
-          }
+        if (tmpTerm instanceof SQPAllDocsTerm) {
+          q = new MatchAllDocsQuery();
+        } else {
+          q = buildTerminal(currField, tmpTerm);
         }
         i++;
       } else {
@@ -346,7 +299,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
       //reset mods and conj and field
       mods = MOD_NONE;
       conj = CONJ_NONE;
-      tmpField = field;
+      currField = field;
     }
 
     if (clauses.size() == 0) {
@@ -368,7 +321,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
 
     if (clause instanceof SQPOrClause) {
       SQPOrClause tmpClause = (SQPOrClause)clause;
-      if (tmpClause.getMinimumNumberShouldMatch() > SQPOrClause.DEFAULT_MINIMUM_NUMBER_SHOULD_MATCH) {
+      if (tmpClause.getMinimumNumberShouldMatch() != null) {
         bq.setMinimumNumberShouldMatch(tmpClause.getMinimumNumberShouldMatch());
       }
     }
@@ -376,23 +329,14 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
     return bq;
   }
 
-  //This is necessary for Solr-ization or anywhere that someone might override getAnalyer(field)
-  //and return a null Analyzer.  If the user enters something like: 
-  //part_no:"some kind of part"
-  // and part_no is a String field, we want to treat "some kind of part" as an unmodified literal string
-  private Query parseNullAnalyzer(String field, SQPNearClause tmpNear) {
-    String literalSpan = topLevelQueryString.substring(tmpNear.getCharStartOffset(), tmpNear.getCharEndOffset());
-    return handleNullAnalyzer(field, literalSpan);
-  }
 
   private Query testAllDocs(String tmpField, SQPTerminal tmpTerm) {
     if (tmpField.equals("*") && 
         tmpTerm instanceof SQPTerm &&
         ((SQPTerm)tmpTerm).getString().equals("*")) {
       Query q = new MatchAllDocsQuery();
-      float boost = ((SQPBoostableToken)tmpTerm).getBoost();
-      if (boost != SpanQueryParserBase.UNSPECIFIED_BOOST){
-        q.setBoost(((SQPBoostableToken)tmpTerm).getBoost());
+      if (tmpTerm.getBoost() != null) {
+        q.setBoost(tmpTerm.getBoost());
       }
       return q;
     }
@@ -416,55 +360,10 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
       throw new ParseException("Can't end clause with a field token");
     }
     if (e instanceof SQPBooleanOpToken) {
-      throw new ParseException("Can't end clause with a boolean operator");
+      throw new ParseException("Can't end clause with a boolean defaultOperator");
     }
   }
 
-
-  /**
-   * Extracts the spans from the BooleanQueries that are not in Occur.NOT
-   * clauses for highlighting. This query should not be used for document retrieval
-   * and will likely return different documents than "parse."
-   * 
-   * @return SpanQuery for highlighting
-   */
-  public SpanQuery getHighlightQuery(String field, String queryString) throws ParseException {
-    Query q = parse(queryString);
-    List<SpanQuery> sqs = new ArrayList<SpanQuery>();
-    extractSpanQueries(field, q, sqs);
-    return buildSpanOrQuery(sqs);
-  }
-
-  /**
-   * Takes a query generated by this parser and extracts all
-   * SpanQueries into sqs that are not in a Boolean.Occur.NOT clause
-   * and that match the given field.
-   * 
-   * The Query must consist of only BooleanQuery and SpanQuery objects!!!
-   */
-  private void extractSpanQueries(String field, Query query, List<SpanQuery> sqs) {
-    if (query == null) {
-      return;
-    }
-    if (query instanceof SpanQuery) {
-      SpanQuery sq = (SpanQuery)query;
-      if (! isEmptyQuery(sq) && 
-          sq.getField().equals(field)) {
-        sqs.add((SpanQuery)query);
-      }
-    } else if (query instanceof BooleanQuery) {
-      BooleanQuery bq = (BooleanQuery)query;
-      BooleanClause[] clauses = bq.getClauses();
-      for (BooleanClause clause : clauses) {
-        if (clause.getOccur() != Occur.MUST_NOT) {
-          extractSpanQueries(field, clause.getQuery(), sqs);
-        }
-      }  
-    } else {
-      //ignore
-    }
-  }
-  
   /**
    * If the query contains only Occur.MUST_NOT clauses,
    * this will add a MatchAllDocsQuery.
@@ -490,4 +389,67 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
     }
     return q;
   }
+
+  /**
+   * Argh!  Copied directly from QueryParserBase.  Preferred to
+   * get rid of parts that don't belong with the SpanQueryParser
+   * in favor of this duplication of code.  Could we add this
+   * to QueryBuilder?
+   *
+   * @param clauses
+   * @param conj
+   * @param mods
+   * @param q
+   */
+  protected void addClause(List<BooleanClause> clauses, int conj, int mods, Query q) {
+    boolean required, prohibited;
+
+    // If this term is introduced by AND, make the preceding term required,
+    // unless it's already prohibited
+    if (clauses.size() > 0 && conj == CONJ_AND) {
+      BooleanClause c = clauses.get(clauses.size()-1);
+      if (!c.isProhibited())
+        c.setOccur(BooleanClause.Occur.MUST);
+    }
+
+    if (clauses.size() > 0 && defaultOperator == QueryParser.Operator.AND && conj == CONJ_OR) {
+      // If this term is introduced by OR, make the preceding term optional,
+      // unless it's prohibited (that means we leave -a OR b but +a OR b-->a OR b)
+      // notice if the input is a OR b, first term is parsed as required; without
+      // this modification a OR b would parsed as +a OR b
+      BooleanClause c = clauses.get(clauses.size()-1);
+      if (!c.isProhibited())
+        c.setOccur(BooleanClause.Occur.SHOULD);
+    }
+
+    // We might have been passed a null query; the term might have been
+    // filtered away by the analyzer.
+    if (q == null)
+      return;
+
+    if (defaultOperator == QueryParser.Operator.OR) {
+      // We set REQUIRED if we're introduced by AND or +; PROHIBITED if
+      // introduced by NOT or -; make sure not to set both.
+      prohibited = (mods == MOD_NOT);
+      required = (mods == MOD_REQ);
+      if (conj == CONJ_AND && !prohibited) {
+        required = true;
+      }
+    } else {
+      // We set PROHIBITED if we're introduced by NOT or -; We set REQUIRED
+      // if not PROHIBITED and not introduced by OR
+      prohibited = (mods == MOD_NOT);
+      required   = (!prohibited && conj != CONJ_OR);
+    }
+    if (required && !prohibited)
+      clauses.add(new BooleanClause(q, BooleanClause.Occur.MUST));
+    else if (!required && !prohibited)
+      clauses.add(new BooleanClause(q, BooleanClause.Occur.SHOULD));
+    else if (!required && prohibited)
+      clauses.add(new BooleanClause(q, BooleanClause.Occur.MUST_NOT));
+    else
+      throw new RuntimeException("Clause cannot be both required and prohibited");
+  }
+
+
 }

@@ -23,12 +23,16 @@ import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Stack;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.lucene.queryparser.classic.ParseException;
 
 class SpanQueryLexer {
+
+  private enum TOKEN_TYPE {
+    UNSPECIFIED, //nothing special, for a token, this is EXACT
+    QUOTED,
+    REGEX,
+  }
 
   private static final int DEFAULT_MIN_REQUIRED_IN_OR = 2;
 
@@ -45,7 +49,6 @@ class SpanQueryLexer {
   private static final int OPEN_CURLY = (int) '{';
   private static final int CLOSE_CURLY = (int) '}';
   private static final int TILDE = (int) '~';
-  private static final int GT = (int) '>';
   private static final int U = (int) 'u';
   private static final int CARET = (int) '^';
   private static final int FORWARD_SLASH = (int) '/';
@@ -56,12 +59,15 @@ class SpanQueryLexer {
   private static final int EXCLAMATION = (int) '!';
   private static final int COMMA = (int) ',';
   private static final int GREATER_THAN = (int) '>';
-  private static final int DECIMAL = (int)'.';
-
-  private static final Pattern BOOST_PATTERN = Pattern.compile("\\^((?:\\d*\\.)?\\d+)");
+  private static final int DECIMAL_POINT = (int)'.';
+  private static final int STAR = (int)'*';
+  private static final int QMARK = (int)'?';
 
 
   boolean inDQuote = false;
+  int wildcardChars = 0;
+  TOKEN_TYPE type = TOKEN_TYPE.UNSPECIFIED;
+
   int nearDepth = 0;
   PushbackReader reader;
   StringBuilder tokenBuffer = new StringBuilder();
@@ -75,7 +81,8 @@ class SpanQueryLexer {
     //TODO: no need to init if initialize lexer w string and change to getTokens()
     tokens.clear();
     stack.clear();
-    tokenBuffer.setLength(0);
+    resetTokenBuffer();
+    resetTokenBuffer();
     nearDepth = 0;
     inDQuote = false;
     reader = new PushbackReader(new StringReader(s));
@@ -86,33 +93,63 @@ class SpanQueryLexer {
     } catch (IOException e) {
       throw new ParseException(e.getMessage());
     }
+    if (! stack.isEmpty()) {
+      throw new ParseException("Couldn't find matching end to: "+stack.pop().getType());
+    }
     return tokens;
   }
 
   boolean nextToken() throws IOException, ParseException {
     int c = reader.read();
     //slurp leading whitespace
-    while (isWhitespace(c)) {
+    while (Character.isWhitespace(c)) {
       c = reader.read();
     }
 
     boolean keepGoing = true;
     while (true) {
-      if (isWhitespace(c)) {
-        flushBuffer(false, false);
+      if (Character.isWhitespace(c)) {
+        flushBuffer();
         return true;
       }
+
       switch (c) {
         case -1:
-          flushBuffer(false, false);
+          flushBuffer();
           return false;
 
+        case STAR :
+          wildcardChars++;
+          break;
+
+        case QMARK :
+          wildcardChars++;
+          break;
+
+        case TILDE :
+          if (tokenBuffer.length() > 0) {
+            handleFuzzyTerm();
+            c = reader.read();
+            continue;
+          }
+          break;
+
+        case CARET :                            // hit boost marker, unread it
+          if (tokenBuffer.length() > 0) {
+            Float boost = tryToReadUnsignedFloat();
+            flushBuffer(boost);
+            return true;
+          }
+          break;
+
         case SQUOTE :                           //single quote
-          flushBuffer(false, false);
+          flushBuffer();
+          type = TOKEN_TYPE.QUOTED;
           return readToMatchingEndToken(SQUOTE);
 
         case FORWARD_SLASH :                    //regex
-          flushBuffer(false, false);
+          flushBuffer();
+          type = TOKEN_TYPE.REGEX;
           return readToMatchingEndToken(FORWARD_SLASH);
 
         case BACK_SLASH:
@@ -122,7 +159,6 @@ class SpanQueryLexer {
           } else if (next == U) {
             tryToReadEscapedUnicode();
           } else {
-            tokenBuffer.appendCodePoint(BACK_SLASH);
             tokenBuffer.appendCodePoint(next);
           }
           c = reader.read();
@@ -130,48 +166,51 @@ class SpanQueryLexer {
 
         case COLON:
           String fieldName = tokenBuffer.toString();
-          tokenBuffer.setLength(0);
+          if (fieldName.equals("*")) {
+            if(tryAllDocs()) {
+              tokens.add(new SQPAllDocsTerm());
+              resetTokenBuffer();
+              return true;
+            }
+          }
+          resetTokenBuffer();
           tryToAddField(fieldName);
           return true;
 
         case OPEN_PAREN:
-          flushBuffer(false, false);
+          flushBuffer();
           handleOpenClause(SQPClause.TYPE.PAREN);
           return true;
 
         case OPEN_SQUARE:
-          flushBuffer(false, false);
+          flushBuffer();
           handleOpenClause(SQPClause.TYPE.BRACKET);
           return true;
 
         case OPEN_CURLY:
-          flushBuffer(false, false);
+          flushBuffer();
           handleOpenClause(SQPClause.TYPE.CURLY);
           return true;
 
         case DQUOTE:
-          flushBuffer(false, false);
           handleDQuote();
           return true;
 
         case CLOSE_PAREN :
-          flushBuffer(false, false);
           handleCloseClause(SQPClause.TYPE.PAREN);
           return true;
 
         case CLOSE_CURLY :
-          flushBuffer(false, false);
           handleCloseClause(SQPClause.TYPE.CURLY);
           return true;
 
         case CLOSE_SQUARE :
-          flushBuffer(false, false);
           handleCloseClause(SQPClause.TYPE.BRACKET);
           return true;
 
         case PLUS :
-          if (tokenBuffer.length() == 0) {
-            flushBuffer(false, false);
+          if (tokenBuffer.length() == 0 && ! isNextWhitespaceOrEnd()) {
+            flushBuffer();
             SQPBooleanOpToken plusToken = new SQPBooleanOpToken(SpanQueryParserBase.MOD_REQ);
             testBooleanTokens(tokens, plusToken);
             tokens.add(plusToken);
@@ -179,10 +218,9 @@ class SpanQueryLexer {
           }
           break;
 
-
         case MINUS :
-          if (tokenBuffer.length() == 0) {
-            flushBuffer(false, false);
+          if (tokenBuffer.length() == 0 && ! isNextWhitespaceOrEnd()) {
+            flushBuffer();
             SQPBooleanOpToken minusToken = new SQPBooleanOpToken(SpanQueryParserBase.MOD_NOT);
             testBooleanTokens(tokens, minusToken);
             tokens.add(minusToken);
@@ -196,6 +234,46 @@ class SpanQueryLexer {
     }
   }
 
+  private void handleFuzzyTerm() throws ParseException, IOException {
+    SQPFuzzyTerm term = new SQPFuzzyTerm(tokenBuffer.toString());
+
+    if (wildcardChars > 0) {
+      throw new ParseException("Need to escape wildcards in fuzzy terms.");
+    }
+    int c = reader.read();
+    if (c == GREATER_THAN) {
+      term.setTranspositions(false);
+    } else {
+      tryToUnread(c);
+    }
+    Float maxEdits = tryToReadUnsignedFloat();
+    if (maxEdits != null) {
+      float maxEditsFloat = maxEdits.floatValue();
+      int maxEditsInt = (int)maxEditsFloat;
+      if (maxEditsInt != maxEditsFloat) {
+        throw new ParseException("Can't use a float value on a fuzzy term any more: "+maxEdits);
+      }
+      term.setMaxEdits(maxEditsInt);
+    }
+    c = reader.read();
+    if (c == COMMA) {
+      Integer prefixLen = tryToReadInteger();
+      if (prefixLen == null) {
+        tryToUnread(COMMA);
+      } else {
+        term.setPrefixLength(prefixLen);
+      }
+    } else {
+      tryToUnread(c);
+    }
+    Float boost = tryToReadBoost();
+    if (boost != null) {
+      term.setBoost(boost);
+    }
+    tokens.add(term);
+    resetTokenBuffer();
+  }
+
   private void handleDQuote() throws IOException, ParseException {
     if (inDQuote) {
       inDQuote = false;
@@ -207,6 +285,8 @@ class SpanQueryLexer {
   }
 
   private void handleCloseClause(SQPClause.TYPE closeType) throws IOException, ParseException {
+    //flush the token buffer
+    flushBuffer();
     SQPOpenClause open = null;
     try {
       open = stack.pop();
@@ -218,13 +298,13 @@ class SpanQueryLexer {
 
     if (closeType == SQPClause.TYPE.PAREN) {
       int next = reader.read();
-      int minMatch = -1;
+      Integer minMatch = -1;
       if (next == TILDE) {
         if (nearDepth > 0) {
           throw new ParseException("Can't specify minimumNumberShouldMatch within a \"near\" clause");
         }
         minMatch = tryToReadInteger();
-        if (minMatch < 0) {
+        if (minMatch == null) {
           minMatch = DEFAULT_MIN_REQUIRED_IN_OR;
         }
       } else {
@@ -234,18 +314,15 @@ class SpanQueryLexer {
       if (minMatch > -1) {
         ((SQPOrClause) newClause).setMinimumNumberShouldMatch(minMatch);
       }
-    } else {
+    } else {  //has to be a span near or span not
       nearDepth--;
       //next0
       int n0 = reader.read();
-
       if (n0 == EXCLAMATION) { //span not
         int n1 = reader.read();
         if (n1 == TILDE) {
-          int notPost = Integer.MIN_VALUE;
-          int notPre = SQPNotNearClause.NOT_DEFAULT;
-          int tmpNotPre = tryToReadInteger();
-          notPre = (tmpNotPre > -1) ? tmpNotPre : notPre;
+          Integer notPost = null;
+          Integer notPre = tryToReadInteger();
 
           int n2 = reader.read();
           if (n2 == COMMA) {
@@ -253,7 +330,7 @@ class SpanQueryLexer {
           } else {
             tryToUnread(n2);
           }
-          if (notPost == Integer.MIN_VALUE) {
+          if (notPost == null) {
             notPost = notPre;
           }
           newClause = new SQPNotNearClause(open.getTokenOffsetStart()+1, tokens.size(), closeType, notPre, notPost);
@@ -261,33 +338,41 @@ class SpanQueryLexer {
           throw new ParseException("Not near query must be followed by ~");
         }
       } else if (n0 == TILDE) { //span
-        boolean inOrder = false;
-        int slop = AbstractSpanQueryParser.UNSPECIFIED_SLOP;
+        Boolean inOrder = false;
         int n1 = reader.read();
         if (n1 == GREATER_THAN) {
           inOrder = true;
         } else {
           tryToUnread(n1);
         }
-        int tmpSlop = tryToReadInteger();
-        if (tmpSlop > -1) {
-          slop = tmpSlop;
-        }
+        Integer slop = tryToReadInteger();
         newClause = new SQPNearClause(open.getTokenOffsetStart() + 1, tokens.size(),
-            open.getStartCharOffset(), -1,
-            open.getType(), true, inOrder, slop);
+            open.getType(), inOrder, slop);
 
       } else { // no special marker at end of near phrase
         tryToUnread(n0);
-        newClause = new SQPNearClause(open.getTokenOffsetStart() + 1, tokens.size(),
-            open.getStartCharOffset(), -1,
-            open.getType(), false, SQPNearClause.UNSPECIFIED_IN_ORDER, AbstractSpanQueryParser.UNSPECIFIED_SLOP);
+        if (open.getTokenOffsetStart() + 2 == tokens.size()) {
+          testBadRange(open.getType() == SQPClause.TYPE.CURLY || closeType == SQPClause.TYPE.CURLY);
+          //if single child between double quotes or brackets, treat it as a quoted SQPTerm
+          SQPTerm t = new SQPTerm(((SQPTerminal) tokens.get(tokens.size() - 1)).getString(), true);
+          Float boost = tryToReadBoost();
+          if (boost != null) {
+            t.setBoost(boost);
+          }
+          tokens.remove(tokens.size()-1);//remove original single term
+          tokens.remove(tokens.size()-1);//remove opening clause marker
+          tokens.add(t);
+          return;
+        } else {
+          newClause = new SQPNearClause(open.getTokenOffsetStart() + 1, tokens.size(),
+              open.getType(), null, null);
+        }
       }
     }
 
     Float boost = tryToReadBoost();
     if (boost != null) {
-      ((SQPBoostableToken) newClause).setBoost(boost);
+      newClause.setBoost(boost);
     }
 
     if (testForRangeQuery(open, newClause, closeType)) {
@@ -296,12 +381,64 @@ class SpanQueryLexer {
     tokens.set(open.getTokenOffsetStart(), newClause);
   }
 
+  private boolean tryAllDocs() throws IOException {
+    int n0 = reader.read();
+    if (n0 != STAR) {
+      tryToUnread(n0);
+      return false;
+    }
+    return isNextBreak();
+  }
+
+  private boolean isNextWhitespaceOrEnd() throws IOException {
+    int n1 = reader.read();
+    if (n1 == -1) {
+      return true;
+    }
+    reader.unread(n1);
+
+    return Character.isWhitespace(n1);
+  }
+
+  private boolean isNextBreak() throws IOException {
+    int n1 = reader.read();
+    if (Character.isWhitespace(n1)){
+      reader.unread(n1);
+      return true;
+    }
+    boolean response = false;
+    switch (n1) {
+      case -1 :
+        response = true;
+        break;
+      case OPEN_CURLY :
+        response = true;
+        break;
+      case CLOSE_CURLY :
+        response = true;
+        break;
+      case OPEN_PAREN :
+        response = true;
+        break;
+      case CLOSE_PAREN :
+        response = true;
+        break;
+      case OPEN_SQUARE :
+        response = true;
+        break;
+      case CLOSE_SQUARE :
+        response = true;
+        break;
+    }
+    tryToUnread(n1);
+    return response;
+  }
   //tries to read a boost if it is there
   //returns null if no parseable boost
-  private Float tryToReadBoost() throws IOException {
+  private Float tryToReadBoost() throws ParseException, IOException {
     int c = reader.read();
     if (c == CARET) {
-      return tryToReadFloat();
+      return tryToReadUnsignedFloat();
     } else {
       tryToUnread(c);
     }
@@ -312,7 +449,6 @@ class SpanQueryLexer {
   //actually a range query.  If it is, then this replaces the clause
   //with a SQPRangeTerm and returns true
   private boolean testForRangeQuery(SQPOpenClause openClause, SQPClause closeClause, SQPClause.TYPE closeType) throws ParseException {
-
     //if paren or quote clause, not a range query
     if (openClause.getType() == SQPClause.TYPE.PAREN ||
         openClause.getType() == SQPClause.TYPE.QUOTE) {
@@ -321,7 +457,7 @@ class SpanQueryLexer {
     if (closeClause instanceof SQPNotNearClause) {
       return false;
     }
-    SQPNearClause clause = (SQPNearClause)closeClause;
+    SQPNearClause clause = (SQPNearClause) closeClause;
 
     //test to see if this looks like a range
     //does it contain three items; are they all terms, is the middle one "TO"
@@ -333,7 +469,7 @@ class SpanQueryLexer {
         closeType == SQPClause.TYPE.CURLY) ? true : false;
 
     //if there are any modifiers on the close bracket
-    if (clause.hasParams()) {
+    if (clause.getInOrder() != null || clause.getSlop() != null) {
       if (hasCurly) {
         throw new ParseException("Can't have modifiers on a range query. " +
             "Or, you can't use curly brackets for a phrase/near query");
@@ -341,40 +477,37 @@ class SpanQueryLexer {
       return false;
     }
 
-    if (openClause.getTokenOffsetStart() == tokens.size() - 4) {
-      for (int i = 1; i < 4; i++) {
-        SQPToken t = tokens.get(tokens.size() - i);
-        if (t instanceof SQPTerm) {
-          if (i == 2 && !((SQPTerm) t).getString().equals("TO")) {
-            return testBadRange(hasCurly);
-          }
-        } else {
-          return testBadRange(hasCurly);
-        }
-      }
+    //now check from the end of the list, and see if this
+    //has <term> TO <term> <start clause>
+
+    //if there aren't three tokens since the start token offset, return
+    if (openClause.getTokenOffsetStart() != tokens.size() - 4) {
+      return testBadRange(hasCurly);
+    }
+    //check for "TO"
+    SQPToken t = tokens.get(tokens.size() - 2);
+    if (t instanceof SQPTerm &&
+        ((SQPTerm) t).getString().equals("TO")) {
     } else {
       return testBadRange(hasCurly);
     }
+
+    SQPToken candStart = tokens.get(tokens.size()-3);
+    SQPToken candEnd = tokens.get(tokens.size()-1);
+    if (candStart instanceof SQPTerminal &&
+        candEnd instanceof SQPTerminal) {
+      //great
+    } else {
+      return testBadRange(hasCurly);
+    }
+    String endString = getCandidateRangeTermString((SQPTerminal)candEnd);
+    String startString = getCandidateRangeTermString((SQPTerminal)candStart);
+
+    //
+
     boolean startInclusive = (openClause.getType() == SQPClause.TYPE.BRACKET) ? true : false;
-    boolean endInclusive = (clause.getType() == SQPClause.TYPE.BRACKET) ? true : false;
-    SQPTerm startTerm = (SQPTerm) tokens.get(tokens.size() - 3);
-    String startString = startTerm.getString();
-    if (startString.equals("*")) {
-      if (startTerm.isQuoted()) {
-        startString = "*";
-      } else {
-        startString = null;
-      }
-    }
-    SQPTerm endTerm = (SQPTerm) tokens.get(tokens.size() - 1);
-    String endString = endTerm.getString();
-    if (endString.equals("*")) {
-      if (endTerm.isQuoted()) {
-        endString = "*";
-      } else {
-        endString = null;
-      }
-    }
+    boolean endInclusive = (closeType == SQPClause.TYPE.BRACKET) ? true : false;
+
     SQPToken range = new SQPRangeTerm(startString, endString, startInclusive, endInclusive);
 
     //remove last term
@@ -386,11 +519,32 @@ class SpanQueryLexer {
     //remove start clause marker
     tokens.remove(tokens.size() - 1);
     tokens.add(range);
-    Float boost = clause.getBoost();
+    Float boost = closeClause.getBoost();
     if (boost != null) {
       ((SQPBoostableToken)range).setBoost(boost);
     }
     return true;
+  }
+
+  private String getCandidateRangeTermString(SQPTerminal t) throws ParseException {
+    if (t instanceof SQPRangeTerm) {
+      throw new ParseException("Can't include a range term within a range query. Make sure to escape the range characters.");
+    } else if (t instanceof SQPFuzzyTerm) {
+      throw new ParseException("Can't include a fuzzy term within a range query. Make sure to escape the fuzzy term characters.");
+    } else if (t instanceof SQPRegexTerm) {
+      throw new ParseException("Can't include a regex term within a range query. Make sure to escape the regex term characters.");
+    } else if (t instanceof SQPPrefixTerm) {
+      throw new ParseException("Can't include a prefix term within a range query. Make sure to escape the *.");
+    } else if (t instanceof SQPWildcardTerm) {
+      String wc = ((SQPWildcardTerm)t).getString();
+      if (wc.equals("*")) {
+        return null;
+      }
+      throw new ParseException("Can't include a wildcard term within a range query. Make sure to escape the * and ?.");
+    } else if (t instanceof SQPTerm) {
+      return ((SQPTerm)t).getString();
+    }
+    throw new IllegalArgumentException("Unrecognizable class in getCandidateRangeTermString: "+t.getClass());
   }
 
   private boolean testBadRange(boolean hasCurly) throws ParseException {
@@ -424,7 +578,7 @@ class SpanQueryLexer {
   }
 
   private void handleOpenClause(SQPClause.TYPE type) {
-    SQPOpenClause open = new SQPOpenClause(tokens.size(), -1, type);
+    SQPOpenClause open = new SQPOpenClause(tokens.size(), type);
     stack.push(open);
     tokens.add(open);
     if (type != SQPClause.TYPE.PAREN) {
@@ -432,6 +586,9 @@ class SpanQueryLexer {
     }
   }
 
+  //this reads everything to a matching end token, e.g. ' or /.
+  //the targChar token is escaped by being doubled.
+  //This unescapes the targChar
   private boolean readToMatchingEndToken(int targChar) throws ParseException, IOException {
     int c = reader.read();
     boolean hitEndOfString = false;
@@ -461,50 +618,38 @@ class SpanQueryLexer {
       throw new ParseException("must have some content between " + (char) targChar + "s");
     }
     String contents = tokenBuffer.toString();
-    tokenBuffer.setLength(0);
-
     SQPToken token = null;
-    if (targChar == FORWARD_SLASH) {
+    if (type == TOKEN_TYPE.REGEX) {
       token = new SQPRegexTerm(contents);
-    } else if (targChar == SQUOTE) {
+    } else if (type == TOKEN_TYPE.QUOTED) {
       token = new SQPTerm(contents, true);
     } else {
       throw new IllegalArgumentException("Don't know how to handle: "+targChar+" while building tokens");
     }
-    c = reader.read();
-    Float boost = null;
-    if (c == CARET) {
-      int next = reader.read();
-      if (next == MINUS) {
-        //can't have MINUS!!!
-        tryToUnread(next);
-        tryToUnread(c);
-      } else {
-        tryToUnread(next);
-        boost = tryToReadFloat();
-      }
-    } else {
-      tryToUnread(c);
-    }
+    Float boost = tryToReadBoost();
     if (boost != null) {
       ((SQPBoostableToken)token).setBoost(boost);
     }
     tokens.add(token);
+    resetTokenBuffer();
     return !hitEndOfString;
   }
 
-  void flushBuffer(boolean isQuoted, boolean isRegex) throws ParseException {
+  void flushBuffer() throws ParseException, IOException {
+    flushBuffer(null);
+  }
+
+  void flushBuffer(Float boost) throws ParseException, IOException {
+
     if (tokenBuffer.length() == 0) {
       return;
     }
     String term = tokenBuffer.toString();
-    tokenBuffer.setLength(0);
-
     //The regex over-captures on a term...Term could be:
-    //AND or NOT boolean operator; and term could have boost
+    //AND or NOT boolean defaultOperator; and term could have boost
 
     //does the term == AND or NOT or OR
-    if (nearDepth == 0) {
+    if (nearDepth == 0 && type == TOKEN_TYPE.UNSPECIFIED) {
       SQPToken token = null;
       if (term.equals(AND)) {
         token = new SQPBooleanOpToken(SpanQueryParserBase.CONJ_AND);
@@ -513,70 +658,51 @@ class SpanQueryLexer {
       } else if (term.equals(OR)) {
         token = new SQPBooleanOpToken(SpanQueryParserBase.CONJ_OR);
       }
+
       if (token != null) {
+        if (boost != null) {
+          throw new ParseException("Can't have boost on a boolean defaultOperator (AND|NOT|OR)");
+        }
         testBooleanTokens(tokens, (SQPBooleanOpToken)token);
         tokens.add(token);
+        resetTokenBuffer();
         return;
       }
     }
 
-    //now deal with potential boost at end of term
-    Matcher boostMatcher = BOOST_PATTERN.matcher(term);
-    int boostStart = -1;
-    while (boostMatcher.find()) {
-      boostStart = boostMatcher.start();
-      if (boostMatcher.end() != term.length()) {
-        throw new ParseException("Must escape boost within a term");
-      }
-    }
-    if (boostStart == 0) {
-      throw new ParseException("Boost must be attached to terminal or clause");
-    }
-
-    float boost = SpanQueryParserBase.UNSPECIFIED_BOOST;
-    if (boostStart > -1) {
-      String boostString = term.substring(boostStart+1);
-      try{
-        boost = Float.parseFloat(boostString);
-      } catch (NumberFormatException e) {
-        //swallow
-      }
-      term = term.substring(0, boostStart);
-    }
     SQPToken token = null;
-    if (isRegex) {
+    if (type == TOKEN_TYPE.REGEX) {
       token = new SQPRegexTerm(term);
+    } else if (wildcardChars > 0) {
+      token = buildWildcard(term);
+    } else if (type == TOKEN_TYPE.QUOTED) {
+      token = new SQPTerm(term, true);
     } else {
-      token = new SQPTerm(unescapeBooleanOperators(term), isQuoted);
+      token = new SQPTerm(term, false);
     }
-    if (boost != SpanQueryParserBase.UNSPECIFIED_BOOST) {
+    if (boost != null) {
       ((SQPBoostableToken)token).setBoost(boost);
     }
     tokens.add(token);
+    resetTokenBuffer();
   }
 
-  boolean isWhitespace(int c) {
-    //TODO: add more whitespace code points
-    switch (c) {
-      case 32:
-        return true;
+  SQPTerminal buildWildcard(String term) {
+    if (term.equals("*")) {
+      return new SQPWildcardTerm("*");
     }
-    ;
-    return false;
+
+    if (wildcardChars == 1 && term.endsWith("*")) {
+      String prefix = term.substring(0,term.length()-1);
+      return new SQPPrefixTerm(prefix);
+    }
+    return new SQPWildcardTerm(term);
   }
 
-  String unescapeBooleanOperators(String s) {
-
-    if (s.equals("\\AND")) {
-      return "AND";
-    }
-    if (s.equals("\\NOT")) {
-      return "NOT";
-    }
-    if (s.equals("\\OR")) {
-      return "OR";
-    }
-    return s;
+  void resetTokenBuffer() {
+    tokenBuffer.setLength(0);
+    wildcardChars = 0;
+    type = TOKEN_TYPE.UNSPECIFIED;
   }
 
   private void tryToAddField(String term) throws ParseException {
@@ -592,7 +718,7 @@ class SpanQueryLexer {
       throw new ParseException("A field must contain a terminal");
     }
 
-    SQPToken token = new SQPField(SpanQueryParserBase.unescape(term));
+    SQPToken token = new SQPField(term);
     tokens.add(token);
   }
   /**
@@ -635,7 +761,7 @@ class SpanQueryLexer {
     }
   }
 
-  int tryToReadInteger() throws IOException {
+  Integer tryToReadInteger() throws IOException {
     StringBuilder sb = new StringBuilder();
     while (true) {
       int c = reader.read();
@@ -648,24 +774,32 @@ class SpanQueryLexer {
       }
     }
     if (sb.length() == 0) {
-      return -1;
+      return null;
     }
     return Integer.parseInt(sb.toString());
   }
 
-  Float tryToReadFloat() throws IOException {
+  Float tryToReadUnsignedFloat() throws ParseException, IOException {
     StringBuilder sb = new StringBuilder();
-    boolean seenDecimal = false;
+    boolean seenDecimalPoint = false;
+    int c = reader.read();
+    if (c == MINUS) {
+      throw new ParseException("Negative values not allowed.");
+    } else if (c == PLUS) {
+      throw new ParseException("Plus sign not allowed.");
+    } else {
+      tryToUnread(c);
+    }
     while (true) {
-      int c = reader.read();
+      c = reader.read();
       int val = c-48;
-      if (c == DECIMAL) {
-        if (seenDecimal) {
+      if (c == DECIMAL_POINT) {
+        if (seenDecimalPoint) {
           tryToUnread(c);
           break;
         } else {
-          seenDecimal = true;
-          sb.appendCodePoint(DECIMAL);
+          seenDecimalPoint = true;
+          sb.appendCodePoint(DECIMAL_POINT);
         }
       } else if (val >= 0 && val <= 9) {
         sb.append(val);
@@ -674,10 +808,16 @@ class SpanQueryLexer {
         break;
       }
     }
-    if (sb.length() == 0) {
+    String tmpFloatString = sb.toString();
+    if (tmpFloatString.length() == 0) {
       return null;
+    } else if (tmpFloatString.equals(".")) {
+      //or do we want to unread and move on?
+      //tryToUnread(DECIMAL);
+      //return null;
+      throw new ParseException("Single \".\" appears where there should be a float!");
     }
-    return Float.parseFloat(sb.toString());
+    return Float.parseFloat(tmpFloatString);
   }
 
   void tryToReadEscapedUnicode() throws ParseException, IOException {

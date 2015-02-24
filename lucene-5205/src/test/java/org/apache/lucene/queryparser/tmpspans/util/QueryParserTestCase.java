@@ -17,7 +17,21 @@ package org.apache.lucene.queryparser.tmpspans.util;
  * limitations under the License.
  */
 
-import org.apache.lucene.analysis.*;
+import java.io.IOException;
+import java.io.Reader;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.MockAnalyzer;
+import org.apache.lucene.analysis.MockTokenizer;
+import org.apache.lucene.analysis.TokenFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
@@ -31,23 +45,22 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.text.DateFormat;
-import java.util.*;
-
 /** Utilities and so on for testing queryparsers */
 public abstract class QueryParserTestCase extends LuceneTestCase {
   public static Analyzer qpAnalyzer;
+  public static Analyzer lcMultiTermAnalyzer;
 
   @BeforeClass
   public static void beforeClass() {
+
     qpAnalyzer = new QPTestAnalyzer();
+    lcMultiTermAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
   }
 
   @AfterClass
   public static void afterClass() {
     qpAnalyzer = null;
+    lcMultiTermAnalyzer = null;
   }
 
   /**

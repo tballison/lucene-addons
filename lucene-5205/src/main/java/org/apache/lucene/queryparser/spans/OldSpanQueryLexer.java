@@ -17,16 +17,6 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Stack;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
-import org.apache.lucene.util.mutable.MutableValueInt;
-
 /**
  * Tokenizer that returns a list of tokens of types:
  * Term, RegexTerm, RangeTerm
@@ -36,7 +26,7 @@ import org.apache.lucene.util.mutable.MutableValueInt;
  * A clause is represented as a node in the list where the clause started.
  * The clause includes offsets into the list for where its contents start and end.
  * <p>
- * Unescapes field and boolean operator tokens, but nothing else
+ * Unescapes field and boolean defaultOperator tokens, but nothing else
  * 
  * <p>
  * Identifies the following types of exceptions:
@@ -47,7 +37,7 @@ import org.apache.lucene.util.mutable.MutableValueInt;
  * 
  */
 class OldSpanQueryLexer {
-
+/*
   private final static String AND = "AND";
   private final static String NOT = "NOT";
   private final static String OR = "OR"; //silently removed from queries...beware!
@@ -136,7 +126,7 @@ class OldSpanQueryLexer {
     //initial validation tests
     //does the string end with an unescaped \\
     if (s.endsWith("\\")) {
-        if (! SpanQueryParserUtil.isCharEscaped(s, s.length()-1)) {
+        if (! isCharEscaped(s, s.length()-1)) {
             throw new ParseException("Can't end query with unescaped backslash character");
         }
     }
@@ -216,7 +206,7 @@ class OldSpanQueryLexer {
           throws ParseException{
 
     //these return early
-    //perhaps rearrange to more closely align with operator frequency
+    //perhaps rearrange to more closely align with defaultOperator frequency
     if (m.group(G.CLOSE_PAREN.ordinal()) != null) {
       processCloseParen(m, tokens, stack, nearDepth.value);
       return;
@@ -520,14 +510,14 @@ class OldSpanQueryLexer {
     if (tokens.size() > 0 && tokens.get(tokens.size()-1) instanceof SQPField) {
       throw new ParseException("A field must contain a terminal");
     }
-    SQPToken token = new SQPField(SpanQueryParserBase.unescape(term));
-    tokens.add(token);
+    //SQPToken token = new SQPField(SpanQueryParserBase.unescape(term));
+    //tokens.add(token);
   } 
 
   private void addRawTerm(String term, int nearDepth, List<SQPToken> tokens)
       throws ParseException {
     //The regex over-captures on a term...Term could be:
-    //AND or NOT boolean operator; and term could have boost
+    //AND or NOT boolean defaultOperator; and term could have boost
 
     //does the term == AND or NOT or OR
     if (nearDepth == 0) {
@@ -586,11 +576,7 @@ class OldSpanQueryLexer {
     }
   }
 
-  /**
-   * Test whether this token can be added to the list of tokens
-   * based on classic queryparser rules
-   */
-  private void testBooleanTokens(List<SQPToken> tokens, SQPBooleanOpToken token) 
+  private void testBooleanTokens(List<SQPToken> tokens, SQPBooleanOpToken token)
       throws ParseException {
     //there are possible exceptions with tokens.size()==0, but they
     //are the same exceptions as at clause beginning.  
@@ -692,4 +678,16 @@ class OldSpanQueryLexer {
     }
     return sb.toString();
   }
+  protected static boolean isCharEscaped(String s, int i) {
+    int j = i;
+    int esc = 0;
+    while (--j >=0 && s.charAt(j) == '\\') {
+      esc++;
+    }
+    if (esc % 2 == 0) {
+      return false;
+    }
+    return true;
+  }
+*/
 }
