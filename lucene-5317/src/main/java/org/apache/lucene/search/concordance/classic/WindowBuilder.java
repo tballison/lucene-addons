@@ -17,19 +17,20 @@ package org.apache.lucene.search.concordance.classic;
  * limitations under the License.
  */
 
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
 import org.apache.lucene.search.concordance.charoffsets.SimpleAnalyzerUtil;
 import org.apache.lucene.search.concordance.charoffsets.TargetTokenNotFoundException;
-import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
 import org.apache.lucene.search.concordance.classic.impl.DefaultSortKeyBuilder;
 import org.apache.lucene.search.concordance.classic.impl.FieldBasedDocIdBuilder;
 import org.apache.lucene.search.concordance.classic.impl.IndexIdDocIdBuilder;
 import org.apache.lucene.search.concordance.classic.impl.SimpleDocMetadataExtractor;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -77,10 +78,8 @@ public class WindowBuilder {
         new DefaultSortKeyBuilder(ConcordanceSortOrder.PRE),
         new SimpleDocMetadataExtractor(),
         new IndexIdDocIdBuilder()
-        );
-    
+    );
   }
-
   public WindowBuilder(int tokensBefore, int tokensAfter, int offsetGap, SortKeyBuilder sortKeyBuilder,
       DocMetadataExtractor metadataExtractor, DocIdBuilder docIdBuilder) {
     this.tokensBefore = tokensBefore;
@@ -152,10 +151,9 @@ public class WindowBuilder {
     String targString = SimpleAnalyzerUtil.substringFromMultiValuedFields(
         targetCharStart, targetCharEnd, fieldValues, 
         offsetGap, INTER_MULTIVALUE_FIELD_PADDING);
-    ConcordanceSortKey sortKey = sortKeyBuilder.buildKey(uniqueDocID, 
+    ConcordanceSortKey sortKey = sortKeyBuilder.buildKey(uniqueDocID,
         targetTokenStart, targetTokenEnd, offsets, tokensBefore, tokensAfter, metadata);
-
-    int charStart = (preCharOffset == null) ? targetCharStart : 
+    int charStart = (preCharOffset == null) ? targetCharStart :
       preCharOffset.startOffset();
     
     int charEnd = (postCharOffset == null) ? targetCharEnd : postCharOffset.endOffset();
@@ -215,7 +213,8 @@ public class WindowBuilder {
 
 
   public Set<String> getFieldSelector() {
-    Set<String> set = metadataExtractor.getFieldSelector();
+    Set<String> set = new HashSet<String>();
+    set.addAll(metadataExtractor.getFieldSelector());
     if (docIdBuilder instanceof FieldBasedDocIdBuilder){
       set.addAll(((FieldBasedDocIdBuilder)docIdBuilder).getFields());
     }

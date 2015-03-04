@@ -45,7 +45,7 @@
 -->
         <maven.compile.source>1.7</maven.compile.source>
         <maven.compile.target>1.7</maven.compile.target>
-        <lucene.version>4.10.2</lucene.version>
+        <lucene.version>4.10.3</lucene.version>
     </properties>
 
 

@@ -17,10 +17,10 @@ package org.apache.lucene.search.concordance.classic;
  * limitations under the License.
  */
 
+import org.apache.lucene.document.Document;
+
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.lucene.document.Document;
 
 /**
  * Simple interface for a component that extracts metadata from
@@ -28,6 +28,7 @@ import org.apache.lucene.document.Document;
  *
  */
 public interface DocMetadataExtractor {
+
   /**
    * 
    * @return the fields that need to be retrieved for the document

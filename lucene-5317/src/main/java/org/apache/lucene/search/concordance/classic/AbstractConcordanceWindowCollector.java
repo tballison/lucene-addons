@@ -129,6 +129,26 @@ public abstract class AbstractConcordanceWindowCollector {
    * @return total number of documents in all indices
    */
   public long getTotalDocs() {
-    return totalDocs;
+      return totalDocs;
+  }
+
+  /**
+   *
+   * @return number of windows in results
+   */
+  public int getNumWindows() {
+    List<ConcordanceWindow> windows = getWindows();
+    if (windows != null) {
+      return windows.size();
+    }
+    return 0;
+  }
+
+  /**
+   *
+   * @return number of documents in results
+   */
+  public int getNumDocs() {
+    return docIds.size();
   }
 }

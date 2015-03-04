@@ -56,6 +56,11 @@ public class ConcordanceSortKey implements Comparable<ConcordanceSortKey> {
       return false;
     return true;
   }
+
+  @Override
+  public String toString() {
+    return concSortString;
+  }
   
 
 }

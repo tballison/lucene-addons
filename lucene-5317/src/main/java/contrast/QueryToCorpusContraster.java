@@ -1,14 +1,5 @@
 package contrast;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -29,6 +20,9 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.apache.lucene.util.mutable.MutableValueInt;
+
+import java.io.IOException;
+import java.util.*;
 
 public class QueryToCorpusContraster {
 
@@ -62,9 +56,8 @@ public class QueryToCorpusContraster {
     
     //total hack
     int initialSize = scoreDocs.length * 100;
-    CharArrayMap<MutableValueInt> map = new CharArrayMap<MutableValueInt>(version, 
-        initialSize, ignoreCase);
-    CharArraySet tmpSet = new CharArraySet(version, 100, ignoreCase);
+    CharArrayMap<MutableValueInt> map = new CharArrayMap<MutableValueInt>(initialSize, ignoreCase);
+    CharArraySet tmpSet = new CharArraySet(100, ignoreCase);
     TermsEnum te = null;
     Set<String> selector = new HashSet<String>();
     selector.add(fieldName);

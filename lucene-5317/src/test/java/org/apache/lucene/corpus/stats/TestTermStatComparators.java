@@ -1,13 +1,10 @@
 package org.apache.lucene.corpus.stats;
 
-import static org.junit.Assert.*;
+import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import org.junit.Test;
 
 public class TestTermStatComparators {
 
@@ -25,6 +22,7 @@ public class TestTermStatComparators {
     
     List<TermDFTF> list = Arrays.asList(tst);
     Collections.sort(list);
+    //TODO: add actual test!
     for (int i = 0; i < list.size(); i++){
       System.out.println(list.get(i).toString());
     }
