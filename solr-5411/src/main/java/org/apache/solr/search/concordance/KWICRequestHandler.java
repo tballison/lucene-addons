@@ -60,7 +60,7 @@ import java.util.List;
 			<str name="targetDisplaySize">42</str>
 			<str name="tokensAfter">42</str>
 			<str name="tokensBefore">42</str>
-			<str name="sortOrder">TARGET_PRE</str>
+			<str name="sortOrder">TARGET_PRE</str> //TODO: add options here: TARGET_POST, PRE, POST
 			
 			-->
 		</lst>
