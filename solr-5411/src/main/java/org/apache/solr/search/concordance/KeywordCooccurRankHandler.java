@@ -303,7 +303,7 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 
         //TODO: convert results to docIdBuilder? xx
 	
-		return results;
+		//xx return results;
 	}
 	
 	
