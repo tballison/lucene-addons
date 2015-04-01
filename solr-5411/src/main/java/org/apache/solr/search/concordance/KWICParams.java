@@ -35,6 +35,7 @@ public interface KWICParams
 	
 	  /**
 	   * The Doc Ids (Lucene internal ids) of the docs to get the term vectors for
+       * up with which I shall not put
 	   */
 	public static final String DOC_IDS = PREFIX + "docIds";
 }

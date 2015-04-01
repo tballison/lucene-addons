@@ -129,7 +129,7 @@ public class KWICRequestHandler extends SolrConcordanceBase
 		String q = params.get(CommonParams.Q);
 
 		String fl = params.get(CommonParams.FL);
-    String solrUniqueKeyField = req.getSchema().getUniqueKeyField().getName();
+        String solrUniqueKeyField = req.getSchema().getUniqueKeyField().getName();
 		DocMetadataExtractor metadataExtractor = (fl != null && fl.length() > 0) ?
         new SimpleDocMetadataExtractor(fl.split(",")) :
         new SimpleDocMetadataExtractor();

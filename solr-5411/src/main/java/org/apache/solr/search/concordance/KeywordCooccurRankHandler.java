@@ -18,10 +18,12 @@ package org.apache.solr.search.concordance;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.corpus.stats.IDFCalc;
+import org.apache.lucene.corpus.stats.TermIDF;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.concordance.charoffsets.TargetTokenNotFoundException;
 import org.apache.lucene.search.concordance.classic.ConcordanceSortOrder;
 import org.apache.lucene.search.concordance.classic.DocIdBuilder;
 import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
@@ -42,6 +44,7 @@ import org.apache.solr.schema.SchemaField;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.SolrIndexSearcher;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -97,21 +100,25 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 
 	@Override
   public String getDescription() {
-		return "Returns tokens that frequently co-occur within cocordance windows";
+		return "Returns tokens that frequently co-occur within concordance windows";
 	}
+
+    @Override public String getSource(){
+        return "https://issues.apache.org/jira/browse/SOLR-5411 - https://github.com/tballison/lucene-addons";
+    }
 
 
 	@SuppressWarnings("unchecked")
 	@Override
   public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
-		
 		boolean isDistrib = isDistributed(req);
 		if(isDistrib) {
-      doZooQuery(req, rsp);
-    }	else {
-      doQuery(req, rsp);
+          doZooQuery(req, rsp);
+        }	else {
+            doQuery(req, rsp);
+        }
     }
-	}
+
 	
 	@SuppressWarnings("unchecked")
 	private void doZooQuery(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
@@ -208,61 +215,92 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 	}
 	
 	//xx
-	public static NamedList doLocalSearch(Query filter, SolrQueryRequest req) throws Exception
-	{
-		SolrParams params = req.getParams();
-		String field = getField(params);
-		
-		
-
-		String fl = params.get(CommonParams.FL);
-    DocMetadataExtractor metadataExtractor = (fl != null && fl.length() > 0) ?
-        new SimpleDocMetadataExtractor(fl.split(",")) :
-        new SimpleDocMetadataExtractor();
-
-		
-	
-		CooccurConfig config = configureParams(field, params);
-		
-		IndexSchema schema = req.getSchema();
-		SchemaField sf = schema.getField(field);
-		Analyzer analyzer = sf.getType().getIndexAnalyzer();
-		Filter queryFilter = getFilterQuery(req);
-    String q = params.get(CommonParams.Q);
-
-    Query query = QParser.getParser(q, null, req).parse();
-		
-		SolrIndexSearcher solr = req.getSearcher();
-		IndexReader reader = solr.getIndexReader();
-    boolean allowDuplicates = false;
-    boolean allowFieldSeparators = false;
-
-		Grammer grammer = new WGrammer(config.getMinNGram(), config.getMaxNGram(), allowFieldSeparators);
-		IDFCalc idfCalc = new IDFCalc(reader);
-		CooccurVisitor visitor = new CooccurVisitor(field, config.getTokensBefore(),
-        config.getTokensAfter(), grammer, idfCalc, config.getMaxWindows(), allowDuplicates
-    );
+	public static NamedList doLocalSearch(Query filter, SolrQueryRequest req) throws Exception {
+        SolrParams params = req.getParams();
+        String field = getField(params);
 
 
+        String fl = params.get(CommonParams.FL);
+        DocMetadataExtractor metadataExtractor = (fl != null && fl.length() > 0) ?
+                new SimpleDocMetadataExtractor(fl.split(",")) :
+                new SimpleDocMetadataExtractor();
 
-		try {
-      ConcordanceArrayWindowSearcher searcher =
-          new ConcordanceArrayWindowSearcher();
+
+        CooccurConfig config = configureParams(field, params);
+
+        IndexSchema schema = req.getSchema();
+        SchemaField sf = schema.getField(field);
+        Analyzer analyzer = sf.getType().getIndexAnalyzer();
+        Filter queryFilter = getFilterQuery(req);
+        String q = params.get(CommonParams.Q);
+        Query query = QParser.getParser(q, null, req).parse();
+
+        SolrIndexSearcher solr = req.getSearcher();
+        IndexReader reader = solr.getIndexReader();
+        boolean allowDuplicates = false;
+        boolean allowFieldSeparators = false;
+
+        Grammer grammer = new WGrammer(config.getMinNGram(), config.getMaxNGram(), allowFieldSeparators);
+        IDFCalc idfCalc = new IDFCalc(reader);
+
+        CooccurVisitor visitor = new CooccurVisitor(field, config.getTokensBefore(),
+                config.getTokensAfter()
+                , grammer
+                , idfCalc
+                , config.getMaxWindows()
+                , allowDuplicates);
+        try {
+            ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
+            searcher.search(reader, field, query, queryFilter, analyzer, visitor, null);
+        } catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (TargetTokenNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        List<TermIDF>  overallResults = visitor.getResults();
+        NamedList results = toNamedList(overallResults);
+        //needed for cloud computations, merging cores
+        results.add("collectionSize", reader.numDocs());
+        results.add("numDocsVisited", visitor.getNumDocsVisited());
+        results.add("numWindowsVisited", visitor.getNumWindowsVisited());
+        results.add("numResults", overallResults.size());
+        results.add("minTF", visitor.getMinTermFreq());
+
+        return results;
+    }
+
+
 
     public void search(IndexReader reader, String fieldName,
       Query query, Filter filter, Analyzer analyzer,
-      ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder ) throws IllegalArgumentException,
+      ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder ) throws IllegalArgumentException
+    {
 
-			searcher.search(reader, field, query, queryFilter, analyzer, visitor, );
+        try {
+            ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
+			searcher.search(reader, fieldName, query, filter, analyzer, visitor, docIdBuilder );
 		} catch (IllegalArgumentException e) {
 			e.printStackTrace();
-		}
+		} catch (TargetTokenNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-		TFIDFResults overallResults = visitor.getResults();
+        //xx copy consturctor instead?
+        CooccurVisitor covisitor = (CooccurVisitor)visitor;
+        List<TermIDF>  overallResults = covisitor.getResults();
 		NamedList results = toNamedList(overallResults);
-		results.add("numDocsVisited", visitor.getNumDocsVisited());
-		results.add("numWindowsVisited", visitor.getNumWindowsVisited());
+        results.add("collectionSize", reader.numDocs());
+        results.add("numDocsVisited", covisitor.getNumDocsVisited());
+        results.add("numWindowsVisited", covisitor.getNumWindowsVisited());
+        results.add("numResults", overallResults.size());
+        results.add("minTF", covisitor.getMinTermFreq());
 
+        //TODO: convert results to docIdBuilder? xx
 	
 		return results;
 	}
@@ -588,36 +626,26 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 	
 	
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public static NamedList toNamedList(TFIDFResults results)
+	public static NamedList toNamedList(List<TermIDF>  results)
 	{
 		SimpleOrderedMap ret = new SimpleOrderedMap();
+
 		
-		ret.add("collectionSize", results.getTotalDocs());
-		ret.add("numDocs", results.getNumDocs());
-		ret.add("numWindows", results.getWindows());
-		
-		List<TFIDFResult> list = results.getResults();
-		ret.add("numResults", list.size());
-		
-		if(list.size() > 0)
+		if(results.size() > 0)
 		{
 			NamedList nlResults = new SimpleOrderedMap();
 			ret.add("results", nlResults);
 			
-			for(TFIDFResult result : list)
+			for(TermIDF result : results)
 			{
 				NamedList nl = new SimpleOrderedMap();
 				nl.add("term", result.getTerm());
 				//nl.add("value", result.getValue());
 				nl.add("tfidf", result.getTFIDF());
-				nl.add("tf", result.getTF());
+				nl.add("tf", result.getTermFreq());
 				nl.add("idf", result.getIDF());
 				
-				if(result.getDF() != null)
-					nl.add("df", result.getDF());
-				
-				if(result.getMinDF() != null)
-					nl.add("minDF", result.getMinDF());
+				nl.add("df", result.getDocFreq());
 				
 				nlResults.add("result", nl);
 			}
