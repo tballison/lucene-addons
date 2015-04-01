@@ -302,7 +302,6 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
         results.add("minTF", covisitor.getMinTermFreq());
 
         //TODO: convert results to docIdBuilder? xx
-	
 		//xx return results;
 	}
 	
