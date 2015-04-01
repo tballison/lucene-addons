@@ -274,6 +274,7 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 
 
 
+
     public void search(IndexReader reader, String fieldName,
       Query query, Filter filter, Analyzer analyzer,
       ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder ) throws IllegalArgumentException
