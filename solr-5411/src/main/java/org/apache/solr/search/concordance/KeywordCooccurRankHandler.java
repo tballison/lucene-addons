@@ -27,6 +27,8 @@ import org.apache.lucene.search.concordance.charoffsets.TargetTokenNotFoundExcep
 import org.apache.lucene.search.concordance.classic.ConcordanceSortOrder;
 import org.apache.lucene.search.concordance.classic.DocIdBuilder;
 import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
+import org.apache.lucene.search.concordance.classic.impl.FieldBasedDocIdBuilder;
+import org.apache.lucene.search.concordance.classic.impl.IndexIdDocIdBuilder;
 import org.apache.lucene.search.concordance.classic.impl.SimpleDocMetadataExtractor;
 import org.apache.lucene.search.concordance.windowvisitor.*;
 import org.apache.solr.cloud.RequestThreads;
@@ -234,6 +236,8 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
         Filter queryFilter = getFilterQuery(req);
         String q = params.get(CommonParams.Q);
         Query query = QParser.getParser(q, null, req).parse();
+        String solrUniqueKeyField = req.getSchema().getUniqueKeyField().getName();
+
 
         SolrIndexSearcher solr = req.getSearcher();
         IndexReader reader = solr.getIndexReader();
@@ -249,9 +253,14 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
                 , idfCalc
                 , config.getMaxWindows()
                 , allowDuplicates);
+
+        visitor.setMinTermFreq(config.getMinTermFreq());
+
         try {
             ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
-            searcher.search(reader, field, query, queryFilter, analyzer, visitor, null);
+            DocIdBuilder docIdBuilder = new FieldBasedDocIdBuilder(solrUniqueKeyField);
+
+            searcher.search(reader, field, query, queryFilter, analyzer, visitor, docIdBuilder);
         } catch (IllegalArgumentException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -272,8 +281,7 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
         return results;
     }
 
-
-
+/*
 
     public void search(IndexReader reader, String fieldName,
       Query query, Filter filter, Analyzer analyzer,
@@ -305,7 +313,7 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 		//xx return results;
 	}
 
-
+*/
 	
 	
 	public static class Results

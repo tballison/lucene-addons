@@ -12,9 +12,9 @@
         <relativePath>../lucene-addons-parent/pom.xml</relativePath>
     </parent>
 
+    <groupId>org.apache.solr</groupId>
     <artifactId>solr-5410</artifactId>
     <packaging>jar</packaging>
-
     <version>1.0</version>
 
 
