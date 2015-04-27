@@ -17,36 +17,25 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
-import java.util.List;
-
-import java.util.Set;
-import java.util.HashSet;
-import java.io.IOException;
-
-import org.apache.lucene.index.IndexReader;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
-
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queries.ChainedFilter;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
-import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsets;
-import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsetsIterator;
-import org.apache.lucene.search.concordance.charoffsets.OffsetLengthStartComparator;
-import org.apache.lucene.search.concordance.charoffsets.OffsetUtil;
-import org.apache.lucene.search.concordance.charoffsets.ReanalyzingTokenCharOffsetsReader;
-import org.apache.lucene.search.concordance.charoffsets.TargetTokenNotFoundException;
-import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetRequests;
-import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
-import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetsReader;
+import org.apache.lucene.search.concordance.charoffsets.*;
 import org.apache.lucene.search.concordance.classic.DocIdBuilder;
 import org.apache.lucene.search.concordance.classic.impl.FieldBasedDocIdBuilder;
 import org.apache.lucene.search.concordance.util.ConcordanceSearcherUtil;
 import org.apache.lucene.search.spans.SimpleSpanQueryConverter;
 import org.apache.lucene.search.spans.SpanQuery;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Calculates term statistics for the tokens before and after a given query
@@ -131,10 +120,11 @@ public class ConcordanceArrayWindowSearcher {
 
     // iterate through documents
     while (itr.next()) {
-
+      System.out.println("another doc!");
       docTokenOffsets = itr.getDocTokenOffsets();
       Document document = docTokenOffsets.getDocument();
       String docId = docIdBuilder.build(document, docTokenOffsets.getUniqueDocId());
+      System.out.println("DOC ID:"+docId);
       String[] fieldValues = document.getValues(query.getField());
       if (fieldValues == null) {
         throw new IOException("Mismatched content field");

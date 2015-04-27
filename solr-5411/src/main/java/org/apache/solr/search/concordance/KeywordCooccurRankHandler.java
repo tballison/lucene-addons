@@ -28,9 +28,11 @@ import org.apache.lucene.search.concordance.classic.ConcordanceSortOrder;
 import org.apache.lucene.search.concordance.classic.DocIdBuilder;
 import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
 import org.apache.lucene.search.concordance.classic.impl.FieldBasedDocIdBuilder;
-import org.apache.lucene.search.concordance.classic.impl.IndexIdDocIdBuilder;
 import org.apache.lucene.search.concordance.classic.impl.SimpleDocMetadataExtractor;
-import org.apache.lucene.search.concordance.windowvisitor.*;
+import org.apache.lucene.search.concordance.windowvisitor.ConcordanceArrayWindowSearcher;
+import org.apache.lucene.search.concordance.windowvisitor.CooccurVisitor;
+import org.apache.lucene.search.concordance.windowvisitor.Grammer;
+import org.apache.lucene.search.concordance.windowvisitor.WGrammer;
 import org.apache.solr.cloud.RequestThreads;
 import org.apache.solr.cloud.RequestWorker;
 import org.apache.solr.cloud.ZkController;
@@ -46,7 +48,6 @@ import org.apache.solr.schema.SchemaField;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.SolrIndexSearcher;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -54,7 +55,7 @@ import java.util.Map.Entry;
 
 
 /**
- <requestHandler name="/kwCooccur" class="org.apache.solr.handler.KeywordCooccurRankHandler">
+ <requestHandler name="/kwCooccur" class="org.apache.solr.search.concordance.KeywordCooccurRankHandler">
 		<lst name="defaults">
 			<str name="echoParams">explicit</str>
 			<str name="defType">spanquery</str>

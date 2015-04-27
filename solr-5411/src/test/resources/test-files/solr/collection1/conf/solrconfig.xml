@@ -230,11 +230,36 @@
      <int name="ps">100</int>
     </lst>
   </requestHandler>
-    <requestHandler name="/concordance" class="org.apache.solr.search.concordance.KWICRequestHandler">
+  <requestHandler name="/concordance" class="org.apache.solr.search.concordance.KWICRequestHandler">
 
+  </requestHandler>
+  <requestHandler name="/kwCooccur" class="org.apache.solr.search.concordance.KeywordCooccurRankHandler">
+    <lst name="defaults">
+       <str name="echoParams">explicit</str>
+            <str name="defType">spanquery</str>
+            <str name="f">text</str>
+            <str name="df">text</str>
+            <str name="wt">xml</str>
+            <int name="minNGram">1</int>
+            <int name="maxNGram">1</int>
+            <int name="minTF">1</int>
+            <int name="minDF">1</int>
+            <double name="minIDF">-1.0f</double>
+            <int name="numResults">50</int>
+            <int name="maxWindows">100000</int>
+        <int name="tokensBefore">10</int>
+        <int name="tokensAfter">10</int>
+        </lst>
+        <lst name="invariants">
+            <str name="prop1">value1</str>
+            <int name="prop2">2</int>
+            <!-- ... more config items here ... -->
+        </lst>
     </requestHandler>
 
-  <requestHandler name="mock" class="org.apache.solr.core.MockQuerySenderListenerReqHandler"/>
+
+
+    <requestHandler name="mock" class="org.apache.solr.core.MockQuerySenderListenerReqHandler"/>
 
   <requestHandler name="/admin/" class="org.apache.solr.handler.admin.AdminHandlers" />
 
