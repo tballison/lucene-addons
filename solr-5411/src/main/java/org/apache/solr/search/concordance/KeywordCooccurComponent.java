@@ -44,6 +44,7 @@ public class KeywordCooccurComponent  extends SearchComponent implements SolrCor
 	@Override public String getSource()
 	{
 		// TODO Auto-generated method stub
+		
 		return null;
 	}
 	
