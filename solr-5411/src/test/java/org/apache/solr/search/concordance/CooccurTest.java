@@ -14,6 +14,7 @@ public class CooccurTest extends SolrTestCaseJ4 {
    * Expected URI at which the given suggester will live.
    */
   private static final String requestUri = "/kwCooccur";
+  private static final String TARGET = "target";
 
   @BeforeClass
   public static void beforeClass() throws Exception {
@@ -30,12 +31,12 @@ public class CooccurTest extends SolrTestCaseJ4 {
 
   private void setupDocs(String fieldName) {
     clearIndex();
-    assertU(adoc("id", "1", fieldName, "the QUICK BROWN fox jumped over THE LAZY ELEPHANT"));
-    assertU(adoc("id", "2", fieldName, "the quick brown dog jumped over the lazy cat"));
-    assertU(adoc("id", "3", fieldName, "whan that brown aprile jumped its shoures soote"));
+    assertU(adoc("id", "1", fieldName, "aa aa aa aa aa aa " + TARGET + " aa aa aa aa aa aa"));
+    assertU(adoc("id", "2", fieldName, "aa ab "+TARGET+" ab aa"));
+    assertU(adoc("id", "3", fieldName, "ac aa aa aa aa aa "+TARGET+" aa aa aa aa aa ac"));
     //add a bunch of other docs to make statistics work
     for (int i = 4; i < 100; i++) {
-      assertU(adoc("id", Integer.toString(i), fieldName, "something else"));
+      assertU(adoc("id", Integer.toString(i), fieldName, "zz zz"));
 
     }
 
@@ -45,8 +46,8 @@ public class CooccurTest extends SolrTestCaseJ4 {
   @Test
   public void basicTest() throws Exception {
     setupDocs(CONCORDANCE_FIELD);
-    System.out.println(h.query(req("qt", requestUri, "q", CONCORDANCE_FIELD+":jumped")));
-    SolrQueryRequest req = req("qt", requestUri, "q", CONCORDANCE_FIELD+":jumped");
+    System.out.println(h.query(req("qt", requestUri, "q", CONCORDANCE_FIELD+":"+TARGET)));
+    SolrQueryRequest req = req("qt", requestUri, "q", CONCORDANCE_FIELD+":"+TARGET);
     String response = JQ(req);
     System.out.println(response);
   }
