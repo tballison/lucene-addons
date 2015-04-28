@@ -23,7 +23,7 @@ import java.util.Comparator;
 
 public class ConcordanceSorter implements Comparator<ConcordanceWindow> {
   private static final long serialVersionUID = 7526472295622776147L;
-  
+
   @Override
   public int compare(ConcordanceWindow w1, ConcordanceWindow w2) {
     return w1.getSortKey().compareTo(w2.getSortKey());

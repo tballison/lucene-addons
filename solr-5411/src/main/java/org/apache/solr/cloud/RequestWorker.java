@@ -28,122 +28,126 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class RequestWorker extends QueryRequest implements Runnable
-{
-	private static final long serialVersionUID = -670352553424658631L;
-	
-	
-	private final String requestUrl;
-	private final String handler;
-	
-	@SuppressWarnings("rawtypes")
-	private AtomicReference<NamedList> results;
-	private SolrServer solrServer;
-	private String name;
+public class RequestWorker extends QueryRequest implements Runnable {
+  private static final long serialVersionUID = -670352553424658631L;
 
-	
-	protected Boolean mbIsRunning = false;
-	public Boolean isRunning() { return mbIsRunning;}
-	
-	public RequestWorker(String url, String handlerPath, SolrParams params)
-	{
-		super(params);
-		if(handlerPath.charAt(0) != '/') handlerPath = "/" + handlerPath;
-		super.setPath(handlerPath);
-		requestUrl = url;
-		handler = handlerPath;
-		results = new AtomicReference<>();
-		solrServer = new HttpSolrServer(requestUrl);
-	}
-	public RequestWorker(ZkController zk, String handlerPath, SolrParams params) throws MalformedURLException
-	{
-		super(params);
-		if(handlerPath.charAt(0) != '/') handlerPath = "/" + handlerPath;
-		super.setPath(handlerPath);
-		requestUrl = zk.getBaseUrl();
-		handler = handlerPath;
-		results = new AtomicReference<>();
-		solrServer = new CloudSolrServer(zk.getZkServerAddress());
-	}
-	
-	public String getName() { return name;}
-	public String getURL() { return requestUrl;}
-	public RequestWorker setName(String name){ this.name = name; return this;}
 
-	@Override public void run()
-	{
-		synchronized (mbIsRunning)
-		{ mbIsRunning = true; 	}
-		
-		try
-		{
-			NamedList nl =  solrServer.request( this );
-			results.set( nl );
-		} 
-		catch (SolrServerException e)
-		{
-			e.printStackTrace();
-		} 
-		catch (IOException e)
-		{
-			e.printStackTrace();
-		}
-		finally
-		{
-			solrServer.shutdown();
-		}
-		
-		synchronized (mbIsRunning)
-		{ mbIsRunning = false; 	}
-	}
-	
-	@Override
-	public int hashCode()
-	{
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + ((handler == null) ? 0 : handler.hashCode());
-		result = prime * result + ((name == null) ? 0 : name.hashCode());
-		result = prime * result
-				+ ((requestUrl == null) ? 0 : requestUrl.hashCode());
-		return result;
-	}
+  private final String requestUrl;
+  private final String handler;
 
-	@Override
-	public boolean equals(Object obj)
-	{
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (!(obj instanceof RequestWorker))
-			return false;
-		RequestWorker other = (RequestWorker) obj;
-		if (handler == null)
-		{
-			if (other.handler != null)
-				return false;
-		} else if (!handler.equals(other.handler))
-			return false;
-		if (name == null)
-		{
-			if (other.name != null)
-				return false;
-		} else if (!name.equals(other.name))
-			return false;
-		if (requestUrl == null)
-		{
-			if (other.requestUrl != null)
-				return false;
-		} else if (!requestUrl.equals(other.requestUrl))
-			return false;
-		return true;
-	}
+  @SuppressWarnings("rawtypes")
+  private AtomicReference<NamedList> results;
+  private SolrServer solrServer;
+  private String name;
 
-	@Override public String toString() { return requestUrl + handler; }
-	
-	
-	
-	public NamedList getResults() { return results.get(); }
+
+  protected Boolean mbIsRunning = false;
+
+  public Boolean isRunning() {
+    return mbIsRunning;
+  }
+
+  public RequestWorker(String url, String handlerPath, SolrParams params) {
+    super(params);
+    if (handlerPath.charAt(0) != '/') handlerPath = "/" + handlerPath;
+    super.setPath(handlerPath);
+    requestUrl = url;
+    handler = handlerPath;
+    results = new AtomicReference<>();
+    solrServer = new HttpSolrServer(requestUrl);
+  }
+
+  public RequestWorker(ZkController zk, String handlerPath, SolrParams params) throws MalformedURLException {
+    super(params);
+    if (handlerPath.charAt(0) != '/') handlerPath = "/" + handlerPath;
+    super.setPath(handlerPath);
+    requestUrl = zk.getBaseUrl();
+    handler = handlerPath;
+    results = new AtomicReference<>();
+    solrServer = new CloudSolrServer(zk.getZkServerAddress());
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getURL() {
+    return requestUrl;
+  }
+
+  public RequestWorker setName(String name) {
+    this.name = name;
+    return this;
+  }
+
+  @Override
+  public void run() {
+    synchronized (mbIsRunning) {
+      mbIsRunning = true;
+    }
+
+    try {
+      NamedList nl = solrServer.request(this);
+      results.set(nl);
+    } catch (SolrServerException e) {
+      e.printStackTrace();
+    } catch (IOException e) {
+      e.printStackTrace();
+    } finally {
+      solrServer.shutdown();
+    }
+
+    synchronized (mbIsRunning) {
+      mbIsRunning = false;
+    }
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((handler == null) ? 0 : handler.hashCode());
+    result = prime * result + ((name == null) ? 0 : name.hashCode());
+    result = prime * result
+        + ((requestUrl == null) ? 0 : requestUrl.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (!(obj instanceof RequestWorker))
+      return false;
+    RequestWorker other = (RequestWorker) obj;
+    if (handler == null) {
+      if (other.handler != null)
+        return false;
+    } else if (!handler.equals(other.handler))
+      return false;
+    if (name == null) {
+      if (other.name != null)
+        return false;
+    } else if (!name.equals(other.name))
+      return false;
+    if (requestUrl == null) {
+      if (other.requestUrl != null)
+        return false;
+    } else if (!requestUrl.equals(other.requestUrl))
+      return false;
+    return true;
+  }
+
+  @Override
+  public String toString() {
+    return requestUrl + handler;
+  }
+
+
+  public NamedList getResults() {
+    return results.get();
+  }
 
 }

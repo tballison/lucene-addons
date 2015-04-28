@@ -25,7 +25,7 @@ class SQPTerm extends SQPTerminal {
     this.string = string;
     this.isQuoted = isQuoted;
   }
-  
+
   public String getString() {
     return string;
   }
@@ -33,7 +33,7 @@ class SQPTerm extends SQPTerminal {
   public void setIsQuoted(boolean b) {
     isQuoted = b;
   }
-  
+
   public boolean isQuoted() {
     return isQuoted;
   }

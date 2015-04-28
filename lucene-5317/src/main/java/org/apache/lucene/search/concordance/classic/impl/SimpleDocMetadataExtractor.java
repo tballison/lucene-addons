@@ -20,14 +20,17 @@ package org.apache.lucene.search.concordance.classic.impl;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Simple class that returns a map of key value pairs
  * for the fields specified during initialization.
  * <p/>
  * Beware! For multi-valued fields, this will take only the first value.
- *
  */
 public class SimpleDocMetadataExtractor implements DocMetadataExtractor {
 
@@ -61,5 +64,5 @@ public class SimpleDocMetadataExtractor implements DocMetadataExtractor {
     }
     return map;
   }
- 
+
 }

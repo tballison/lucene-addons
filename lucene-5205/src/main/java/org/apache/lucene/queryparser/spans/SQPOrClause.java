@@ -22,19 +22,19 @@ class SQPOrClause extends SQPClause {
   public static final int DEFAULT_MINIMUM_NUMBER_SHOULD_MATCH = 1;
 
   private int minimumNumberShouldMatch = DEFAULT_MINIMUM_NUMBER_SHOULD_MATCH;
-  
+
   public SQPOrClause(int tokenOffsetStart, int tokenOffsetEnd) {
     super(tokenOffsetStart, tokenOffsetEnd);
   }
-  
+
   public int getMinimumNumberShouldMatch() {
     return minimumNumberShouldMatch;
   }
-  
+
   public void setMinimumNumberShouldMatch(int n) {
     minimumNumberShouldMatch = n;
   }
-  
+
   public TYPE getType() {
     return TYPE.PAREN;
   }

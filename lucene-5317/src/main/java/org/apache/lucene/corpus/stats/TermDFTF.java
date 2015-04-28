@@ -17,7 +17,6 @@ package org.apache.lucene.corpus.stats;
  */
 
 
-
 public class TermDFTF extends TermDF {
 
   public final long termFreq;
@@ -42,15 +41,14 @@ public class TermDFTF extends TermDF {
     } else if (docFreq > other.docFreq) {
       return -1;
     }
-    
+
     if (termFreq < other.termFreq) {
       return 1;
     } else if (termFreq > other.termFreq) {
       return -1;
-    }    
+    }
     return term.compareTo(other.getTerm());
   }
-
 
 
   @Override
@@ -83,7 +81,7 @@ public class TermDFTF extends TermDF {
 
 
   @Override
-  public String toString(){
+  public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append(term).append(": tf=").append(termFreq).append(" df=").append(docFreq);
     return sb.toString();

@@ -17,16 +17,16 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
+import org.apache.lucene.util.OpenBitSet;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.lucene.util.OpenBitSet;
 
 /**
  * Class to record results for looking up normalized terms (String) and
  * character offsets for specified tokens. Will return NULL_TERM/NULL_OFFSET if
  * a token offset was not found.
- * 
+ * <p/>
  * Has utility methods for safely getting the closest found token. This is
  * useful for when a concordance window ends in a stop word (no term/offset
  * info).
@@ -44,14 +44,13 @@ public class RandomAccessCharOffsetContainer {
   private Map<Integer, Integer> ends = new HashMap<>();
 
   /**
-   * 
-   * @param tokenOffset token of interest
+   * @param tokenOffset     token of interest
    * @param startCharOffset start character offset within the string stored in StoredField[fieldIndex]
-   * @param endCharOffset end character offset within the string stored in StoredField[fieldIndex]
-   * @param term string term at that position
+   * @param endCharOffset   end character offset within the string stored in StoredField[fieldIndex]
+   * @param term            string term at that position
    */
   public void add(int tokenOffset, int startCharOffset,
-      int endCharOffset, String term) {
+                  int endCharOffset, String term) {
     addStart(tokenOffset, startCharOffset);
     addEnd(tokenOffset, endCharOffset);
     addTerm(tokenOffset, term);
@@ -82,7 +81,7 @@ public class RandomAccessCharOffsetContainer {
    */
   public int getCharacterOffsetStart(int tokenOffset) {
     Integer start = starts.get(tokenOffset);
-    if (start == null){
+    if (start == null) {
       return NULL_OFFSET;
     }
     return start.intValue();
@@ -94,14 +93,13 @@ public class RandomAccessCharOffsetContainer {
    */
   public int getCharacterOffsetEnd(int tokenOffset) {
     Integer end = ends.get(tokenOffset);
-    if (end == null){
+    if (end == null) {
       return NULL_OFFSET;
     }
     return end.intValue();
   }
 
   /**
-   * 
    * @param tokenOffset tokenOffset
    * @return term stored at this tokenOffset; can return {@link #NULL_TERM}
    */
@@ -114,7 +112,6 @@ public class RandomAccessCharOffsetContainer {
   }
 
   /**
-   * 
    * @return last/largest token offset
    */
   public int getLast() {
@@ -139,7 +136,7 @@ public class RandomAccessCharOffsetContainer {
   /**
    * Find the closest non-null token starting from startToken
    * and ending with stopToken (inclusive).
-   * 
+   *
    * @param startToken
    * @param stopToken
    * @param map
@@ -147,8 +144,8 @@ public class RandomAccessCharOffsetContainer {
    * {@link #NULL_OFFSET} if no non-null offset was found
    */
   private int getClosestToken(int startToken, int stopToken,
-      Map<Integer, Integer> map) {
-    
+                              Map<Integer, Integer> map) {
+
     if (startToken < 0 || stopToken < 0) {
       return NULL_OFFSET;
     }
@@ -177,7 +174,7 @@ public class RandomAccessCharOffsetContainer {
 
     int i = getClosestToken(startToken, stopToken, starts);
     Integer charStart = getCharacterOffsetStart(i);
-    if (charStart == null){
+    if (charStart == null) {
       return NULL_OFFSET;
     }
     return charStart.intValue();
@@ -186,7 +183,7 @@ public class RandomAccessCharOffsetContainer {
   public int getClosestCharEnd(int startToken, int stopToken) {
     int i = getClosestToken(startToken, stopToken, ends);
     Integer charEnd = getCharacterOffsetEnd(i);
-    if (charEnd == null){
+    if (charEnd == null) {
       return NULL_OFFSET;
     }
     return charEnd.intValue();
@@ -222,8 +219,8 @@ public class RandomAccessCharOffsetContainer {
   }
 
   public void remove(int token) {
-    if (token == last){
-      last = getClosestToken(last-1, 0, starts);
+    if (token == last) {
+      last = getClosestToken(last - 1, 0, starts);
     }
     set.clear(token);
     terms.remove(token);

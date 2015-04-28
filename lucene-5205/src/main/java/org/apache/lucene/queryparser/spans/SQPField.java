@@ -19,11 +19,11 @@ package org.apache.lucene.queryparser.spans;
 
 class SQPField implements SQPToken {
   private final String field;
-  
+
   public SQPField(String field) {
     this.field = field;
   }
-  
+
   public String getField() {
     return field;
   }

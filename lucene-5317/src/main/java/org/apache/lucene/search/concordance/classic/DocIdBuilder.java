@@ -25,9 +25,8 @@ import org.apache.lucene.document.Document;
  * Some implementations may be able to rely only
  * on the ephemeral Lucene docId.  Others, may
  * want to use a field within the document.
- *
  */
 public interface DocIdBuilder {
-  
+
   public String build(Document document, long docId);
 }

@@ -23,54 +23,45 @@ import java.util.List;
 /**
  * Simple abstract class that takes a list of tokens and creates
  * ngrams.
- *
  */
 public abstract class Grammer {
 
   private final int minGram;
   private final int maxGram;
-  
+
   /**
    * Initialize with the minimum gram and the maximum gram
+   *
    * @param minGram
    * @param maxGram
    */
-  public Grammer(int minGram, int maxGram){
-    if (minGram < 0 || maxGram < 0){
+  public Grammer(int minGram, int maxGram) {
+    if (minGram < 0 || maxGram < 0) {
       throw new IllegalArgumentException("minGram and maxGram must both be > 0");
     }
-    if (maxGram < minGram){
+    if (maxGram < minGram) {
       minGram = maxGram;
     }
     this.minGram = minGram;
     this.maxGram = maxGram;
   }
-  
-  /**
-   * Override to get a list of grams
-   * 
-   * @param strings list of unigrams to be combined into larger grams
-   * @param delimiter string to use to join unigrams
-   * @return list of xgrams
-   */
-  public abstract List<String> getGrams(List<String> strings, String delimiter);
-  
+
   /**
    * Simple util function to join a list of strings into a single string.
-   * 
+   *
    * @param delimiter string to use to mark boundaries
-   * @param strings list of strings to join
-   * @param start start offset (inclusive)
-   * @param end end offset (exclusive)
+   * @param strings   list of strings to join
+   * @param start     start offset (inclusive)
+   * @param end       end offset (exclusive)
    * @return joined string
    */
   public static String join(String delimiter, List<String> strings, int start,
-      int end) {
-    
-    if (start < 0 || end < 0){
+                            int end) {
+
+    if (start < 0 || end < 0) {
       throw new IllegalArgumentException("start and end must both be > 0");
     }
-    
+
     StringBuilder sb = new StringBuilder();
     for (int i = start; i < end && i < strings.size() - 1; i++) {
       sb.append(ConcordanceArrayWindow.tokenToString(strings.get(i)));
@@ -81,20 +72,27 @@ public abstract class Grammer {
     }
     return sb.toString();
   }
-  
+
   /**
-   * 
+   * Override to get a list of grams
+   *
+   * @param strings   list of unigrams to be combined into larger grams
+   * @param delimiter string to use to join unigrams
+   * @return list of xgrams
+   */
+  public abstract List<String> getGrams(List<String> strings, String delimiter);
+
+  /**
    * @return minimum gram
    */
-  public int getMinGram(){
+  public int getMinGram() {
     return minGram;
   }
-  
+
   /**
-   * 
    * @return maximum gram
    */
-  public int getMaxGram(){
+  public int getMaxGram() {
     return maxGram;
   }
 }

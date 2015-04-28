@@ -64,10 +64,10 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
         newIndexWriterConfig(analyzer)
-        .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
-        .setMergePolicy(newLogMergePolicy()));
+            .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
+            .setMergePolicy(newLogMergePolicy()));
 
-    String[] f1Docs = new String[] { 
+    String[] f1Docs = new String[]{
         "quick brown AND fox",//0
         "quick brown AND dog", //1
         "quick brown dog", //2
@@ -84,7 +84,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
         "blah saturday night fever with john travolta" //13
 
     };
-    String [] f2Docs = new String[] {
+    String[] f2Docs = new String[]{
         "zero",
         "one",
         "two",
@@ -134,9 +134,9 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
   public void testNegativeOnly() throws Exception {
     //negative only queries
-    compareHits("-fever", 0,1,2,3,4,5,6,7,8,9);
-    compareHits("-f1:fever", 0,1,2,3,4,5,6,7,8,9);
-    compareHits("-fever -brown", 3,4,5,6,7,8,9);
+    compareHits("-fever", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    compareHits("-f1:fever", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    compareHits("-fever -brown", 3, 4, 5, 6, 7, 8, 9);
   }
 
   public void testUnlimitedRange() throws Exception {
@@ -152,7 +152,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     String s = "cat dog AND elephant aardvark";
     Query q = parser.parse(s);
     assertTrue(q instanceof BooleanQuery);
-    BooleanQuery bq = (BooleanQuery)q;
+    BooleanQuery bq = (BooleanQuery) q;
     List<BooleanClause> clauses = bq.clauses();
     assertEquals(4, clauses.size());
     testForClause(clauses, "cat", Occur.SHOULD);
@@ -163,7 +163,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     s = "cat dog NOT elephant aardvark";
     q = parser.parse(s);
     assertTrue(q instanceof BooleanQuery);
-    bq = (BooleanQuery)q;
+    bq = (BooleanQuery) q;
     clauses = bq.clauses();
     assertEquals(4, clauses.size());
     testForClause(clauses, "cat", Occur.SHOULD);
@@ -174,7 +174,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     s = "cat +dog -elephant +aardvark";
     q = parser.parse(s);
     assertTrue(q instanceof BooleanQuery);
-    bq = (BooleanQuery)q;
+    bq = (BooleanQuery) q;
     clauses = bq.clauses();
     assertEquals(4, clauses.size());
     testForClause(clauses, "cat", Occur.SHOULD);
@@ -204,7 +204,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
   public void testBooleanOrHits() throws Exception {
     compareHits("f2:three (brown dog)", 0, 1, 2, 3);
     compareHits("f2:three (brown dog)~2", 1, 2, 3);
-  } 
+  }
 
   public void testBooleanHits() throws Exception {
     //test treatment of AND within phrase
@@ -217,18 +217,18 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
   private void testForClause(List<BooleanClause> clauses, String term, Occur occur) {
     assertTrue(clauses.contains(
-        new BooleanClause(
-            new SpanTermQuery(
-                new Term(FIELD1, term)),
+            new BooleanClause(
+                new SpanTermQuery(
+                    new Term(FIELD1, term)),
                 occur))
-        );
+    );
   }
-  
-  private void compareHits(String s, int ... docids ) throws Exception{
+
+  private void compareHits(String s, int... docids) throws Exception {
     compareHits(new SpanQueryParser(TEST_VERSION_CURRENT, FIELD1, analyzer), s, docids);
   }
 
-  private void compareHits(SpanQueryParser p, String s, int ... docids ) throws Exception{
+  private void compareHits(SpanQueryParser p, String s, int... docids) throws Exception {
     Query q = p.parse(s);
     TopScoreDocCollector results = TopScoreDocCollector.create(1000, true);
     searcher.search(q, results);
@@ -263,7 +263,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
         "dog OR",
         "dog NOT",
         "dog -",
-    "dog +"};
+        "dog +"};
 
     for (String s : strings) {
       testException(s, parser);
@@ -274,10 +274,11 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     try {
       p.parse(s);
       fail("didn't get expected exception");
-    } catch (ParseException expected) {}
+    } catch (ParseException expected) {
+    }
   }
 
-  public void testIsEscaped() throws Exception{
+  public void testIsEscaped() throws Exception {
     String[] notEscaped = new String[]{
         "abcd",
         "a\\\\d",
@@ -316,14 +317,14 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     Directory dir = newDirectory();
     RandomIndexWriter w = new RandomIndexWriter(random(), dir,
         newIndexWriterConfig(stopsAnalyzer)
-        .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
-        .setMergePolicy(newLogMergePolicy()));
-    String[] docs = new String[] { 
+            .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
+            .setMergePolicy(newLogMergePolicy()));
+    String[] docs = new String[]{
         "ab the the cd the the the ef the gh",
         "ab cd",
         "ab the ef"
     };
-    
+
     for (int i = 0; i < docs.length; i++) {
       Document doc = new Document();
       doc.add(newTextField(FIELD1, docs[i], Field.Store.YES));
@@ -333,32 +334,32 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     IndexSearcher s = newSearcher(r);
     w.close();
     SpanQueryParser p = new SpanQueryParser(TEST_VERSION_CURRENT, FIELD1, stopsAnalyzer);
-    assertHits( "-ab +the +cd", p, s, 0);
-    assertHits( "+ab +the +cd", p, s, 2);
-    assertHits( "+the", p, s, 0);
-    assertHits( "ab AND CD", p, s, 2);
-    assertHits( "ab AND the", p, s, 3);
-    assertHits( "ab OR the", p, s, 3);
-    assertHits( "(ab the cd)~2", p, s, 2);
-    assertHits( "(ab the cd)~3", p, s, 0);
-    assertHits( "ab AND (the OR cd)", p, s, 2);
-    assertHits( "ab AND (the AND cd)", p, s, 2);
-    assertHits( "cd OR (the OR ef)", p, s, 3);
-    assertHits( "cd AND (the AND ef)", p, s, 1);
+    assertHits("-ab +the +cd", p, s, 0);
+    assertHits("+ab +the +cd", p, s, 2);
+    assertHits("+the", p, s, 0);
+    assertHits("ab AND CD", p, s, 2);
+    assertHits("ab AND the", p, s, 3);
+    assertHits("ab OR the", p, s, 3);
+    assertHits("(ab the cd)~2", p, s, 2);
+    assertHits("(ab the cd)~3", p, s, 0);
+    assertHits("ab AND (the OR cd)", p, s, 2);
+    assertHits("ab AND (the AND cd)", p, s, 2);
+    assertHits("cd OR (the OR ef)", p, s, 3);
+    assertHits("cd AND (the AND ef)", p, s, 1);
     //do we want this behavior?
-    assertHits( "-the", p, s, 0);
-    
-    assertHits ("\"ab cd\"", p, s, 1);
-    assertHits ("\"ab a a cd\"", p, s, 2);
-    assertHits ("\"ab a cd\"~1", p, s, 2);
-    assertHits ("\"ab a cd\"~>1", p, s, 2);
-    assertHits ("\"cd a a ab\"", p, s, 0);
-    assertHits ("\"cd a ab\"~1", p, s, 2);
-    
+    assertHits("-the", p, s, 0);
+
+    assertHits("\"ab cd\"", p, s, 1);
+    assertHits("\"ab a a cd\"", p, s, 2);
+    assertHits("\"ab a cd\"~1", p, s, 2);
+    assertHits("\"ab a cd\"~>1", p, s, 2);
+    assertHits("\"cd a a ab\"", p, s, 0);
+    assertHits("\"cd a ab\"~1", p, s, 2);
+
     r.close();
     dir.close();
   }
-  
+
   private void assertHits(String qString, SpanQueryParser p, IndexSearcher s, int expected) throws Exception {
     Query q = p.parse(qString);
     TopScoreDocCollector results = TopScoreDocCollector.create(1000, true);

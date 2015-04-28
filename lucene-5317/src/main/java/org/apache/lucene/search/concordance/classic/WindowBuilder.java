@@ -34,24 +34,21 @@ import java.util.Set;
 
 
 /**
- * 
  * Builds a ConcordanceWindow.
- * 
+ * <p/>
  * This class includes basic functionality for building a window from token offsets.
- * 
+ * <p/>
  * It also calls three other components:
  * <ol>
  * <li>DocIdBuilder - extracts or builds a unique key for each document</li>
  * <li>DocMetadataExtractor - extracts metadata from a document to be stored with each window</li>
  * <li>SortKeyBuilder - builds a window's sort key</li>
  * </ol>
- * 
  */
 public class WindowBuilder {
 
-  private static String INTER_MULTIVALUE_FIELD_PADDING = " | ";
   private final static String EMPTY_STRING = "";
-
+  private static String INTER_MULTIVALUE_FIELD_PADDING = " | ";
   private final int tokensBefore;
   private final int tokensAfter;
   private final SortKeyBuilder sortKeyBuilder;
@@ -59,7 +56,7 @@ public class WindowBuilder {
   private final DocIdBuilder docIdBuilder;
   private final int offsetGap;
 
-  public WindowBuilder(){
+  public WindowBuilder() {
     this(
         10, //tokens before
         10, //tokens after
@@ -67,9 +64,9 @@ public class WindowBuilder {
         new DefaultSortKeyBuilder(ConcordanceSortOrder.PRE),
         new SimpleDocMetadataExtractor(),
         new IndexIdDocIdBuilder()
-        );
+    );
   }
-  
+
   public WindowBuilder(int tokensBefore, int tokensAfter, int offsetGap) {
     this(
         tokensBefore,
@@ -80,8 +77,9 @@ public class WindowBuilder {
         new IndexIdDocIdBuilder()
     );
   }
+
   public WindowBuilder(int tokensBefore, int tokensAfter, int offsetGap, SortKeyBuilder sortKeyBuilder,
-      DocMetadataExtractor metadataExtractor, DocIdBuilder docIdBuilder) {
+                       DocMetadataExtractor metadataExtractor, DocIdBuilder docIdBuilder) {
     this.tokensBefore = tokensBefore;
     this.tokensAfter = tokensAfter;
     this.offsetGap = offsetGap;
@@ -93,25 +91,21 @@ public class WindowBuilder {
   /**
    * Makes the assumption that the target token start and target token end can
    * be found. If not, this returns a null.
-   * @param uniqueDocID ephemeral internal lucene unique document id
-   * @param targetTokenStart
-   *          Target's start token
-   * 
-   * @param targetTokenEnd
-   *          Target's end token
-   * @param fieldValues field values
-   * @param metadata
-   *          Metadata to be stored with the window
-   * @param offsets
-   *          TokenOffsetResults from
+   *
+   * @param uniqueDocID      ephemeral internal lucene unique document id
+   * @param targetTokenStart Target's start token
+   * @param targetTokenEnd   Target's end token
+   * @param fieldValues      field values
+   * @param metadata         Metadata to be stored with the window
+   * @param offsets          TokenOffsetResults from
    * @return ConcordanceWindow or null if character offset information cannot be
-   *         found for both the targetTokenStart and the targetTokenEnd
+   * found for both the targetTokenStart and the targetTokenEnd
    */
   public ConcordanceWindow buildConcordanceWindow(String uniqueDocID,
-      int targetTokenStart, int targetTokenEnd, 
-      String[] fieldValues,
-      RandomAccessCharOffsetContainer offsets, Map<String, String> metadata) 
-          throws TargetTokenNotFoundException,
+                                                  int targetTokenStart, int targetTokenEnd,
+                                                  String[] fieldValues,
+                                                  RandomAccessCharOffsetContainer offsets, Map<String, String> metadata)
+      throws TargetTokenNotFoundException,
       IllegalArgumentException {
 
     if (targetTokenStart < 0 || targetTokenEnd < 0) {
@@ -122,11 +116,11 @@ public class WindowBuilder {
       throw new IllegalArgumentException(
           "targetTokenEnd must be >= targetTokenStart");
     }
-    
+
     int targetCharStart = offsets.getCharacterOffsetStart(targetTokenStart);
     int targetCharEnd = offsets.getCharacterOffsetEnd(targetTokenEnd);
 
-    if (targetCharStart < 0 || 
+    if (targetCharStart < 0 ||
         targetCharEnd < 0) {
       throw new TargetTokenNotFoundException(
           "couldn't find character offsets for a target token.\n"
@@ -135,27 +129,27 @@ public class WindowBuilder {
 
     OffsetAttribute preCharOffset = getPreCharOffset(targetTokenStart,
         targetCharStart, offsets);
-    String preString = (preCharOffset == null) ? EMPTY_STRING : 
-      SimpleAnalyzerUtil.substringFromMultiValuedFields(
-          preCharOffset.startOffset(), preCharOffset.endOffset(), fieldValues, 
-          offsetGap, INTER_MULTIVALUE_FIELD_PADDING);
+    String preString = (preCharOffset == null) ? EMPTY_STRING :
+        SimpleAnalyzerUtil.substringFromMultiValuedFields(
+            preCharOffset.startOffset(), preCharOffset.endOffset(), fieldValues,
+            offsetGap, INTER_MULTIVALUE_FIELD_PADDING);
 
     OffsetAttribute postCharOffset = getPostCharOffset(targetTokenEnd,
         targetCharEnd, offsets);
 
-    String postString = (postCharOffset == null) ? EMPTY_STRING : 
-      SimpleAnalyzerUtil.substringFromMultiValuedFields(
-          postCharOffset.startOffset(), postCharOffset.endOffset(), fieldValues, 
-          offsetGap, INTER_MULTIVALUE_FIELD_PADDING);
+    String postString = (postCharOffset == null) ? EMPTY_STRING :
+        SimpleAnalyzerUtil.substringFromMultiValuedFields(
+            postCharOffset.startOffset(), postCharOffset.endOffset(), fieldValues,
+            offsetGap, INTER_MULTIVALUE_FIELD_PADDING);
 
     String targString = SimpleAnalyzerUtil.substringFromMultiValuedFields(
-        targetCharStart, targetCharEnd, fieldValues, 
+        targetCharStart, targetCharEnd, fieldValues,
         offsetGap, INTER_MULTIVALUE_FIELD_PADDING);
     ConcordanceSortKey sortKey = sortKeyBuilder.buildKey(uniqueDocID,
         targetTokenStart, targetTokenEnd, offsets, tokensBefore, tokensAfter, metadata);
     int charStart = (preCharOffset == null) ? targetCharStart :
-      preCharOffset.startOffset();
-    
+        preCharOffset.startOffset();
+
     int charEnd = (postCharOffset == null) ? targetCharEnd : postCharOffset.endOffset();
     return new ConcordanceWindow(uniqueDocID, charStart, charEnd, preString, targString,
         postString, sortKey, metadata);
@@ -164,8 +158,8 @@ public class WindowBuilder {
 
 
   private OffsetAttribute getPreCharOffset(int targetTokenStart,
-      int targetCharStart,
-      RandomAccessCharOffsetContainer charOffsets) {
+                                           int targetCharStart,
+                                           RandomAccessCharOffsetContainer charOffsets) {
     if (tokensBefore == 0)
       return null;
 
@@ -183,14 +177,14 @@ public class WindowBuilder {
       return null;
     }
     int contextCharEnd = Math.max(contextCharStart, targetCharStart - 1);
-    
+
     return buildOffsetAttribute(contextCharStart, contextCharEnd);
   }
 
   private OffsetAttribute getPostCharOffset(int targetTokenEnd,
-      int targetCharEnd,
-      RandomAccessCharOffsetContainer charOffsets) {
-    
+                                            int targetCharEnd,
+                                            RandomAccessCharOffsetContainer charOffsets) {
+
     if (tokensAfter == 0)
       return null;
 
@@ -198,7 +192,7 @@ public class WindowBuilder {
     int contextCharStart = targetCharEnd;
     int contextCharEnd = charOffsets.getClosestCharEnd(
         contextTokenEnd, targetTokenEnd + 1);
-    
+
     if (contextCharStart >= contextCharEnd) {
       return null;
     }
@@ -215,22 +209,23 @@ public class WindowBuilder {
   public Set<String> getFieldSelector() {
     Set<String> set = new HashSet<String>();
     set.addAll(metadataExtractor.getFieldSelector());
-    if (docIdBuilder instanceof FieldBasedDocIdBuilder){
-      set.addAll(((FieldBasedDocIdBuilder)docIdBuilder).getFields());
+    if (docIdBuilder instanceof FieldBasedDocIdBuilder) {
+      set.addAll(((FieldBasedDocIdBuilder) docIdBuilder).getFields());
     }
     return set;
   }
 
   /**
    * Simple wrapper around metadataExtractor
+   *
    * @param document
    * @return
    */
-  public Map<String, String> extractMetadata(Document document) {    
+  public Map<String, String> extractMetadata(Document document) {
     return metadataExtractor.extract(document);
   }
 
-  public String getUniqueDocumentId(Document document, long docId){
+  public String getUniqueDocumentId(Document document, long docId) {
     return docIdBuilder.build(document, docId);
   }
 

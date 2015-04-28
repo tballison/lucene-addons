@@ -37,56 +37,55 @@ public class ConcordanceConfig {
     return maxWindows;
   }
 
-
-  public void setAllowTargetOverlaps(boolean allowTargetOverlaps) {
-    this.allowTargetOverlaps = allowTargetOverlaps;
+  public void setMaxWindows(int maxWindows) {
+    this.maxWindows = maxWindows;
   }
 
   public boolean isAllowTargetOverlaps() {
     return allowTargetOverlaps;
   }
 
-  public void setMaxContextDisplaySizeChars(int maxContextDisplaySizeChars) {
-    this.maxContextDisplaySizeChars = maxContextDisplaySizeChars;
+  public void setAllowTargetOverlaps(boolean allowTargetOverlaps) {
+    this.allowTargetOverlaps = allowTargetOverlaps;
   }
 
   public int getMaxContextDisplaySizeChars() {
     return maxContextDisplaySizeChars;
   }
 
-  public void setMaxTargetDisplaySizeChars(int maxTargetDisplaySizeChars) {
-    this.maxTargetDisplaySizeChars = maxTargetDisplaySizeChars;
+  public void setMaxContextDisplaySizeChars(int maxContextDisplaySizeChars) {
+    this.maxContextDisplaySizeChars = maxContextDisplaySizeChars;
   }
 
   public int getMaxTargetDisplaySizeChars() {
     return maxTargetDisplaySizeChars;
   }
 
-  public void setMaxWindows(int maxWindows) {
-    this.maxWindows = maxWindows;
-  }
-
-  public void setTokensAfter(int tokensAfter) {
-    this.tokensAfter = tokensAfter;
+  public void setMaxTargetDisplaySizeChars(int maxTargetDisplaySizeChars) {
+    this.maxTargetDisplaySizeChars = maxTargetDisplaySizeChars;
   }
 
   public int getTokensAfter() {
     return tokensAfter;
   }
 
-  public void setTokensBefore(int tokensBefore) {
-    this.tokensBefore = tokensBefore;
+  public void setTokensAfter(int tokensAfter) {
+    this.tokensAfter = tokensAfter;
   }
 
   public int getTokensBefore() {
     return tokensBefore;
   }
 
-  public void setSortOrder(ConcordanceSortOrder sortOrder) {
-    this.sortOrder = sortOrder;
+  public void setTokensBefore(int tokensBefore) {
+    this.tokensBefore = tokensBefore;
   }
 
   public ConcordanceSortOrder getSortOrder() {
     return sortOrder;
+  }
+
+  public void setSortOrder(ConcordanceSortOrder sortOrder) {
+    this.sortOrder = sortOrder;
   }
 }

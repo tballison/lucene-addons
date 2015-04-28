@@ -20,20 +20,28 @@ package org.apache.lucene.queryparser.spans;
 class SQPBooleanOpToken implements SQPToken {
 
   private final int type;
-  
+
   public SQPBooleanOpToken(int type) {
     this.type = type;
   }
-  
+
+  public static boolean isMod(int i) {
+    if (i == SpanQueryParserBase.CONJ_AND ||
+        i == SpanQueryParserBase.CONJ_OR) {
+      return false;
+    }
+    return true;
+  }
+
   public int getType() {
     return type;
   }
 
   public boolean isConj() {
-      return type == SpanQueryParserBase.CONJ_AND ||
-              type == SpanQueryParserBase.CONJ_OR;
+    return type == SpanQueryParserBase.CONJ_AND ||
+        type == SpanQueryParserBase.CONJ_OR;
   }
-  
+
   @Override
   public int hashCode() {
     final int prime = 31;
@@ -64,13 +72,5 @@ class SQPBooleanOpToken implements SQPToken {
     builder.append(type);
     builder.append("]");
     return builder.toString();
-  }
-
-  public static boolean isMod(int i) {
-    if (i == SpanQueryParserBase.CONJ_AND ||
-        i == SpanQueryParserBase.CONJ_OR) {
-      return false;
-    }
-    return true;
   }
 }

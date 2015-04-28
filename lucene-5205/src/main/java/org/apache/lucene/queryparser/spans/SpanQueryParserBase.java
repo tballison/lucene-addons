@@ -28,38 +28,55 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;
 import org.apache.lucene.queryparser.flexible.standard.parser.EscapeQuerySyntaxImpl;
 import org.apache.lucene.sandbox.queries.SlowFuzzyQuery;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.FuzzyQuery;
+import org.apache.lucene.search.MatchAllDocsQuery;
+import org.apache.lucene.search.MultiPhraseQuery;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
-import org.apache.lucene.search.spans.*;
+import org.apache.lucene.search.PhraseQuery;
+import org.apache.lucene.search.PrefixQuery;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.RegexpQuery;
+import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
+import org.apache.lucene.search.spans.SpanNearQuery;
+import org.apache.lucene.search.spans.SpanNotQuery;
+import org.apache.lucene.search.spans.SpanOrQuery;
+import org.apache.lucene.search.spans.SpanQuery;
+import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.util.BytesRef;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * This class overrides some important functionality within QueryParserBase, esp.
  * for generating terminal spanquery nodes: term, range, regex, fuzzy, etc.
- * <p>
- * When SpanQueries are eventually nuked, there should be an easyish 
+ * <p/>
+ * When SpanQueries are eventually nuked, there should be an easyish
  * refactoring of classes that extend this class to extend QueryParserBase.
- * <p>
+ * <p/>
  * This should also allow for an easy transfer to javacc or similar.
- * 
  */
 abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
   //better to make these public in QueryParserBase
 
   //they are needed in addClause
-  public static final int CONJ_NONE   = 0;
-  public static final int CONJ_AND    = 1;
-  public static final int CONJ_OR     = 2;
+  public static final int CONJ_NONE = 0;
+  public static final int CONJ_AND = 1;
+  public static final int CONJ_OR = 2;
 
-  public static final int MOD_NONE    = 0;
-  public static final int MOD_NOT     = 10;
-  public static final int MOD_REQ     = 11;
+  public static final int MOD_NONE = 0;
+  public static final int MOD_NOT = 10;
+  public static final int MOD_REQ = 11;
 
   public static final float UNSPECIFIED_BOOST = -1.0f;
   public static final int UNSPECIFIED_SLOP = -1;
@@ -67,15 +84,12 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   public static final float DEFAULT_BOOST = 1.0f;
 
   public static final boolean DEFAULT_IN_ORDER = true;
-
-  private static final Pattern FUZZY_PATTERN = Pattern
-      .compile("~(>)?(?:(\\d+)?(?:\\.(\\d+))?)?(?:,(\\d+))?$");
-  private final Pattern WILDCARD_PATTERN = Pattern.compile("([?*]+)");
-  
   protected static final int PREFIX = 0;
   protected static final int WILDCARD = 1;
   protected static final int NEITHER_PREFIX_NOR_WILDCARD = 2;
-
+  private static final Pattern FUZZY_PATTERN = Pattern
+      .compile("~(>)?(?:(\\d+)?(?:\\.(\\d+))?)?(?:,(\\d+))?$");
+  private final Pattern WILDCARD_PATTERN = Pattern.compile("([?*]+)");
   private int spanNearMaxDistance = 100;
   private int spanNotNearMaxDistance = 50;
 
@@ -83,18 +97,53 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   //Unsupported operations
   ///////
 
-  /**
-   * There is no direct parallel in the SpanQuery 
-   * world for position increments.  This always throws an UnsupportedOperationException.
-   */
-  @Override
-  public void setEnablePositionIncrements(boolean enable) {
-    throw new UnsupportedOperationException("Sorry, position increments are not supported by SpanQueries");
+  public static Term unescape(Term t) {
+
+    String txt = t.text();
+    try {
+      UnescapedCharSequence un = EscapeQuerySyntaxImpl.discardEscapeChar(txt);
+
+      if (!un.toString().equals(txt)) {
+        t = new Term(t.field(), un.toString());
+      }
+    } catch (org.apache.lucene.queryparser.flexible.standard.parser.ParseException e) {
+      //swallow;
+    }
+
+    return t;
+  }
+
+  public static String unescape(String s) {
+    try {
+      UnescapedCharSequence un = EscapeQuerySyntaxImpl.discardEscapeChar(s);
+      return un.toString();
+    } catch (org.apache.lucene.queryparser.flexible.standard.parser.ParseException e) {
+      //swallow;
+    }
+
+    return s;
   }
 
   /**
-   * @see #setEnablePositionIncrements(boolean)
+   * Copied nearly exactly from FuzzyQuery's floatToEdits because
+   * FuzzyQuery's floatToEdits requires that the return value
+   * be <= LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE
+   *
+   * @return edits
+   */
+  public static int unboundedFloatToEdits(float minimumSimilarity, int termLen) {
+    if (minimumSimilarity >= 1f) {
+      return (int) minimumSimilarity;
+    } else if (minimumSimilarity == 0.0f) {
+      return 0; // 0 means exact, not infinite # of edits!
+    } else {
+      return (int) ((1f - minimumSimilarity) * termLen);
+    }
+  }
+
+  /**
    * @return nothing, ever
+   * @see #setEnablePositionIncrements(boolean)
    */
   @Override
   public boolean getEnablePositionIncrements() {
@@ -102,7 +151,22 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
+   * There is no direct parallel in the SpanQuery
+   * world for position increments.  This always throws an UnsupportedOperationException.
+   */
+  @Override
+  public void setEnablePositionIncrements(boolean enable) {
+    throw new UnsupportedOperationException("Sorry, position increments are not supported by SpanQueries");
+  }
+
+  ///////
+  // Override getXQueries to return span queries
+  // Lots of boilerplate.  Sorry.
+  //////
+
+  /**
    * Unsupported. Try newNearQuery. Always throws UnsupportedOperationException.
+   *
    * @return nothing, ever
    */
   @Override
@@ -112,6 +176,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
   /**
    * Unsupported. Try newNearQuery. Always throws UnsupportedOperationException.
+   *
    * @return nothing, ever
    */
   @Override
@@ -127,12 +192,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     return new SpanNearQuery(queries, slop, inOrder, collectPayloads);
   }
 
-  ///////
-  // Override getXQueries to return span queries
-  // Lots of boilerplate.  Sorry.
-  //////
-
-  @Override 
+  @Override
   protected Query newRegexpQuery(Term t) {
     RegexpQuery query = new RegexpQuery(t);
     query.setRewriteMethod(getMultiTermRewriteMethod(t.field()));
@@ -143,6 +203,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Currently returns multiTermRewriteMethod no matter the field.
    * This allows for hooks for overriding to handle
    * field-specific MultiTermRewriteMethod handling
+   *
    * @return RewriteMethod for a given field
    */
   public RewriteMethod getMultiTermRewriteMethod(String field) {
@@ -163,39 +224,38 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * {@link #getWildcardQuery}). Called when parser parses
    * an input term token that has the fuzzy suffix (~) appended.
    *
-   * @param field Name of the field query will use.
+   * @param field   Name of the field query will use.
    * @param termStr Term token to use for building term for the query
-   *
    * @return Resulting {@link org.apache.lucene.search.Query} built for the term
-   * @exception org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
+   * @throws org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
    */
   protected Query getFuzzyQuery(String field, String termStr, float minSimilarity) throws ParseException {
     return getFuzzyQuery(field, termStr, minSimilarity, getFuzzyPrefixLength(), FuzzyQuery.defaultTranspositions);
   }
-  
+
   /**
    * Factory method for generating a query (similar to
    * {@link #getWildcardQuery}). Called when parser parses
    * an input term token that has the fuzzy suffix (~) appended.
    *
-   * @param field Name of the field query will use.
+   * @param field   Name of the field query will use.
    * @param termStr Term token to use for building term for the query
-   *
    * @return Resulting {@link org.apache.lucene.search.Query} built for the term
-   * @exception org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
+   * @throws org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
    */
   protected Query getFuzzyQuery(String field, String termStr,
-      float minSimilarity, int prefixLength) throws ParseException {
+                                float minSimilarity, int prefixLength) throws ParseException {
     return getFuzzyQuery(field, termStr, minSimilarity, prefixLength, FuzzyQuery.defaultTranspositions);
   }
 
   /**
    * nocommit
+   *
    * @return query
    * @throws org.apache.lucene.queryparser.classic.ParseException, RuntimeException if there was an IOException from the analysis process
    */
   protected Query getFuzzyQuery(String field, String termStr,
-      float minSimilarity, int prefixLength, boolean transpositions) throws ParseException {
+                                float minSimilarity, int prefixLength, boolean transpositions) throws ParseException {
     if (getNormMultiTerms() == NORM_MULTI_TERMS.ANALYZE) {
       termStr = analyzeMultitermTermParseEx(field, termStr).utf8ToString();
     } else if (getNormMultiTerms() == NORM_MULTI_TERMS.LOWERCASE) {
@@ -211,9 +271,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @return fuzzy query
    */
   protected Query newFuzzyQuery(Term t, float minimumSimilarity, int prefixLength,
-      boolean transpositions) {
+                                boolean transpositions) {
 
-    if (minimumSimilarity <=0.0f) {
+    if (minimumSimilarity <= 0.0f) {
       return newTermQuery(t);
     }
     String text = t.text();
@@ -223,14 +283,14 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       //if both are < 1.0 then make sure that parameter that was passed in
       //is >= than fuzzyminsim
       if (minimumSimilarity < 1.0f) {
-        minimumSimilarity = (minimumSimilarity < getFuzzyMinSim())? getFuzzyMinSim() : minimumSimilarity;
+        minimumSimilarity = (minimumSimilarity < getFuzzyMinSim()) ? getFuzzyMinSim() : minimumSimilarity;
         numEdits = unboundedFloatToEdits(minimumSimilarity, len);
       } else {
         //if fuzzyMinSim < 1.0 and the parameter that was passed in
         //is >= 1, convert that to a %, test against fuzzyminsim and then
         //recalculate numEdits
-        float tmpSim = (len-minimumSimilarity)/(float)len;
-        tmpSim = (tmpSim < getFuzzyMinSim())? getFuzzyMinSim() : tmpSim;
+        float tmpSim = (len - minimumSimilarity) / (float) len;
+        tmpSim = (tmpSim < getFuzzyMinSim()) ? getFuzzyMinSim() : tmpSim;
         numEdits = unboundedFloatToEdits(tmpSim, len);
       }
     } else {
@@ -238,9 +298,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
       if (minimumSimilarity < 1.0f) {
         int tmpNumEdits = unboundedFloatToEdits(minimumSimilarity, len);
-        numEdits = (tmpNumEdits >= (int)getFuzzyMinSim())?(int)getFuzzyMinSim() : tmpNumEdits;
+        numEdits = (tmpNumEdits >= (int) getFuzzyMinSim()) ? (int) getFuzzyMinSim() : tmpNumEdits;
       } else {
-        numEdits = (minimumSimilarity >= getFuzzyMinSim())? (int) getFuzzyMinSim() : (int)minimumSimilarity;
+        numEdits = (minimumSimilarity >= getFuzzyMinSim()) ? (int) getFuzzyMinSim() : (int) minimumSimilarity;
       }
     }
     /*
@@ -251,7 +311,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
      * an Automaton for numEdits <= 2.
      */
     if (numEdits <= FuzzyQuery.defaultMaxEdits) {
-      FuzzyQuery fq =new FuzzyQuery(t, numEdits, prefixLength, FuzzyQuery.defaultMaxExpansions,
+      FuzzyQuery fq = new FuzzyQuery(t, numEdits, prefixLength, FuzzyQuery.defaultMaxExpansions,
           transpositions);
       fq.setRewriteMethod(getMultiTermRewriteMethod(t.field()));
       return new SpanMultiTermQueryWrapper<FuzzyQuery>(fq);
@@ -277,21 +337,20 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * character as its last character. Since this is a special case
    * of generic wildcard term, and such a query can be optimized easily,
    * this usually results in a different query object.
-   *<p>
+   * <p/>
    * Depending on settings, a prefix term may be lower-cased
    * automatically. It will not go through the default Analyzer,
    * however, since normal Analyzers are unlikely to work properly
    * with wildcard templates.
-   *<p>
+   * <p/>
    * Can be overridden by extending classes, to provide custom handling for
    * wild card queries, which may be necessary due to missing analyzer calls.
    *
-   * @param field Name of the field query will use.
+   * @param field   Name of the field query will use.
    * @param termStr Term token to use for building term for the query
-   *    (<b>without</b> trailing '*' character!)
-   *
+   *                (<b>without</b> trailing '*' character!)
    * @return Resulting {@link org.apache.lucene.search.Query} built for the term
-   * @exception org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
+   * @throws org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
    */
   protected Query getPrefixQuery(String field, String termStr) throws ParseException {
     if (!getAllowLeadingWildcard() && termStr.startsWith("*"))
@@ -318,21 +377,20 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * parses an input term token that contains one or more wildcard
    * characters (? and *), but is not a prefix term token (one
    * that has just a single * character at the end)
-   *<p>
+   * <p/>
    * Depending on settings, prefix term may be lower-cased
    * automatically. It will not go through the default Analyzer,
    * however, since normal Analyzers are unlikely to work properly
    * with wildcard templates.
-   *<p>
+   * <p/>
    * Can be overridden by extending classes, to provide custom handling for
    * wildcard queries, which may be necessary due to missing analyzer calls.
    *
-   * @param field Name of the field query will use.
+   * @param field   Name of the field query will use.
    * @param termStr Term token that contains one or more wild card
-   *   characters (? or *), but is not simple prefix term
-   *
+   *                characters (? or *), but is not simple prefix term
    * @return Resulting {@link org.apache.lucene.search.Query} built for the term
-   * @exception org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
+   * @throws org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
    */
   @Override
   protected Query getWildcardQuery(String field, String termStr) throws ParseException {
@@ -358,20 +416,19 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Will convert to lowercase if {@link #getLowercaseExpandedTerms()} == true.
    * Will analyze terms if {@link #getAnalyzeRangeTerms()} == true.
    *
-   *
-   * @param field Field
-   * @param part1 min
-   * @param part2 max
+   * @param field          Field
+   * @param part1          min
+   * @param part2          max
    * @param startInclusive true if the start of the range is inclusive
-   * @param endInclusive true if the end of the range is inclusive
+   * @param endInclusive   true if the end of the range is inclusive
    * @return new {@link org.apache.lucene.search.TermRangeQuery} instance
    */
   @Override
   protected Query newRangeQuery(String field, String part1, String part2,
-      boolean startInclusive, boolean endInclusive) {
+                                boolean startInclusive, boolean endInclusive) {
     //TODO: modify newRangeQuery in QueryParserBase to throw ParseException for failure of analysis
     //need to copy and paste this until we can change analyzeMultiterm(String field, String part) to protected
-    //if we just returned a spanmultitermwrapper around super.newRangeQuery(), analyzeMultiterm would use 
+    //if we just returned a spanmultitermwrapper around super.newRangeQuery(), analyzeMultiterm would use
     //the analyzer, but not the multitermAnalyzer
     String start = null;
     String end = null;
@@ -391,7 +448,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       if ((start == null && getAnalyzeRangeTerms()) &&
           getNormMultiTerms() == NORM_MULTI_TERMS.LOWERCASE) {
         start = part1.toLowerCase(getLocale());
-      } else if (start == null){
+      } else if (start == null) {
         start = part1;
       }
     }
@@ -399,7 +456,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       end = null;
     } else {
       if (getAnalyzeRangeTerms()) {
-        try { 
+        try {
           end = analyzeMultitermTermParseEx(field, part2).utf8ToString();
         } catch (ParseException e) {
           //swallow..doh!
@@ -425,11 +482,12 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   /**
    * This identifies and then builds the various single term and/or multiterm
    * queries, including MatchAllDocsQuery. This does not identify a regex or range term query!
-   * 
-   * <p>
-   * For {@link org.apache.lucene.search.FuzzyQuery}, this defaults to 
+   * <p/>
+   * <p/>
+   * For {@link org.apache.lucene.search.FuzzyQuery}, this defaults to
    * {@link org.apache.lucene.search.FuzzyQuery#defaultMaxEdits}
    * if no value is specified after the ~.
+   *
    * @return SpanQuery, MatchAllDocsQuery or null if termText is a stop word
    */
   public Query buildAnySingleTermQuery(String field, String termText, boolean quoted) throws ParseException {
@@ -446,7 +504,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     // is this a fuzzy term?
     Matcher m = FUZZY_PATTERN.matcher(termText);
 
-    if (m.find() && ! SpanQueryParserUtil.isCharEscaped(termText, m.start())) {
+    if (m.find() && !SpanQueryParserUtil.isCharEscaped(termText, m.start())) {
       String term = termText.substring(0, m.start());
       String transposString = m.group(1);
       String minSimilarityString = m.group(2);
@@ -496,7 +554,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     if (q != null) {
       return q;
     }
-    // treat as basic single term query    
+    // treat as basic single term query
     return getFieldQuery(field, termText, quoted);
   }
 
@@ -508,7 +566,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     Matcher m = WILDCARD_PATTERN.matcher(termText);
     Set<Integer> ws = new HashSet<Integer>();
     while (m.find()) {
-      if (! SpanQueryParserUtil.isCharEscaped(termText, m.start())) {
+      if (!SpanQueryParserUtil.isCharEscaped(termText, m.start())) {
         ws.add(m.start());
       }
     }
@@ -544,7 +602,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     Query query = getFieldQuery(field, queryText, true);
 
     if (query instanceof SpanNearQuery) {
-      if (((SpanNearQuery)query).getSlop() != slop) {
+      if (((SpanNearQuery) query).getSlop() != slop) {
         slop = (spanNearMaxDistance > -1 && slop > spanNearMaxDistance) ? spanNearMaxDistance : slop;
         SpanQuery[] clauses = ((SpanNearQuery) query).getClauses();
         query = new SpanNearQuery(clauses, slop, true);
@@ -553,19 +611,20 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
     return query;
   }
-  
+
   /**
    * Build what appears to be a simple single term query. If the analyzer breaks
    * it into multiple terms, treat that as a "phrase" or as an "or" depending on
    * the value of {@link #autoGeneratePhraseQueries}.
-   * 
+   * <p/>
    * If the analyzer is null, this returns {@link #handleNullAnalyzer(String, String)}
-   * 
+   * <p/>
    * Can return null!
+   *
    * @param quoted -- is the term quoted
    * @return query
    */
-  @Override 
+  @Override
   protected Query newFieldQuery(Analyzer analyzer, String fieldName, String termText, boolean quoted)
       throws ParseException {
     if (analyzer == null) {
@@ -617,8 +676,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       //source.end();
       // close original stream - all tokens buffered
       source.close();
-    }
-    catch (IOException e) {
+    } catch (IOException e) {
       ParseException p = new ParseException("Cannot close TokenStream analyzing query text");
       p.initCause(e);
       throw p;
@@ -648,7 +706,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
         } else {
           while (buffer.incrementToken()) {
             termAtt.fillBytesRef();
-            queries.add((SpanTermQuery)newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+            queries.add((SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
           }
         }
       } catch (IOException e) {
@@ -658,7 +716,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       for (SpanQuery piece : queries) {
         if (piece != null) {
           nonEmpties.add(piece);
-        } 
+        }
       }
 
       if (nonEmpties.size() == 0) {
@@ -667,7 +725,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       if (nonEmpties.size() == 1) {
         return nonEmpties.get(0);
       }
-      
+
       SpanQuery[] ret = nonEmpties
           .toArray(new SpanQuery[nonEmpties.size()]);
       if (quoted || getAutoGeneratePhraseQueries() == true) {
@@ -681,6 +739,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   /**
    * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
    * with no modifications to termText
+   *
    * @return query
    */
   public Query handleNullAnalyzer(String fieldName, String termText) {
@@ -694,20 +753,21 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   /**
    * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
    * or prefix with no modifications to termText.
+   *
    * @return query
    */
   public Query handleNullAnalyzerPrefix(String fieldName, String prefix) {
     return new SpanTermQuery(new Term(fieldName, prefix));
   }
-  
+
   /**
    * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
    * with no modifications to termText
-   * 
+   *
    * @return query
    */
   public Query handleNullAnalyzerRange(String fieldName, String start,
-      String end, boolean startInclusive, boolean endInclusive) {
+                                       String end, boolean startInclusive, boolean endInclusive) {
     final TermRangeQuery query =
         TermRangeQuery.newStringRange(fieldName, start, end, startInclusive, endInclusive);
 
@@ -716,59 +776,59 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   private void analyzeComplexSingleTerm(String fieldName,
-      CachingTokenFilter ts, TermToBytesRefAttribute termAtt, BytesRef bytes,
-      OffsetAttribute offAtt,
-      List<SpanQuery> queries) throws IOException {
+                                        CachingTokenFilter ts, TermToBytesRefAttribute termAtt, BytesRef bytes,
+                                        OffsetAttribute offAtt,
+                                        List<SpanQuery> queries) throws IOException {
     int lastStart = -1;
     while (ts.incrementToken()) {
       termAtt.fillBytesRef();
       //if start is the same, treat it as a synonym...ignore end because
       //of potential for shingles
       if (lastStart > -1 && offAtt.startOffset() == lastStart) {
-        handleSyn(queries, (SpanTermQuery)newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+        handleSyn(queries, (SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
       } else {
-        queries.add((SpanTermQuery)newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+        queries.add((SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
       }
       lastStart = offAtt.startOffset();
     }
   }
 
   private void analyzeComplexSingleTerm(String fieldName,
-      CachingTokenFilter ts, TermToBytesRefAttribute termAtt, BytesRef bytes,
-      PositionIncrementAttribute posAtt,
-      List<SpanQuery> queries) throws IOException {
+                                        CachingTokenFilter ts, TermToBytesRefAttribute termAtt, BytesRef bytes,
+                                        PositionIncrementAttribute posAtt,
+                                        List<SpanQuery> queries) throws IOException {
     while (ts.incrementToken()) {
       termAtt.fillBytesRef();
       if (posAtt.getPositionIncrement() == 0) {
-        handleSyn(queries, (SpanTermQuery)newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+        handleSyn(queries, (SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
       } else {
         //add null for stop words
         for (int i = 1; i < posAtt.getPositionIncrement(); i++) {
           queries.add(null);
         }
-        queries.add((SpanTermQuery)newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+        queries.add((SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
       }
     }
   }
 
   private void handleSyn(List<SpanQuery> queries, SpanQuery currQuery) {
-    assert(queries != null);
+    assert (queries != null);
     //grab the last query added to queries
     SpanQuery last = null;
     boolean removed = false;
     if (queries.size() > 0) {
-      last = queries.remove(queries.size()-1);
+      last = queries.remove(queries.size() - 1);
       removed = true;
     }
     //if it exists and does not equal null
     if (last != null) {
       if (last instanceof SpanOrQuery) {
-        ((SpanOrQuery)last).addClause(currQuery);
+        ((SpanOrQuery) last).addClause(currQuery);
       } else {
         SpanQuery tmp = last;
         last = new SpanOrQuery();
-        ((SpanOrQuery)last).addClause(tmp);
-        ((SpanOrQuery)last).addClause(currQuery);
+        ((SpanOrQuery) last).addClause(tmp);
+        ((SpanOrQuery) last).addClause(currQuery);
       }
       queries.add(last);
     } else {
@@ -782,10 +842,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * 
    * @return {@link org.apache.lucene.search.spans.SpanOrQuery} might be empty if clauses is null or contains
-   *         only empty queries
-   */   
+   * only empty queries
+   */
   protected SpanQuery buildSpanOrQuery(List<SpanQuery> clauses)
       throws ParseException {
     if (clauses == null || clauses.size() == 0)
@@ -802,9 +861,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     return new SpanOrQuery(arr);
   }
 
-
   protected SpanQuery buildSpanNearQuery(List<SpanQuery> clauses, int slop,
-      Boolean inOrder) throws ParseException {
+                                         Boolean inOrder) throws ParseException {
     if (clauses == null || clauses.size() == 0)
       return getEmptySpanQuery();
 
@@ -813,24 +871,24 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     int start = 0;
     int end = clauses.size();
     for (int i = 0; i < clauses.size(); i++) {
-      if (! isEmptyQuery(clauses.get(i))) {
+      if (!isEmptyQuery(clauses.get(i))) {
         start = i;
         break;
       }
     }
-    for (int i = clauses.size()-1; i >= 0; i--) {
-      if (! isEmptyQuery(clauses.get(i))) {
-        end = i+1;
+    for (int i = clauses.size() - 1; i >= 0; i--) {
+      if (!isEmptyQuery(clauses.get(i))) {
+        end = i + 1;
         break;
       }
     }
-    
+
     //now count the stop words that occur
     //between the first and last non-null
     int numIntermedStops = 0;
     for (int i = start; i < end; i++) {
       SpanQuery clause = clauses.get(i);
-      if (!isEmptyQuery(clause)){
+      if (!isEmptyQuery(clause)) {
         nonEmpties.add(clause);
       } else {
         numIntermedStops++;
@@ -844,7 +902,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       SpanQuery child = nonEmpties.get(0);
       //if single child is itself a SpanNearQuery, inherit slop and inorder
       if (child instanceof SpanNearQuery) {
-        SpanQuery[] childsClauses = ((SpanNearQuery)child).getClauses();
+        SpanQuery[] childsClauses = ((SpanNearQuery) child).getClauses();
         child = new SpanNearQuery(childsClauses, slop, inOrder);
       }
     }
@@ -852,12 +910,12 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     if (slop == UNSPECIFIED_SLOP) {
       slop = getPhraseSlop();
     }
-   
+
     //adjust slop to handle intermediate stops that
     //were removed
     slop += numIntermedStops;
 
-    if  (spanNearMaxDistance > -1 && slop > spanNearMaxDistance) {
+    if (spanNearMaxDistance > -1 && slop > spanNearMaxDistance) {
       slop = spanNearMaxDistance;
     }
 
@@ -878,29 +936,28 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * probably meant: find those two characters within three words of each other,
    * not find those right next to each other and that hit has to be within three
    * words of nothing.
-   * 
+   * <p/>
    * If a user entered the same thing and {@link #autoGeneratePhraseQueries} is
    * set to false, then the parser would treat this as [(\u5927\u5B66)]~3: find
    * one character or the other and then that hit has to be within three words
    * of nothing...not the desired outcome  * @param field
-   * 
-   * 
+   *
    * @param termText this is the sole child of a SpanNearQuery as identified by a whitespace-based tokenizer
    * @return query
    */
   protected Query specialHandlingForSpanNearWithOneComponent(String field,
-      String termText, 
-      int ancestralSlop, Boolean ancestralInOrder) throws ParseException {
+                                                             String termText,
+                                                             int ancestralSlop, Boolean ancestralInOrder) throws ParseException {
     Query q = newFieldQuery(getAnalyzer(field), field, termText, true);
     if (q instanceof SpanNearQuery) {
-      SpanQuery[] childsClauses = ((SpanNearQuery)q).getClauses();
+      SpanQuery[] childsClauses = ((SpanNearQuery) q).getClauses();
       return buildSpanNearQuery(Arrays.asList(childsClauses), ancestralSlop, ancestralInOrder);
     }
     return q;
   }
 
   protected SpanQuery buildSpanNotNearQuery(List<SpanQuery> clauses, int pre,
-      int post) throws ParseException {
+                                            int post) throws ParseException {
     if (clauses.size() != 2) {
       throw new ParseException(
           String.format("SpanNotNear query must have two clauses. I count %d",
@@ -924,7 +981,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     return new SpanNotQuery(clauses.get(0), clauses.get(1), pre, post);
   }
 
-
   private List<SpanQuery> removeEmpties(List<SpanQuery> queries)
       throws ParseException {
 
@@ -932,7 +988,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     for (SpanQuery q : queries) {
       if (!isEmptyQuery(q)) {
         nonEmpties.add(q);
-      } 
+      }
     }
     return nonEmpties;
   }
@@ -950,35 +1006,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     return false;
   }
 
-  public static Term unescape(Term t) {
-
-    String txt = t.text();
-    try {
-      UnescapedCharSequence un = EscapeQuerySyntaxImpl.discardEscapeChar(txt);
-
-      if (! un.toString().equals(txt)) {
-        t = new Term(t.field(),un.toString());
-      }
-    } catch (org.apache.lucene.queryparser.flexible.standard.parser.ParseException e) {
-      //swallow;
-    }
-
-    return t;
-  }
-
-  public static String unescape(String s) {
-    try {
-      UnescapedCharSequence un = EscapeQuerySyntaxImpl.discardEscapeChar(s);
-      return un.toString();
-    } catch (org.apache.lucene.queryparser.flexible.standard.parser.ParseException e) {
-      //swallow;
-    }
-
-    return s;
-  }
-
   /**
-   * 
    * @return maximum distance allowed for a SpanNear query.  Can return negative values.
    */
   public int getSpanNearMaxDistance() {
@@ -986,17 +1014,15 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * 
-   * @param spanNearMaxDistance maximum distance for a SpanNear (phrase) query. If < 0, 
-   * there is no limitation on distances in SpanNear queries.
+   * @param spanNearMaxDistance maximum distance for a SpanNear (phrase) query. If < 0,
+   *                            there is no limitation on distances in SpanNear queries.
    */
   public void setSpanNearMaxDistance(int spanNearMaxDistance) {
     this.spanNearMaxDistance = spanNearMaxDistance;
   }
 
   /**
-   * 
-   * @return maximum distance allowed for a SpanNotNear query.  
+   * @return maximum distance allowed for a SpanNotNear query.
    * Can return negative values.
    */
   public int getSpanNotNearMaxDistance() {
@@ -1004,29 +1030,11 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * 
-   * @param spanNotNearMaxDistance maximum distance for the previous and post distance for a SpanNotNear query. If < 0, 
-   * there is no limitation on distances in SpanNotNear queries.
+   * @param spanNotNearMaxDistance maximum distance for the previous and post distance for a SpanNotNear query. If < 0,
+   *                               there is no limitation on distances in SpanNotNear queries.
    */
   public void setSpanNotNearMaxDistance(int spanNotNearMaxDistance) {
     this.spanNotNearMaxDistance = spanNotNearMaxDistance;
   }
 
-    /**
-   * Copied nearly exactly from FuzzyQuery's floatToEdits because
-   * FuzzyQuery's floatToEdits requires that the return value 
-   * be <= LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE
-   * 
-   * @return edits
-   */
-  public static int unboundedFloatToEdits(float minimumSimilarity, int termLen) {
-    if (minimumSimilarity >= 1f) {
-      return (int)minimumSimilarity;
-    } else if (minimumSimilarity == 0.0f) {
-      return 0; // 0 means exact, not infinite # of edits!
-    } else {
-      return (int)((1f-minimumSimilarity) * termLen);
-    }
-  }
-  
 }

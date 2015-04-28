@@ -16,10 +16,6 @@
  */
 package org.apache.lucene.search.concordance;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.util.List;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.analysis.MockTokenizer;
@@ -39,9 +35,42 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestUtil;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.util.List;
+
 public class ConcordanceTestBase extends LuceneTestCase {
 
   protected final static String FIELD = "f1";
+
+  public static Analyzer getAnalyzer(final CharacterRunAutomaton stops) {
+    return getAnalyzer(stops, random().nextInt(10000), random().nextInt(10000));
+  }
+
+  public static Analyzer getAnalyzer(final CharacterRunAutomaton stops,
+                                     final int posIncGap, final int charOffsetGap) {
+
+    Analyzer analyzer = new Analyzer() {
+
+      @Override
+      public TokenStreamComponents createComponents(String fieldName, Reader reader) {
+        Tokenizer tokenizer = new MockTokenizer(reader, MockTokenizer.WHITESPACE, true);
+        TokenFilter filter = new MockTokenFilter(tokenizer, stops);
+        return new TokenStreamComponents(tokenizer, filter);
+      }
+
+      @Override
+      public int getPositionIncrementGap(String fieldName) {
+        return posIncGap;
+      }
+
+      @Override
+      public int getOffsetGap(String fieldName) {
+        return charOffsetGap;
+      }
+    };
+    return analyzer;
+  }
 
   public Directory getDirectory(Analyzer analyzer, String[] vals)
       throws IOException {
@@ -68,7 +97,7 @@ public class ConcordanceTestBase extends LuceneTestCase {
         newIndexWriterConfig(analyzer)
             .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
             .setMergePolicy(newLogMergePolicy()));
-    
+
     for (String[] vals : input) {
       Document d = new Document();
       for (String s : vals) {
@@ -80,42 +109,13 @@ public class ConcordanceTestBase extends LuceneTestCase {
     return directory;
   }
 
-  public static Analyzer getAnalyzer(final CharacterRunAutomaton stops) {
-    return getAnalyzer(stops, random().nextInt(10000), random().nextInt(10000));
-  }
-  
-  public static Analyzer getAnalyzer(final CharacterRunAutomaton stops, 
-    final int posIncGap, final int charOffsetGap) {
-    
-    Analyzer analyzer = new Analyzer() {
+  protected Directory buildNeedleIndex(String needle,
+                                       Analyzer analyzer, int numFieldValues) throws Exception {
 
-      @Override
-      public TokenStreamComponents createComponents(String fieldName, Reader reader) {
-        Tokenizer tokenizer = new MockTokenizer(reader, MockTokenizer.WHITESPACE, true);
-        TokenFilter filter = new MockTokenFilter(tokenizer, stops);
-        return new TokenStreamComponents(tokenizer, filter);
-      }
-
-      @Override
-      public int getPositionIncrementGap(String fieldName) {
-        return posIncGap;
-      }
-      
-      @Override
-      public int getOffsetGap(String fieldName) {
-        return charOffsetGap;
-      }
-    };
-    return analyzer;
-  }
-  
-  protected Directory buildNeedleIndex(String needle, 
-      Analyzer analyzer, int numFieldValues) throws Exception {
-    
     IndexWriterConfig config = newIndexWriterConfig(random(), TEST_VERSION_CURRENT, analyzer)
         .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
         .setMergePolicy(newLogMergePolicy());
-    
+
     Directory directory = newDirectory();
     String pf = TestUtil.getPostingsFormat(FIELD);
     if (doesntSupportOffsets.contains(pf)) {
@@ -130,11 +130,11 @@ public class ConcordanceTestBase extends LuceneTestCase {
       float r = random().nextFloat();
       String doc = "";
       if (r <= 0.33) {
-        doc = needle+" "+getRandomWords(29, needle, analyzer);
+        doc = needle + " " + getRandomWords(29, needle, analyzer);
       } else if (r <= 0.66) {
-        doc = getRandomWords(13, needle, analyzer)+" "+needle+" "+getRandomWords(17, needle, analyzer);
+        doc = getRandomWords(13, needle, analyzer) + " " + needle + " " + getRandomWords(17, needle, analyzer);
       } else {
-        doc = getRandomWords(31, needle, analyzer)+" "+needle;
+        doc = getRandomWords(31, needle, analyzer) + " " + needle;
       }
       fs[i] = doc;
     }
@@ -148,20 +148,19 @@ public class ConcordanceTestBase extends LuceneTestCase {
     for (String s : fs) {
       d.add(newField(FIELD, s, type));
     }
-    writer.addDocument(d);   
+    writer.addDocument(d);
     writer.close();
     return directory;
   }
-  
-  
-  
+
+
   /**
    * this assumes no stop filter in the analyzer.
    * Best to use whitespace tokenizer.
    */
   private String getRandomWords(int numWords, String needle, Analyzer analyzer) throws Exception {
     StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < numWords; i++ ) {
+    for (int i = 0; i < numWords; i++) {
       sb.append(TestUtil.randomUnicodeString(random(), 31));
       sb.append(" ");
     }
@@ -181,28 +180,28 @@ public class ConcordanceTestBase extends LuceneTestCase {
   }
 
 
-  protected String getNeedle(Analyzer analyzer){
+  protected String getNeedle(Analyzer analyzer) {
     //try to get a term that would come out of the analyzer
     for (int i = 0; i < 10; i++) {
       //start with a random base string
-      String baseString = TestUtil.randomUnicodeString(random(), random().nextInt(10)+2);
-      
-      try{
+      String baseString = TestUtil.randomUnicodeString(random(), random().nextInt(10) + 2);
+
+      try {
         //run it through the analyzer, and take the first thing
         //that comes out of it if the length > 0
         List<String> terms = SimpleAnalyzerUtil.getTermStrings(baseString, analyzer);
-        for (String t : terms){
-          if (t.length() > 0){
+        for (String t : terms) {
+          if (t.length() > 0) {
             return t;
           }
         }
-      } catch (IOException e){
+      } catch (IOException e) {
         //swallow
       }
     }
     //if nothing is found in 10 tries,
     //return literal string "needle"
-    
+
     return "needle";
   }
 }

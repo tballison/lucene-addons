@@ -28,42 +28,42 @@ import java.util.Set;
  * Simple class that grabs the stringValue() of a specified
  * field to use as a document's unique key for the ConcordanceWindow
  * building process.
- * 
+ * <p/>
  * Note that this takes only the first value of the field.
  * If a multi-valued field is selected, surprises might happen.
- * 
+ * <p/>
  * Also, note that if the field is not found, this returns
  * a string representation of the ephemeral Lucene docId.
- * 
+ * <p/>
  * Some users might want to throw an exception instead of this behavior.
- *
  */
 public class FieldBasedDocIdBuilder implements DocIdBuilder {
 
   private final String fieldName;
-  
+
   /**
-   * 
    * @param fieldName, name of field to be used as a document's unique key
    */
-  public FieldBasedDocIdBuilder(String fieldName){
+  public FieldBasedDocIdBuilder(String fieldName) {
     this.fieldName = fieldName;
   }
-  
+
   @Override
   public String build(Document d, long docId) {
     IndexableField field = d.getField(fieldName);
     //should probably throw exception, no?!
-    if (field == null){
+    if (field == null) {
       return Long.toString(docId);
     }
     return field.stringValue();
   }
+
   /**
    * Instead of getField(String fieldName), this allows for extension
+   *
    * @return
    */
-  public Set<String> getFields(){
+  public Set<String> getFields() {
     Set<String> fields = new HashSet<String>();
     fields.add(fieldName);
     return fields;

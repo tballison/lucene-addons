@@ -17,6 +17,9 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
+import org.apache.lucene.corpus.stats.TermDFTF;
+import org.apache.lucene.util.mutable.MutableValueInt;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,33 +29,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.lucene.corpus.stats.TermDFTF;
-import org.apache.lucene.util.mutable.MutableValueInt;
-
 
 /**
  * The ArrayWindowSearcher must visit all windows in a document before
  * moving on to a new document.  If (for some unforeseen reason...multithreading?),
  * the Searcher visits two windows in doc1, a window in doc2 and then another window in doc1,
  * the doc frequency counts will double count the targets in doc1.
- * 
  */
 public class TargetVisitor extends ArrayWindowVisitor<List<TermDFTF>> {
 
   private final static String JOINER = " ";
-
+  private final int numResults;
   private Map<String, MutableValueInt> tf = new HashMap<String, MutableValueInt>();
   private Map<String, MutableValueInt> df = new HashMap<String, MutableValueInt>();
-
-  private final int numResults;
   private String lastDocId = null;
 
   //cache of terms seen in current doc
   //this is reset with each new doc
   private Set<String> seenInThisDoc = new HashSet<String>();
 
-  public TargetVisitor(String fieldName, int numResults, 
-      boolean analyzeTarget, int maxWindows){
+  public TargetVisitor(String fieldName, int numResults,
+                       boolean analyzeTarget, int maxWindows) {
     super(fieldName, 0, 0, true, analyzeTarget, maxWindows);
     this.numResults = numResults;
   }
@@ -60,14 +57,14 @@ public class TargetVisitor extends ArrayWindowVisitor<List<TermDFTF>> {
   @Override
   public void visit(String docId, ConcordanceArrayWindow window)
       throws IOException {
-    
-    if (getNumWindowsVisited() >= getMaxWindows()){
+
+    if (getNumWindowsVisited() >= getMaxWindows()) {
       setHitMax(true);
       return;
     }
-    
+
     //will throw NPE if docId is null
-    if (lastDocId != null  && ! lastDocId.equals(docId)){
+    if (lastDocId != null && !lastDocId.equals(docId)) {
       seenInThisDoc.clear();
     }
     String targ = "";
@@ -84,7 +81,7 @@ public class TargetVisitor extends ArrayWindowVisitor<List<TermDFTF>> {
     }
 
     MutableValueInt cnt = tf.get(targ);
-    if (cnt == null){
+    if (cnt == null) {
       cnt = new MutableValueInt();
       cnt.value = 1;
     } else {
@@ -93,9 +90,9 @@ public class TargetVisitor extends ArrayWindowVisitor<List<TermDFTF>> {
 
     tf.put(targ, cnt);
 
-    if (! seenInThisDoc.contains(targ)){
+    if (!seenInThisDoc.contains(targ)) {
       cnt = df.get(targ);
-      if (cnt == null){
+      if (cnt == null) {
         cnt = new MutableValueInt();
         cnt.value = 1;
       } else {
@@ -123,15 +120,15 @@ public class TargetVisitor extends ArrayWindowVisitor<List<TermDFTF>> {
     }
     Collections.sort(list);
     //if list is short enough, return now
-    if (list.size() <= numResults){
+    if (list.size() <= numResults) {
       return list;
     }
 
     //copy over only the required results
     List<TermDFTF> ret = new ArrayList<TermDFTF>();
     int i = 0;
-    for (TermDFTF t : list){
-      if (i++ >= numResults){
+    for (TermDFTF t : list) {
+      if (i++ >= numResults) {
         break;
       }
       ret.add(t);
@@ -139,7 +136,7 @@ public class TargetVisitor extends ArrayWindowVisitor<List<TermDFTF>> {
     return ret;
   }
 
-  public int getUniqTermCounts(){
+  public int getUniqTermCounts() {
     return tf.keySet().size();
   }
 

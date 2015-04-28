@@ -17,9 +17,6 @@ package org.apache.lucene.search.concordance;
  * limitations under the License.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.document.Document;
@@ -33,6 +30,9 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.concordance.charoffsets.SimpleAnalyzerUtil;
 import org.apache.lucene.store.Directory;
 import org.junit.BeforeClass;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TestSimpleAnalyzerUtil extends ConcordanceTestBase {
 
@@ -73,7 +73,7 @@ public class TestSimpleAnalyzerUtil extends ConcordanceTestBase {
     reader.close();
     directory.close();
   }*/
-  
+
   public void testHitInGaps() throws Exception {
     String[] values = new String[]{
         "abc",
@@ -83,9 +83,9 @@ public class TestSimpleAnalyzerUtil extends ConcordanceTestBase {
     };
     List<String[]> docs = new ArrayList<>();
     docs.add(values);
-    
+
     Directory directory = getDirectory(customCharOffsetGapAnalyzer, docs);
-    
+
     String joiner = " | ";
     int gap = customCharOffsetGapAnalyzer.getOffsetGap(FIELD);
     IndexReader reader = DirectoryReader.open(directory);
@@ -108,7 +108,7 @@ public class TestSimpleAnalyzerUtil extends ConcordanceTestBase {
     assertEquals("start in between and end in between1", " | def", testSimple(5, 300, fieldValues, gap, joiner));
     assertEquals("start in between and end in between2", " | def | ghi", testSimple(5, 600, fieldValues, gap, joiner));
     assertEquals("", "def | ghi | jkl", testSimple(216, 10000, fieldValues, gap, joiner));
-    
+
     reader.close();
     directory.close();
 
@@ -139,7 +139,7 @@ public class TestSimpleAnalyzerUtil extends ConcordanceTestBase {
       dpe.nextPosition();
       String[] fieldValues = r.document(docId).getValues(FIELD);
       while (advanced++ < frq) {
-        String rebuilt = SimpleAnalyzerUtil.substringFromMultiValuedFields(dpe.startOffset(), 
+        String rebuilt = SimpleAnalyzerUtil.substringFromMultiValuedFields(dpe.startOffset(),
             dpe.endOffset(), fieldValues, analyzer.getOffsetGap(FIELD), " | ");
         assertEquals(needle, rebuilt);
         numTests++;
@@ -148,8 +148,8 @@ public class TestSimpleAnalyzerUtil extends ConcordanceTestBase {
       docId = dpe.nextDoc();
     }
     reader.close();
-    directory.close(); 
-    assertEquals("number of tests", numFieldValues-1, numTests);
+    directory.close();
+    assertEquals("number of tests", numFieldValues - 1, numTests);
   }
 
   private String testSimple(int start, int end, String[] fieldValues, int gap, String joiner) {

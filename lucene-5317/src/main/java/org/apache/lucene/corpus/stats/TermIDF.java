@@ -17,27 +17,25 @@ package org.apache.lucene.corpus.stats;
  */
 
 
-
-
 public class TermIDF extends TermDFTF {
 
   private double idf;
   private double tfidf;
-  
+
   public TermIDF(String term, int docFreq, long termFreq, double idf) {
     super(term, docFreq, termFreq);
     this.idf = idf;
-    this.tfidf = termFreq*idf;
+    this.tfidf = termFreq * idf;
   }
 
-  public double getIDF(){
+  public double getIDF() {
     return idf;
   }
-  
-  public double getTFIDF(){
+
+  public double getTFIDF() {
     return tfidf;
   }
-  
+
   /**
    * "natural order" is descending idf
    * then descending doc freq
@@ -46,10 +44,10 @@ public class TermIDF extends TermDFTF {
    */
   @Override
   public int compareTo(TermDF other) {
-    if (other instanceof TermIDF){
-      if (tfidf < ((TermIDF)other).tfidf){
+    if (other instanceof TermIDF) {
+      if (tfidf < ((TermIDF) other).tfidf) {
         return 1;
-      } else if (tfidf > ((TermIDF)other).tfidf){
+      } else if (tfidf > ((TermIDF) other).tfidf) {
         return -1;
       }
     }
@@ -58,10 +56,10 @@ public class TermIDF extends TermDFTF {
     } else if (docFreq > other.docFreq) {
       return -1;
     }
-    if (other instanceof TermDFTF){
-      if (termFreq < ((TermDFTF)other).termFreq) {
+    if (other instanceof TermDFTF) {
+      if (termFreq < ((TermDFTF) other).termFreq) {
         return 1;
-      } else if (termFreq > ((TermDFTF)other).termFreq) {
+      } else if (termFreq > ((TermDFTF) other).termFreq) {
         return -1;
       }
     }

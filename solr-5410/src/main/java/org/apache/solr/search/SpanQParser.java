@@ -33,11 +33,10 @@ import org.apache.solr.schema.SchemaField;
 /**
  * @see SpanQParserPlugin
  */
-public class SpanQParser extends QParser
-{
+public class SpanQParser extends QParser {
 
   private SolrSpanQueryParser parser;
-  private String defaultFieldName;		
+  private String defaultFieldName;
   private final String MIN_FUZZY_DIST = "mfd";
   private final String NORMMULTITERMS = "nmt";
   private final String NEAR_MAX = "nmax";
@@ -49,7 +48,7 @@ public class SpanQParser extends QParser
   private final String PREFIX_LENGTH = "pl";
 
 
-  public SpanQParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req){
+  public SpanQParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) {
     super(qstr, localParams, params, req);
     IndexSchema schema = req.getSchema();
 
@@ -59,10 +58,10 @@ public class SpanQParser extends QParser
     defaultFieldName = getDefaultField(schema);
 
     SchemaField sf = schema.getField(defaultFieldName);
-    if(sf != null && sf.getType() != null)
+    if (sf != null && sf.getType() != null)
       analyzer = sf.getType().getAnalyzer();
     else
-      analyzer = schema.getAnalyzer();	//default analyzer?
+      analyzer = schema.getAnalyzer();  //default analyzer?
 
     //initialize the parser
     parser = new SolrSpanQueryParser(schema.getDefaultLuceneMatchVersion(), defaultFieldName, analyzer, schema, this);
@@ -74,7 +73,7 @@ public class SpanQParser extends QParser
 
     parser.setAnalyzeRangeTerms(solrParams.getBool(ANALYZE_RANGE_TERMS, true));
     parser.setAutoGeneratePhraseQueries(solrParams.getBool(AUTO_GENERATE_PHRASE, false));
-    QueryParser.Operator defaultOp = 
+    QueryParser.Operator defaultOp =
         QueryParsing.getQueryParserDefaultOperator(req.getSchema(), solrParams.get(QueryParsing.OP));
 
     if (defaultOp == QueryParser.Operator.AND) {
@@ -91,30 +90,29 @@ public class SpanQParser extends QParser
 
   private NORM_MULTI_TERMS getNorm(
       String string, NORM_MULTI_TERMS defaultNorm) {
-    if (string == null){
+    if (string == null) {
       return defaultNorm;
     }
     String lc = string.toLowerCase();
-    if (lc.equals("none")){
+    if (lc.equals("none")) {
       return NORM_MULTI_TERMS.NONE;
-    } else if (lc.equals("lc")){
+    } else if (lc.equals("lc")) {
       return NORM_MULTI_TERMS.LOWERCASE;
-    } else if (lc.equals("analyze")){
+    } else if (lc.equals("analyze")) {
       return NORM_MULTI_TERMS.ANALYZE;
     }
     return defaultNorm;
   }
 
-  @Override public Query parse() throws SyntaxError
-  {
+  @Override
+  public Query parse() throws SyntaxError {
     Query query = null;
-    try
-    {
+    try {
       String qstr = getString();
 
       query = parser.parse(qstr);
 
-    } catch (ParseException e){
+    } catch (ParseException e) {
       throw new SyntaxError(e.toString());
     }
 
@@ -122,24 +120,23 @@ public class SpanQParser extends QParser
   }
 
 
-
-  private String getDefaultField(IndexSchema schema){
+  private String getDefaultField(IndexSchema schema) {
 
     String fieldName = getParam(CommonParams.FIELD);
-    if(fieldName == null || fieldName.equalsIgnoreCase("null")){
+    if (fieldName == null || fieldName.equalsIgnoreCase("null")) {
 
-      if(fieldName == null || fieldName.equalsIgnoreCase("null"))
+      if (fieldName == null || fieldName.equalsIgnoreCase("null"))
         fieldName = getParam(CommonParams.DF);
 
-      if(fieldName == null || fieldName.equalsIgnoreCase("null")){
+      if (fieldName == null || fieldName.equalsIgnoreCase("null")) {
         //check field list if not in field
         fieldName = getParam(CommonParams.FL);
 
         //TODO: change when/if parser allows for multiple terms
-        if(fieldName != null)
+        if (fieldName != null)
           fieldName = fieldName.split(",")[0].trim();
       }
-      if (fieldName == null || fieldName.equals("null")){
+      if (fieldName == null || fieldName.equals("null")) {
         fieldName = QueryParsing.getDefaultField(schema, null);
       }
     }

@@ -3,7 +3,7 @@ package org.apache.lucene.corpus.stats;
 
 import org.apache.lucene.util.PriorityQueue;
 
-public class TFIDFPriorityQueue extends PriorityQueue<TermIDF>{
+public class TFIDFPriorityQueue extends PriorityQueue<TermIDF> {
   public TFIDFPriorityQueue(int maxSize) {
     super(maxSize);
   }

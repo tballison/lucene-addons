@@ -16,32 +16,31 @@
  */
 package org.apache.solr.search.concordance;
 
-public interface KeywordsCooccurParams extends KWICParams
-{
+public interface KeywordsCooccurParams extends KWICParams {
 
-	public static final String PREFIX = "kwCo.";
-	
-	
-	public static final String MAX_WINDOWS =  PREFIX + "maxWindows";
-	public static final String TARGET_OVERLAPS =  PREFIX + "targetOverlaps";
-	public static final String CONTENT_DISPLAY =  PREFIX + "contentDisplaySize";
-	public static final String TARGET_DISPLAY  =  PREFIX + "targetDisplaySize";
-	public static final String TOKENS_BEFORE =  PREFIX + "tokensBefore";
-	public static final String TOKENS_AFTER =  PREFIX + "tokensAfter";
-	public static final String FIELDS =  PREFIX + "fl";
+  public static final String PREFIX = "kwCo.";
 
-	
-	public static final String MIN_NGRAM =  PREFIX + "minNGram";
-	public static final String MAX_NGRAM =  PREFIX + "maxNGram";
-	public static final String MIN_TF =  PREFIX + "minTF";
-	public static final String MAX_TERMS =  PREFIX + "maxTerms";
-	
-	public static final String DF =  PREFIX + "df";
-	public static final String TF =  PREFIX + "tf";
-	public static final String TF_IDF =  PREFIX + "tf_idf";
-	
-	/**
-	 * Include Termvectors if termvectors are enabled in the schema.  (see TermVectorComponent)
-	 */
-	public static final String TV =  PREFIX + "tv";
+
+  public static final String MAX_WINDOWS = PREFIX + "maxWindows";
+  public static final String TARGET_OVERLAPS = PREFIX + "targetOverlaps";
+  public static final String CONTENT_DISPLAY = PREFIX + "contentDisplaySize";
+  public static final String TARGET_DISPLAY = PREFIX + "targetDisplaySize";
+  public static final String TOKENS_BEFORE = PREFIX + "tokensBefore";
+  public static final String TOKENS_AFTER = PREFIX + "tokensAfter";
+  public static final String FIELDS = PREFIX + "fl";
+
+
+  public static final String MIN_NGRAM = PREFIX + "minNGram";
+  public static final String MAX_NGRAM = PREFIX + "maxNGram";
+  public static final String MIN_TF = PREFIX + "minTF";
+  public static final String MAX_TERMS = PREFIX + "maxTerms";
+
+  public static final String DF = PREFIX + "df";
+  public static final String TF = PREFIX + "tf";
+  public static final String TF_IDF = PREFIX + "tf_idf";
+
+  /**
+   * Include Termvectors if termvectors are enabled in the schema.  (see TermVectorComponent)
+   */
+  public static final String TV = PREFIX + "tv";
 }

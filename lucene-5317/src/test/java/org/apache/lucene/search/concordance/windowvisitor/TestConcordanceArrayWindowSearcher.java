@@ -17,11 +17,6 @@
 
 package org.apache.lucene.search.concordance.windowvisitor;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.corpus.stats.IDFCalc;
@@ -31,18 +26,18 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.concordance.ConcordanceTestBase;
 import org.apache.lucene.search.concordance.classic.impl.IndexIdDocIdBuilder;
-import org.apache.lucene.search.concordance.windowvisitor.ArrayWindowVisitor;
-import org.apache.lucene.search.concordance.windowvisitor.ConcordanceArrayWindowSearcher;
-import org.apache.lucene.search.concordance.windowvisitor.CooccurVisitor;
-import org.apache.lucene.search.concordance.windowvisitor.WGrammer;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.util.LuceneTestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
 
@@ -58,26 +53,26 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
 
   @Test
   public void testSimple() throws Exception {
-    String[] docs = new String[] { "a b c d e f", "b c d g f e" };
+    String[] docs = new String[]{"a b c d e f", "b c d g f e"};
     Analyzer analyzer = getAnalyzer(
         MockTokenFilter.EMPTY_STOPSET, 50, 100);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
-    
+
 
     IDFCalc idfCalc = new IDFCalc(reader);
-    
+
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfCalc, 100, true);
-    
+
     visitor.setMinTermFreq(0);
     ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
 
-    searcher.search(reader, FIELD, q, null, analyzer, visitor, 
+    searcher.search(reader, FIELD, q, null, analyzer, visitor,
         new IndexIdDocIdBuilder());
 
-    List<TermIDF> results = ((CooccurVisitor)visitor).getResults();
+    List<TermIDF> results = ((CooccurVisitor) visitor).getResults();
     Map<String, Integer> truth = new HashMap<String, Integer>();
     truth.put("a", 1);
     truth.put("g", 1);
@@ -94,14 +89,14 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
 
     visitor = new CooccurVisitor(
         FIELD, 1, 1, new WGrammer(1, 1, false), idfCalc, 100, true);
-    ((CooccurVisitor)visitor).setMinTermFreq(0);
-    
+    ((CooccurVisitor) visitor).setMinTermFreq(0);
+
     searcher = new ConcordanceArrayWindowSearcher();
     q = new SpanTermQuery(new Term(FIELD, "d"));
 
     searcher.search(reader, FIELD, q, null, analyzer, visitor, new IndexIdDocIdBuilder());
 
-    results = ((CooccurVisitor)visitor).getResults();
+    results = ((CooccurVisitor) visitor).getResults();
     truth.clear();
     truth.put("c", 2);
     truth.put("e", 1);
@@ -118,7 +113,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
 
   @Test
   public void testWithStops() throws Exception {
-    String[] docs = new String[] { "a b the d the f", "b c the d the e" };
+    String[] docs = new String[]{"a b the d the f", "b c the d the e"};
     Analyzer analyzer = getAnalyzer(
         MockTokenFilter.ENGLISH_STOPSET, 50, 100);
     Directory directory = getDirectory(analyzer, docs);
@@ -127,15 +122,15 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     IDFCalc idfer = new IDFCalc(reader);
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfer, 100, true);
-    
-    ((CooccurVisitor)visitor).setMinTermFreq(0);
+
+    ((CooccurVisitor) visitor).setMinTermFreq(0);
     ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
 
-    searcher.search(reader, FIELD, q, null, analyzer, visitor, 
+    searcher.search(reader, FIELD, q, null, analyzer, visitor,
         new IndexIdDocIdBuilder());
 
-    List<TermIDF> results = ((CooccurVisitor)visitor).getResults();
+    List<TermIDF> results = ((CooccurVisitor) visitor).getResults();
     Map<String, Integer> truth = new HashMap<String, Integer>();
 
     truth.put("b", 2);
@@ -154,7 +149,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
 
   @Test
   public void testSimpleMultiValuedField() throws Exception {
-    String[] vals = new String[] { "a b c d e f", "b c d g f e" };
+    String[] vals = new String[]{"a b c d e f", "b c d g f e"};
     List<String[]> docs = new ArrayList<String[]>();
     docs.add(vals);
     Analyzer analyzer = getAnalyzer(
@@ -166,15 +161,15 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     IDFCalc idfer = new IDFCalc(reader);
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfer, 100, true);
-    
-    ((CooccurVisitor)visitor).setMinTermFreq(0);
+
+    ((CooccurVisitor) visitor).setMinTermFreq(0);
     ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
 
-    searcher.search(reader, FIELD, q, null, analyzer, visitor, 
+    searcher.search(reader, FIELD, q, null, analyzer, visitor,
         new IndexIdDocIdBuilder());
 
-    List<TermIDF> results = ((CooccurVisitor)visitor).getResults();
+    List<TermIDF> results = ((CooccurVisitor) visitor).getResults();
     Map<String, Integer> truth = new HashMap<String, Integer>();
     truth.put("a", 1);
     truth.put("g", 1);
@@ -190,15 +185,15 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
 
     visitor = new CooccurVisitor(
         FIELD, 1, 1, new WGrammer(1, 1, false), idfer, 100, true);
-    
-    ((CooccurVisitor)visitor).setMinTermFreq(0);
+
+    ((CooccurVisitor) visitor).setMinTermFreq(0);
     searcher = new ConcordanceArrayWindowSearcher();
     q = new SpanTermQuery(new Term(FIELD, "d"));
 
-    searcher.search(reader, FIELD, 
+    searcher.search(reader, FIELD,
         q, null, analyzer, visitor, new IndexIdDocIdBuilder());
 
-    results = ((CooccurVisitor)visitor).getResults();
+    results = ((CooccurVisitor) visitor).getResults();
     truth.clear();
     truth.put("c", 2);
     truth.put("e", 1);
@@ -219,7 +214,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
      * test handling of target spread out over several indices in a multivalued
      * field array
      */
-    String[] doc = new String[] { "a b c the", "clockwork", "orange d e f " };
+    String[] doc = new String[]{"a b c the", "clockwork", "orange d e f "};
     List<String[]> docs = new ArrayList<String[]>();
     docs.add(doc);
     Analyzer analyzer = getAnalyzer(
@@ -231,9 +226,9 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     IDFCalc idfer = new IDFCalc(reader);
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfer, 100, true);
-    
+
     visitor.setMinTermFreq(0);
-    
+
     ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
 
     SpanQuery q1 = new SpanTermQuery(
@@ -242,12 +237,12 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
         "clockwork"));
     SpanQuery q3 = new SpanTermQuery(new Term(FIELD,
         "orange"));
-    SpanQuery q = new SpanNearQuery(new SpanQuery[] { q1, q2, q3 }, 3, true);
+    SpanQuery q = new SpanNearQuery(new SpanQuery[]{q1, q2, q3}, 3, true);
 
-    searcher.search(reader, FIELD, q, null, analyzer, visitor, 
+    searcher.search(reader, FIELD, q, null, analyzer, visitor,
         new IndexIdDocIdBuilder());
 
-    List<TermIDF> results = ((CooccurVisitor)visitor).getResults();
+    List<TermIDF> results = ((CooccurVisitor) visitor).getResults();
     Map<String, Integer> truth = new HashMap<String, Integer>();
     truth.put("a", 1);
     truth.put("b", 1);
@@ -265,6 +260,6 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     directory.close();
 
   }
-  
+
   //TODO: add tests for ignore duplicates, TargetVisitor
 }

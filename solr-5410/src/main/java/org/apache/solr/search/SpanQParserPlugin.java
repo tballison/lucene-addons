@@ -22,7 +22,7 @@ import org.apache.solr.request.SolrQueryRequest;
 
 /**
  * Solr's variant on the Lucene SpanQueryParser syntax.
- * 
+ * <p/>
  * <br>
  * Other parameters:
  * <ul>
@@ -40,18 +40,18 @@ import org.apache.solr.request.SolrQueryRequest;
  * <li>pl - default prefix length</li>
  * </ul>
  */
-public class SpanQParserPlugin extends QParserPlugin
-{
+public class SpanQParserPlugin extends QParserPlugin {
 
-	public static final String NAME = "span";
-	
-	
-	@Override public void init(@SuppressWarnings("rawtypes") NamedList args)
-	{ }
+  public static final String NAME = "span";
 
-	@Override public QParser createParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req)
-	{
-		return new SpanQParser(qstr, localParams, params, req);
-	}
+
+  @Override
+  public void init(@SuppressWarnings("rawtypes") NamedList args) {
+  }
+
+  @Override
+  public QParser createParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) {
+    return new SpanQParser(qstr, localParams, params, req);
+  }
 
 }

@@ -21,13 +21,15 @@ import org.apache.solr.SolrTestCaseJ4;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/** Simple tests for SpanQParserPlugin. */
+/**
+ * Simple tests for SpanQParserPlugin.
+ */
 //Thank you, TestSimpleQParserPlugin, for the the model for this!
 
 public class TestSpanQParserPlugin extends SolrTestCaseJ4 {
   @BeforeClass
   public static void beforeClass() throws Exception {
-    initCore("solrconfig-basic-span.xml","schema-spanqpplugin.xml");
+    initCore("solrconfig-basic-span.xml", "schema-spanqpplugin.xml");
     index();
   }
 
@@ -42,7 +44,7 @@ public class TestSpanQParserPlugin extends SolrTestCaseJ4 {
   @Test
   public void testQueryFields() throws Exception {
     assertJQ(req("defType", "span", "q", "[t0 t2]~>3"), "/response/numFound==2");
-    
+
     //test maxedit > 2
     assertJQ(req("defType", "span", "q", "text1:abcd~3"), "/response/numFound==0");
     assertJQ(req("defType", "span", "q", "text1:abcd~3", "mfd", "3"), "/response/numFound==1");
@@ -66,15 +68,19 @@ public class TestSpanQParserPlugin extends SolrTestCaseJ4 {
     assertJQ(req("defType", "span", "q", "t1 t2"), "/response/numFound==2");
   }
 
-  /** Test that multiterm analysis chain is used for prefix, wildcard and fuzzy */
+  /**
+   * Test that multiterm analysis chain is used for prefix, wildcard and fuzzy
+   */
   public void testMultitermAnalysis() throws Exception {
     assertJQ(req("defType", "span", "q", "FOOBA*"), "/response/numFound==1");
     assertJQ(req("defType", "span", "q", "f\u00F6\u00F6ba*"), "/response/numFound==1");
     assertJQ(req("defType", "span", "q", "f\u00F6\u00F6b?r"), "/response/numFound==1");
     assertJQ(req("defType", "span", "q", "f\u00F6\u00F6bat~1"), "/response/numFound==1");
   }
-  
-  /** Test negative query */
+
+  /**
+   * Test negative query
+   */
   public void testNegativeQuery() throws Exception {
     assertJQ(req("defType", "span", "q", "-t0"), "/response/numFound==2");
   }

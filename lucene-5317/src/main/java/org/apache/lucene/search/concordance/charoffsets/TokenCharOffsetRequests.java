@@ -20,6 +20,7 @@ package org.apache.lucene.search.concordance.charoffsets;
 /**
  * Util class used to specify the tokens for which character offsets are requested.
  */
+
 import org.apache.lucene.util.OpenBitSet;
 
 public class TokenCharOffsetRequests {
@@ -28,6 +29,7 @@ public class TokenCharOffsetRequests {
 
   /**
    * Is a specific token requested?
+   *
    * @param i token number to test
    * @return whether or not this token is requested
    */
@@ -37,8 +39,9 @@ public class TokenCharOffsetRequests {
 
   /**
    * add a request from start to end inclusive
+   *
    * @param start range of token offsets to request (inclusive)
-   * @param end end range of token offsets to request (inclusive)
+   * @param end   end range of token offsets to request (inclusive)
    */
   public void add(int start, int end) {
     for (int i = start; i <= end; i++) {
@@ -48,6 +51,7 @@ public class TokenCharOffsetRequests {
 
   /**
    * add a request for a specific token
+   *
    * @param i token offset to request the character offsets for
    */
   public void add(int i) {
@@ -65,7 +69,6 @@ public class TokenCharOffsetRequests {
   }
 
   /**
-   * 
    * @return greatest/last token offset in the request
    */
   public int getLast() {
@@ -73,7 +76,6 @@ public class TokenCharOffsetRequests {
   }
 
   /**
-   * 
    * @return the set of tokens whose character offsets are requested
    */
   protected OpenBitSet getSet() {

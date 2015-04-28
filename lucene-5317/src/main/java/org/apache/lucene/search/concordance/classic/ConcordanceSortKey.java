@@ -20,16 +20,15 @@ package org.apache.lucene.search.concordance.classic;
 
 /**
  * Simple comparable class to allow for subclassing.
- *
  */
 public class ConcordanceSortKey implements Comparable<ConcordanceSortKey> {
-  
+
   private final String concSortString;
-  
+
   public ConcordanceSortKey(String s) {
     this.concSortString = s;
   }
-  
+
   @Override
   public int compareTo(ConcordanceSortKey other) {
     return concSortString.compareTo(other.concSortString);
@@ -61,6 +60,6 @@ public class ConcordanceSortKey implements Comparable<ConcordanceSortKey> {
   public String toString() {
     return concSortString;
   }
-  
+
 
 }

@@ -17,18 +17,6 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-import java.io.IOException;
-import java.io.Reader;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.analysis.MockTokenizer;
@@ -62,30 +50,41 @@ import org.apache.lucene.util.automaton.Operations;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static org.apache.lucene.util.automaton.Automata.makeString;
 
 public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
+  private static final String FIELD = "f1";
+  private static final CharacterRunAutomaton STOP_WORDS = new CharacterRunAutomaton(
+      Operations.union(Arrays.asList(makeString("a"), makeString("an"),
+          makeString("and"), makeString("are"), makeString("as"),
+          makeString("at"), makeString("be"), makeString("but"),
+          makeString("by"), makeString("for"), makeString("if"),
+          makeString("in"), makeString("into"), makeString("is"),
+          makeString("it"), makeString("no"), makeString("not"),
+          makeString("of"), makeString("on"), makeString("or"),
+          makeString("such"), makeString("that"), makeString("the"),
+          makeString("their"), makeString("then"), makeString("there"),
+          makeString("these"), makeString("they"), makeString("this"),
+          makeString("to"), makeString("was"), makeString("will"),
+          makeString("with"), makeString("\u5927"))));
   private static IndexReader reader;
   private static IndexSearcher searcher;
   private static Directory directory;
   private static Analyzer stopAnalyzer;
   private static Analyzer noStopAnalyzer;
-  private static final String FIELD = "f1";
-
-  private static final CharacterRunAutomaton STOP_WORDS = new CharacterRunAutomaton(
-      Operations.union(Arrays.asList(makeString("a"), makeString("an"),
-              makeString("and"), makeString("are"), makeString("as"),
-              makeString("at"), makeString("be"), makeString("but"),
-              makeString("by"), makeString("for"), makeString("if"),
-              makeString("in"), makeString("into"), makeString("is"),
-              makeString("it"), makeString("no"), makeString("not"),
-              makeString("of"), makeString("on"), makeString("or"),
-              makeString("such"), makeString("that"), makeString("the"),
-              makeString("their"), makeString("then"), makeString("there"),
-              makeString("these"), makeString("they"), makeString("this"),
-              makeString("to"), makeString("was"), makeString("will"),
-              makeString("with"), makeString("\u5927"))));
 
   @BeforeClass
   public static void beforeClass() throws Exception {
@@ -114,9 +113,9 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     directory = newDirectory();
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
         newIndexWriterConfig(stopAnalyzer)
-        .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
-        .setMergePolicy(newLogMergePolicy()));
-    String[] docs = new String[] {
+            .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
+            .setMergePolicy(newLogMergePolicy()));
+    String[] docs = new String[]{
         "the quick brown fox ",
         "jumped over the lazy brown dog and the brown green cat",
         "quick green fox",
@@ -124,8 +123,8 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
         "over green lazy",
         // longish doc for recursion test
         "eheu fugaces postume postume labuntur anni nec "
-        + "pietas moram rugis et instanti senectae "
-        + "adferet indomitaeque morti",
+            + "pietas moram rugis et instanti senectae "
+            + "adferet indomitaeque morti",
         // non-whitespace language
         "\u666E \u6797 \u65AF \u987F \u5927 \u5B66",
         "reg/exp",
@@ -163,7 +162,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
     // test null and empty
     boolean ex = false;
-    try{
+    try {
       countSpansDocs(p, null, 0, 0);
 
     } catch (NullPointerException e) {
@@ -182,13 +181,15 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     try {
       p.parse("\"brown \"dog\"");
       fail("didn't get expected exception");
-    } catch (ParseException expected) {}
+    } catch (ParseException expected) {
+    }
 
     // unmatched [
     try {
       p.parse("[brown [dog]");
       fail("didn't get expected exception");
-    } catch (ParseException expected) {}
+    } catch (ParseException expected) {
+    }
 
     testOffsetForSingleSpanMatch(p, "\"brown dog\"", 1, 4, 6);
 
@@ -223,7 +224,8 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     try {
       p.parse("\"brown dog car\"!~2,2");
       fail("didn't get expected exception");
-    } catch (ParseException expected) {}
+    } catch (ParseException expected) {
+    }
 
     countSpansDocs(p, "\"brown dog\"!~2,2", 2, 2);
 
@@ -366,8 +368,8 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     countSpansDocs(p, "(the brown)", 3, 2);
 
     countSpansDocs(p, "[brown the]!~5,5", 3, 2);
- 
-    
+
+
     //this tests that slop is really converted to 2 because of stop word
     countSpansDocs(p, "[over the brown]~1", 1, 1);
 
@@ -381,7 +383,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     countSpansDocs(p, "(over the lazy)", 4, 2);
     countSpansDocs(p, "(over the)", 2, 2);
     countSpansDocs(p, "(the and and the)", 0, 0);
-    
+
     //this tests that slop is really converted to 3 because of stop words
     countSpansDocs(p, "[over the the dog]~1", 1, 1);
 
@@ -392,7 +394,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     //ditto
     countSpansDocs(p, "[the the the the jumped the cat the the the the]~1", 0, 0);
     countSpansDocs(p, "[the the the the over the brown the the the the]~1", 1, 1);
-    
+
     // add tests for surprise phrasal with stopword!!! chinese
     SpanOnlyParser noStopsParser = new SpanOnlyParser(TEST_VERSION_CURRENT, FIELD, noStopAnalyzer);
     noStopsParser.setAutoGeneratePhraseQueries(true);
@@ -404,7 +406,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
     testOffsetForSingleSpanMatch(noStopsParser,
         "[\u666E \u6797 \u65AF \u987F \u5B66]~2", 6, 0, 6);
-        
+
   }
 
   public void testNonWhiteSpaceLanguage() throws Exception {
@@ -472,7 +474,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
   public void testQuotedSingleTerm() throws Exception {
     SpanOnlyParser p = new SpanOnlyParser(TEST_VERSION_CURRENT, FIELD, noStopAnalyzer);
 
-    String[] quoteds = new String[] {
+    String[] quoteds = new String[]{
         "/regex/",
         "fuzzy~2",
         "wil*card",
@@ -481,11 +483,11 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     };
 
     for (String q : quoteds) {
-      countSpansDocs(p, "\""+q+"\"", 1, 1);
+      countSpansDocs(p, "\"" + q + "\"", 1, 1);
     }
 
     for (String q : quoteds) {
-      countSpansDocs(p, "'"+q+"'", 1, 1);
+      countSpansDocs(p, "'" + q + "'", 1, 1);
     }
 
     countSpansDocs(p, "'single''quote'", 1, 1);
@@ -562,7 +564,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     countSpansDocs(p, q, 0, 0);
   }
 
-  private void testException(SpanOnlyParser p, String q) throws Exception{
+  private void testException(SpanOnlyParser p, String q) throws Exception {
     boolean ex = false;
     try {
       countSpansDocs(p, q, 3, 2);
@@ -571,10 +573,10 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     }
     assertTrue(q, ex);
   }
-  
+
   private void countSpansDocs(SpanOnlyParser p, String s, int spanCount,
-      int docCount) throws Exception {
-    SpanQuery q = (SpanQuery)p.parse(s);
+                              int docCount) throws Exception {
+    SpanQuery q = (SpanQuery) p.parse(s);
     assertEquals("spanCount: " + s, spanCount, countSpans(q));
     assertEquals("docCount: " + s, docCount, countDocs(q));
   }
@@ -624,8 +626,8 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
   }
 
   private void testOffsetForSingleSpanMatch(SpanOnlyParser p, String s,
-      int trueDocID, int trueSpanStart, int trueSpanEnd) throws Exception {
-    SpanQuery q = (SpanQuery)p.parse(s);
+                                            int trueDocID, int trueSpanStart, int trueSpanEnd) throws Exception {
+    SpanQuery q = (SpanQuery) p.parse(s);
     List<AtomicReaderContext> ctxs = reader.leaves();
     assert (ctxs.size() == 1);
     AtomicReaderContext ctx = ctxs.get(0);
@@ -651,7 +653,6 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
   /**
    * Mocks StandardAnalyzer for tokenizing Chinese characters (at least for
    * these test cases into individual tokens).
-   * 
    */
   private final static class MockStandardTokenizerFilter extends TokenFilter {
     // Only designed to handle test cases. You may need to modify this
@@ -659,10 +660,9 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     // 1!!!
     private final Pattern hackCJKPattern = Pattern
         .compile("([\u5900-\u9899])|([\\p{InBasic_Latin}]+)");
-    private List<String> buffer = new LinkedList<String>();
-
     private final CharTermAttribute termAtt;
     private final PositionIncrementAttribute posIncrAtt;
+    private List<String> buffer = new LinkedList<String>();
 
     public MockStandardTokenizerFilter(TokenStream in) {
       super(in);

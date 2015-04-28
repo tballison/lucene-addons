@@ -37,7 +37,7 @@ public class DefaultSortKeyBuilder implements SortKeyBuilder {
   private final ConcordanceSortOrder sortOrder;
 
   /**
-   * Calls {@link #DefaultSortKeyBuilder(ConcordanceSortOrder)} 
+   * Calls {@link #DefaultSortKeyBuilder(ConcordanceSortOrder)}
    * with value of: ConcordanceSortOrder.PRE
    */
   public DefaultSortKeyBuilder() {
@@ -45,7 +45,6 @@ public class DefaultSortKeyBuilder implements SortKeyBuilder {
   }
 
   /**
-   * 
    * @param sortOrder sort order to use
    */
   public DefaultSortKeyBuilder(ConcordanceSortOrder sortOrder) {
@@ -53,12 +52,12 @@ public class DefaultSortKeyBuilder implements SortKeyBuilder {
   }
 
   @Override
-  public ConcordanceSortKey buildKey(String docKey, 
-      int startTargetTokenOffset,
-      int endTargetTokenOffset,
-      RandomAccessCharOffsetContainer charOffsets,
-      int tokensBefore, int tokensAfter,
-      Map<String, String> metadata) {
+  public ConcordanceSortKey buildKey(String docKey,
+                                     int startTargetTokenOffset,
+                                     int endTargetTokenOffset,
+                                     RandomAccessCharOffsetContainer charOffsets,
+                                     int tokensBefore, int tokensAfter,
+                                     Map<String, String> metadata) {
 
     if (sortOrder == ConcordanceSortOrder.NONE) {
       return new ConcordanceSortKey(EMPTY_STRING);
@@ -104,7 +103,7 @@ public class DefaultSortKeyBuilder implements SortKeyBuilder {
         || sortOrder == ConcordanceSortOrder.TARGET_POST) {
 
       int tmpStart = endTargetTokenOffset + 1;
-      int tmpEnd = Math.min(charOffsets.getLast(), endTargetTokenOffset+tokensAfter);
+      int tmpEnd = Math.min(charOffsets.getLast(), endTargetTokenOffset + tokensAfter);
 
       if (tmpStart > charOffsets.getLast()) {
         sb.append(SPACE);

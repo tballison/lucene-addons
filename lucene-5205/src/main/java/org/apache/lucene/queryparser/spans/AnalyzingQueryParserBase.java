@@ -30,7 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Enables setting different analyzers for whole term vs. 
+ * Enables setting different analyzers for whole term vs.
  * multiTerm (wildcard, fuzzy, prefix).
  * <p>
  * To set different analyzers per field, use PerFieldAnalyzerWrapper.
@@ -53,7 +53,7 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
   private static final Pattern WILDCARD_PATTERN = Pattern.compile("(?s)(\\\\.)|([?*]+)");
 
   private Analyzer multiTermAnalyzer;
-  
+
   /**
    * Default initialization. The analyzer is used for both whole terms and multiTerms.
    */
@@ -65,12 +65,12 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
 
   /**
    * Expert.  Set a different analyzer for whole terms vs. multiTerm subcomponents.
-   * <p> 
+   * <p/>
    * Warning: this initializer has a side effect of setting normMultiTerms = NORM_MULTI_TERMS.ANALYZE
    */
   public void init(Version matchVersion, String f, Analyzer a, Analyzer multiTermAnalyzer) {
     super.init(matchVersion, f, a);
-    this.multiTermAnalyzer = multiTermAnalyzer;  
+    this.multiTermAnalyzer = multiTermAnalyzer;
     setNormMultiTerms(NORM_MULTI_TERMS.ANALYZE);
   }
 
@@ -78,12 +78,13 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
   //modify to throw only parse exception
 
   /**
-   * Notionally overrides functionality from analyzeMultitermTerm.  Differences 
+   * Notionally overrides functionality from analyzeMultitermTerm.  Differences
    * are that this consumes the full tokenstream, and it throws ParseException
    * if it encounters no content terms or more than one.
-   * 
-   * If getMultitermAnalyzer(String fieldName) returns null, 
+   * <p/>
+   * If getMultitermAnalyzer(String fieldName) returns null,
    * this returns "part" unaltered.
+   *
    * @return bytesRef to term part
    */
   protected BytesRef analyzeMultitermTermParseEx(String field, String part) throws ParseException {
@@ -130,7 +131,7 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
       throw new RuntimeException("Unable to end & close TokenStream after analyzing multiTerm term: " + part);
     }
     if (partCount != 1) {
-      throw new ParseException("Couldn't find any content in >"+ part+"<");
+      throw new ParseException("Couldn't find any content in >" + part + "<");
     }
     return BytesRef.deepCopyOf(bytes);
   }
@@ -138,10 +139,10 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
   /**
    * Analysis of wildcards is a bit tricky.  This splits a term by wildcard
    * and then analyzes the subcomponents.
-   * 
+   *
    * @return analyzed wildcard
    */
-  protected String analyzeWildcard(String field, String termText) throws ParseException {    
+  protected String analyzeWildcard(String field, String termText) throws ParseException {
     // plagiarized from AnalyzingQueryParser
     Matcher wildcardMatcher = WILDCARD_PATTERN.matcher(termText);
     StringBuilder sb = new StringBuilder();
@@ -173,7 +174,7 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
   /**
    * If set to true, normMultiTerms is set to NORM_MULTI_TERMS.LOWERCASE.
    * If set to false, this turns off all normalization and sets normMultiTerms to NORM_MULTI_TERMS.NONE.
-   * 
+   *
    * @deprecated use {@link #setNormMultiTerms(org.apache.lucene.queryparser.spans.AnalyzingQueryParserBase.NORM_MULTI_TERMS)}
    */
   @Override
@@ -189,6 +190,7 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
 
   /**
    * Returns true if normMultiTerms == NORM_MULTI_TERMS.LOWERCASE
+   *
    * @deprecated use {@link #getNormMultiTerms()}
    */
   @Override
@@ -198,10 +200,10 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
   }
 
   /**
-   * In this base class, this simply returns 
+   * In this base class, this simply returns
    * the {@link #multiTermAnalyzer} no matter the value of fieldName.
    * This is useful as a hook for overriding.
-   * 
+   *
    * @return analyzer to use for multiTerms
    */
   public Analyzer getMultiTermAnalyzer(String fieldName) {
@@ -211,7 +213,7 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
   /**
    * Simply returns {@link #getAnalyzer()} no matter the value of fieldName.
    * This is meant as a hook for overriding.
-   * 
+   *
    * @return analyzer to use for full terms
    */
   public Analyzer getAnalyzer(String fieldName) {
@@ -219,7 +221,6 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
   }
 
   /**
-   * 
    * @return type of normalization to perform on multiTerms
    */
   public NORM_MULTI_TERMS getNormMultiTerms() {

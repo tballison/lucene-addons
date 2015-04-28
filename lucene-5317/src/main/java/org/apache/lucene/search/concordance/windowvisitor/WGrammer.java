@@ -17,16 +17,16 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A wgram is similar to a token ngram except...
  * A wgram cannot start or end with a stopword.
- * A wgram may contain stop words inside it.  
+ * A wgram may contain stop words inside it.
  * Stopwords inside of a wgram do not count towards the w-
  * so a "bigram" may contain one or more stopwords inside it.
  * <p/>
@@ -45,7 +45,6 @@ import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
  * <p/>
  * This is a fairly useful language-agnostic hack which in combination
  * with corpus statistics works fairly well in practice for "chunking" tasks.
- *
  */
 public class WGrammer extends Grammer {
 
@@ -55,17 +54,16 @@ public class WGrammer extends Grammer {
   private final boolean allowFieldSeparators;
 
   /**
-   * 
-   * @param minGram minimum gram
-   * @param maxGram maximum gram
+   * @param minGram              minimum gram
+   * @param maxGram              maximum gram
    * @param allowFieldSeparators generate a gram that contains tokens
-   * in different indices within a multivalued field?
+   *                             in different indices within a multivalued field?
    */
   public WGrammer(int minGram, int maxGram, boolean allowFieldSeparators) {
     super(minGram, maxGram);
     this.allowFieldSeparators = allowFieldSeparators;
   }
-  
+
   @Override
   public List<String> getGrams(List<String> strings, String delimiter) {
     List<String> ret = new ArrayList<String>();
@@ -82,16 +80,16 @@ public class WGrammer extends Grammer {
 
     List<OffsetAttribute> ret = new ArrayList<OffsetAttribute>();
     for (int i = 0; i < strings.size(); i++) {
-      if (ConcordanceArrayWindow.isStopOrFieldSeparator(strings.get(i))){
+      if (ConcordanceArrayWindow.isStopOrFieldSeparator(strings.get(i))) {
         continue;
       }
       int nonStops = 0;
       for (int j = i; nonStops < max && j < strings.size(); j++) {
         String tmp = strings.get(j);
-        if (ConcordanceArrayWindow.isStop(tmp) || 
+        if (ConcordanceArrayWindow.isStop(tmp) ||
             (allowFieldSeparators == true && ConcordanceArrayWindow.isFieldSeparator(tmp))) {
           continue;
-        } else if (allowFieldSeparators == false && ConcordanceArrayWindow.isFieldSeparator(tmp)){
+        } else if (allowFieldSeparators == false && ConcordanceArrayWindow.isFieldSeparator(tmp)) {
           break;
         }
         nonStops++;

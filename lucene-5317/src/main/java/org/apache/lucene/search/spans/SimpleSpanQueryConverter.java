@@ -17,11 +17,6 @@ package org.apache.lucene.search.spans;
  * limitations under the License.
  */
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
@@ -34,6 +29,11 @@ import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class SimpleSpanQueryConverter {
   /**
@@ -50,7 +50,7 @@ public class SimpleSpanQueryConverter {
    * {@link org.apache.lucene.search.spans.SpanQuery}. This can happen for many reasons: e.g. if the Query
    * contains no terms in the requested "field" or the Query is a MatchAllDocsQuery.
    * <p/>
-   * Throws IllegalArgumentException if the Query is a class that is 
+   * Throws IllegalArgumentException if the Query is a class that is
    * is not yet handled.
    * <p/>
    * This class does not rewrite the SpanQuery before returning it.
@@ -59,8 +59,8 @@ public class SimpleSpanQueryConverter {
    * Much of this code is copied directly from
    * oal.search.highlight.WeightedSpanTermExtractor. There are some subtle
    * differences.
-   * 
-   * @param field single field to extract SpanQueries for 
+   *
+   * @param field single field to extract SpanQueries for
    * @param query query to convert
    * @return SpanQuery for use in highlighting; can return empty SpanQuery
    * @throws java.io.IOException, IllegalArgumentException
@@ -115,8 +115,8 @@ public class SimpleSpanQueryConverter {
         int sz = positions.length;
         for (int i = 1; i < sz; i++) {
           int pos = positions[i];
-          int inc = pos - lastPos-1;
-          slop += inc;          
+          int inc = pos - lastPos - 1;
+          slop += inc;
           lastPos = pos;
         }
       }
@@ -144,7 +144,7 @@ public class SimpleSpanQueryConverter {
     } else if (query instanceof DisjunctionMaxQuery) {
       List<SpanQuery> spanQs = new ArrayList<SpanQuery>();
       for (Iterator<Query> iterator = ((DisjunctionMaxQuery) query).iterator(); iterator
-          .hasNext();) {
+          .hasNext(); ) {
         tryToAdd(field, convert(field, iterator.next()), spanQs);
       }
       if (spanQs.size() == 0) {
@@ -157,7 +157,7 @@ public class SimpleSpanQueryConverter {
     } else if (query instanceof MatchAllDocsQuery) {
       return getEmptySpanQuery();
     } else if (query instanceof MultiPhraseQuery) {
-    
+
       final MultiPhraseQuery mpq = (MultiPhraseQuery) query;
       final List<Term[]> termArrays = mpq.getTermArrays();
       //test for empty or wrong field
@@ -205,11 +205,11 @@ public class SimpleSpanQueryConverter {
         for (int i = 0; i < disjunctLists.length; ++i) {
           List<SpanQuery> disjuncts = disjunctLists[i];
           if (disjuncts != null) {
-            if (disjuncts.size() == 1){
+            if (disjuncts.size() == 1) {
               clauses[position++] = disjuncts.get(0);
             } else {
               clauses[position++] = new SpanOrQuery(
-                disjuncts.toArray(new SpanQuery[disjuncts.size()]));
+                  disjuncts.toArray(new SpanQuery[disjuncts.size()]));
             }
           } else {
             ++positionGaps;
@@ -226,7 +226,7 @@ public class SimpleSpanQueryConverter {
       }
 
     } else if (query instanceof MultiTermQuery) {
-      return new SpanMultiTermQueryWrapper<MultiTermQuery>((MultiTermQuery)query);
+      return new SpanMultiTermQueryWrapper<MultiTermQuery>((MultiTermQuery) query);
     }
     return convertUnknownQuery(field, query);
   }
@@ -242,19 +242,19 @@ public class SimpleSpanQueryConverter {
    * Extend this to handle queries that are not currently handled.
    * Might consider extending SpanQueryConverter in the queries compilation unit;
    * that includes CommonTermsQuery.
-   * 
+   * <p/>
    * In this class, this always throws an IllegalArgumentException
+   *
    * @param field field to convert
    * @param query query to convert
    * @return nothing.  Throws IllegalArgumentException
    */
   protected SpanQuery convertUnknownQuery(String field, Query query) {
-   throw new IllegalArgumentException("SpanQueryConverter is unable to convert this class "+
-       query.getClass().toString());
+    throw new IllegalArgumentException("SpanQueryConverter is unable to convert this class " +
+        query.getClass().toString());
   }
 
   /**
-   * 
    * @return an empty SpanQuery (SpanOrQuery with no cluases)
    */
   protected SpanQuery getEmptySpanQuery() {
@@ -264,6 +264,7 @@ public class SimpleSpanQueryConverter {
 
   /**
    * Is this a null or empty SpanQuery
+   *
    * @param q query to test
    * @return whether a null or empty SpanQuery
    */
@@ -272,9 +273,9 @@ public class SimpleSpanQueryConverter {
       return true;
     }
     if (q instanceof SpanOrQuery) {
-      SpanOrQuery soq = (SpanOrQuery)q;
+      SpanOrQuery soq = (SpanOrQuery) q;
       for (SpanQuery sq : soq.getClauses()) {
-        if (! isEmptyQuery(sq)) {
+        if (!isEmptyQuery(sq)) {
           return false;
         }
       }

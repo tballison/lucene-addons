@@ -17,19 +17,17 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
-import java.util.ArrayList;
-
-import java.util.List;
-
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
 import org.apache.lucene.document.Document;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
  * Simple class to store a document id (atomic and unique), a StoredDocument,
  * and the offsets for a SpanQuery hit
- * 
  */
 
 public class DocTokenOffsets {
@@ -38,10 +36,6 @@ public class DocTokenOffsets {
   private Document document = null;
   private List<OffsetAttribute> offsets = new ArrayList<OffsetAttribute>();
 
-  public void setDocument(Document d) {
-    this.document = d;
-  }
-
   public void addOffset(int start, int end) {
     OffsetAttributeImpl offset = new OffsetAttributeImpl();
     offset.setOffset(start, end);
@@ -49,7 +43,7 @@ public class DocTokenOffsets {
   }
 
   public void reset(int base, int atomicDocId, Document d, int start,
-      int end) {
+                    int end) {
     this.atomicDocId = atomicDocId;
     this.uniqueId = base + atomicDocId;
     setDocument(d);
@@ -63,6 +57,10 @@ public class DocTokenOffsets {
 
   public Document getDocument() {
     return document;
+  }
+
+  public void setDocument(Document d) {
+    this.document = d;
   }
 
   /*

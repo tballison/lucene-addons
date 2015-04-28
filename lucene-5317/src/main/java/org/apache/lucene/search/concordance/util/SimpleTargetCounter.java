@@ -17,31 +17,30 @@ package org.apache.lucene.search.concordance.util;
  * limitations under the License.
  */
 
-import java.io.IOException;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TotalHitCountCollector;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 public class SimpleTargetCounter {
 
   /**
-   * Simple utility class to perform basic term frequency/document frequency 
-   * counts on the individual terms within a query.  This relies on 
+   * Simple utility class to perform basic term frequency/document frequency
+   * counts on the individual terms within a query.  This relies on
    * IndexReader and does not perform any concordance search/retrieval;
    * it is, therefore, very fast.
-   * 
+   * <p/>
    * <p/>
    * If you want to visit more than basic terms (e.g. SpanNear),
    * see {@link org.apache.lucene.search.concordance.windowvisitor.TargetVisitor}
-   * 
+   *
    * @param query
    * @param reader
    * @return target term results
@@ -68,7 +67,7 @@ public class SimpleTargetCounter {
       long tf = reader.totalTermFreq(t);
       tfs.put(targ, (int) tf);
     }
-    
+
     SimpleTargetTermResults results = new SimpleTargetTermResults(dfs, tfs);
 
     return results;
@@ -77,8 +76,8 @@ public class SimpleTargetCounter {
   /**
    * Simple utility method to get document counts for a given query.
    * This uses TotalHitCounter.
-   * 
-   * @param query query
+   *
+   * @param query  query
    * @param reader reader
    * @return number of docs with a hit
    * @throws java.io.IOException

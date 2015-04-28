@@ -27,21 +27,20 @@ import java.util.List;
 
 /**
  * This is a toy class that enables easy testing of the span only
- * parsing components.  This does not handle boolean operators (AND, NOT, OR, +/-), 
+ * parsing components.  This does not handle boolean operators (AND, NOT, OR, +/-),
  * and it does not handle multiple fields.  It also doesn't handle MatchAllDocsQueries.
- * <p>
+ * <p/>
  * However, it does guarantee that a SpanQuery is returned.
- * <p>
+ * <p/>
  * The functionality of this class was the initial offering in LUCENE-5205.
- * 
  *
-
  * @see SpanQueryParser
  */
 public class SpanOnlyParser extends AbstractSpanQueryParser {
 
   /**
    * Initializes the SpanOnlyParser.
+   *
    * @param f default field
    * @param a analyzer to use
    */
@@ -51,8 +50,9 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
 
   /**
    * Initializes SpanOnlyParser.
-   * @param f default field
-   * @param a analyzer to use for full terms
+   *
+   * @param f                 default field
+   * @param a                 analyzer to use for full terms
    * @param multitermAnalyzer analyzer to use for multiterm analysis
    */
   public SpanOnlyParser(Version matchVersion, String f, Analyzer a, Analyzer multitermAnalyzer) {
@@ -62,32 +62,32 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
   @Override
   public Query parse(String s) throws ParseException {
     Query q = _parsePureSpan(getField(), s);
-    assert(q == null || q instanceof SpanQuery);
+    assert (q == null || q instanceof SpanQuery);
     return q;
   }
 
   /**
-   * This is an artifact of extending QueryParserBase. 
+   * This is an artifact of extending QueryParserBase.
    * Do not use this.  It will always assert(false) and fail to set the stream.
-   * Instead, set the default field in the initializer and 
+   * Instead, set the default field in the initializer and
    * use {@link #parse(String)}.
    */
   @Deprecated
   @Override
   public void ReInit(CharStream stream) {
-    assert(false);
+    assert (false);
   }
 
   /**
-   * This is an artifact of extending QueryParserBase. 
+   * This is an artifact of extending QueryParserBase.
    * Do not use this.  It will always assert(false) and return null.
-   * Instead, set the default field in the initializer and 
+   * Instead, set the default field in the initializer and
    * use {@link #parse(String)}.
    */
   @Deprecated
   @Override
   public Query TopLevelQuery(String field) throws ParseException {
-    assert(false);
+    assert (false);
     return null;
   }
 

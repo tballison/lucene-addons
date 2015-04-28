@@ -18,28 +18,26 @@ package org.apache.lucene.queryparser.spans;
  */
 
 abstract class SQPClause extends SQPBoostableToken {
-  
-  public static enum TYPE { PAREN, BRACKET, QUOTE, CURLY}
+
   private final int tokenOffsetStart;
   private int tokenOffsetEnd;
-
   public SQPClause(int tokenOffsetStart) {
     this.tokenOffsetStart = tokenOffsetStart;
   }
-  
+
   public SQPClause(int tokenOffsetStart, int tokenOffsetEnd) {
     this(tokenOffsetStart);
     this.tokenOffsetEnd = tokenOffsetEnd;
   }
-  
+
   public int getTokenOffsetStart() {
     return tokenOffsetStart;
   }
-  
+
   public int getTokenOffsetEnd() {
     return tokenOffsetEnd;
   }
-  
+
   public void setTokenOffsetEnd(int tokenOffsetEnd) {
     this.tokenOffsetEnd = tokenOffsetEnd;
   }
@@ -68,7 +66,7 @@ abstract class SQPClause extends SQPBoostableToken {
     if (tokenOffsetStart != other.tokenOffsetStart) {
       return false;
     }
-      return tokenOffsetEnd == other.tokenOffsetEnd;
+    return tokenOffsetEnd == other.tokenOffsetEnd;
   }
 
   @Override
@@ -81,4 +79,6 @@ abstract class SQPClause extends SQPBoostableToken {
     builder.append("]");
     return builder.toString();
   }
+
+  public static enum TYPE {PAREN, BRACKET, QUOTE, CURLY}
 }

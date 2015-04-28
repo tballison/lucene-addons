@@ -24,65 +24,51 @@ import java.util.Set;
 
 /**
  * Abstract class to handle basic information for a ConcordanceWindowSearcher
- *
  */
 public abstract class AbstractConcordanceWindowCollector {
   //value to use if all windows should be collected
   public static final int COLLECT_ALL = -1;
-  
+
   private final ConcordanceSorter sorter = new ConcordanceSorter();
-  
-  private Set<String> docIds = new HashSet<String>();
   private final int maxWindows;
+  private Set<String> docIds = new HashSet<String>();
   private boolean hitMax = false;
   private long totalDocs = 0;
 
   /**
-   * 
    * @param maxWindows maximum windows to collect
    */
   public AbstractConcordanceWindowCollector(int maxWindows) {
     this.maxWindows = maxWindows;
   }
-  
+
   /**
    * Collect/process this window
+   *
    * @param w window to be processed
    */
   public abstract void collect(ConcordanceWindow w);
 
   /**
-   * 
    * @return number of windows collected
    */
   public abstract int size();
-  
+
   /**
-   * 
    * @return collected windows (unsorted)
    */
   public abstract List<ConcordanceWindow> getWindows();
-  
+
   /**
-   * 
-   * @param hitMax did the searcher collect the maximum number of windows
-   * and stop early
-   */
-  public void setHitMax(boolean hitMax) {
-    this.hitMax = hitMax;
-  }
-  
-  /**
-   * 
    * @param docId unique key for a document
    */
   public void addDocId(String docId) {
     docIds.add(docId);
   }
-  
+
   /**
-   * 
    * Sort according to {@link #sorter} and return windows
+   *
    * @return sorted list of windows
    */
   public List<ConcordanceWindow> getSortedWindows() {
@@ -90,50 +76,53 @@ public abstract class AbstractConcordanceWindowCollector {
     Collections.sort(windows, sorter);
     return windows;
   }
-  
+
   /**
-   * 
    * @return whether or not the searcher collected the maximum number of
    * windows and stopped early.
    */
   public boolean getHitMax() {
     return hitMax;
   }
-  
+
   /**
-   * 
-   * @return the maximum number of windows to collect. 
+   * @param hitMax did the searcher collect the maximum number of windows
+   *               and stop early
+   */
+  public void setHitMax(boolean hitMax) {
+    this.hitMax = hitMax;
+  }
+
+  /**
+   * @return the maximum number of windows to collect.
    * Can be equal to {@link #COLLECT_ALL}
    */
   public int getMaxWindows() {
     return maxWindows;
   }
- 
+
   /**
-   * 
-   * @param totalDocs see {@link #getTotalDocs()}
-   */
-  public void setTotalDocs(long totalDocs) {
-    this.totalDocs = totalDocs;
-  }
-  
-  /**
-   * 
    * @param totalDocs add this value to {@link #totalDocs}
    */
   public void incrementTotalDocs(long totalDocs) {
     this.totalDocs += totalDocs;
   }
-  
+
   /**
    * @return total number of documents in all indices
    */
   public long getTotalDocs() {
-      return totalDocs;
+    return totalDocs;
   }
 
   /**
-   *
+   * @param totalDocs see {@link #getTotalDocs()}
+   */
+  public void setTotalDocs(long totalDocs) {
+    this.totalDocs = totalDocs;
+  }
+
+  /**
    * @return number of windows in results
    */
   public int getNumWindows() {
@@ -145,7 +134,6 @@ public abstract class AbstractConcordanceWindowCollector {
   }
 
   /**
-   *
    * @return number of documents in results
    */
   public int getNumDocs() {

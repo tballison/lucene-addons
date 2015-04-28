@@ -17,13 +17,12 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
+import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
 import org.apache.lucene.search.concordance.charoffsets.SimpleAnalyzerUtil;
 import org.apache.lucene.search.concordance.charoffsets.TargetTokenNotFoundException;
-import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
 
 /**
  * builds an ArrayWindow
- * 
  */
 
 class ArrayWindowBuilder {
@@ -31,12 +30,12 @@ class ArrayWindowBuilder {
   private final static String INTER_MULTIVALUE_FIELD_PADDING = " | ";
 
   public static ConcordanceArrayWindow buildWindow(int targetStartOffset,
-      int targetEndOffset, int tokensBefore, int tokensAfter,
-      int offsetGap,
-      RandomAccessCharOffsetContainer offsetResults, String[] fieldValues,
-      ConcordanceArrayWindow window, boolean includeTarget,
-      boolean analyzeTarget)
-          throws TargetTokenNotFoundException {
+                                                   int targetEndOffset, int tokensBefore, int tokensAfter,
+                                                   int offsetGap,
+                                                   RandomAccessCharOffsetContainer offsetResults, String[] fieldValues,
+                                                   ConcordanceArrayWindow window, boolean includeTarget,
+                                                   boolean analyzeTarget)
+      throws TargetTokenNotFoundException {
 
 
     if (tokensBefore > 0) {
@@ -66,7 +65,7 @@ class ArrayWindowBuilder {
         }
       } else {
         int targetCharStart = offsetResults.getCharacterOffsetStart(targetStartOffset);
-        int targetCharEnd = offsetResults.getCharacterOffsetEnd(targetEndOffset);        
+        int targetCharEnd = offsetResults.getCharacterOffsetEnd(targetEndOffset);
         String targ = SimpleAnalyzerUtil.substringFromMultiValuedFields(targetCharStart, targetCharEnd,
             fieldValues, offsetGap, INTER_MULTIVALUE_FIELD_PADDING);
         window.addTarget(targ);

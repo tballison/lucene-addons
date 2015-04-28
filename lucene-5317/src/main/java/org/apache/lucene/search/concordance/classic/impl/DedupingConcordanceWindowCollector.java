@@ -17,46 +17,44 @@ package org.apache.lucene.search.concordance.classic.impl;
  * limitations under the License.
  */
 
+import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
+import org.apache.lucene.search.concordance.classic.ConcordanceWindow;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
-import org.apache.lucene.search.concordance.classic.ConcordanceWindow;
-
 /**
  * Like ConcordanceWindowCollector, but this collector
  * doesn't store duplicate windows.  Windows are defined as duplicates by
  * {@link #buildEqualityKey(ConcordanceWindow, StringBuilder)}.
- *
  */
 public class DedupingConcordanceWindowCollector extends AbstractConcordanceWindowCollector {
 
   Map<String, ConcordanceWindow> map = new HashMap<String, ConcordanceWindow>();
   private StringBuilder sb = new StringBuilder();
-  
+
   /**
-   * 
    * @param maxHits maximum number of windows to store.  This could potentially
-   * visit lots more windows than maxHits.
+   *                visit lots more windows than maxHits.
    */
-  public DedupingConcordanceWindowCollector(int maxHits){
+  public DedupingConcordanceWindowCollector(int maxHits) {
     super(maxHits);
   }
-  
+
   @Override
   public void collect(ConcordanceWindow w) {
-    if (getHitMax() == true){
+    if (getHitMax() == true) {
       return;
     }
     buildEqualityKey(w, sb);
     String key = sb.toString();
     ConcordanceWindow oldWindow = map.get(key);
-    if (oldWindow == null){
+    if (oldWindow == null) {
       //we would have added a new window here
       if (getMaxWindows() != AbstractConcordanceWindowCollector.COLLECT_ALL &&
-          map.size() >= getMaxWindows()){
+          map.size() >= getMaxWindows()) {
         setHitMax(true);
         return;
       }
@@ -70,7 +68,7 @@ public class DedupingConcordanceWindowCollector extends AbstractConcordanceWindo
     map.put(key, oldWindow);
   }
 
-  
+
   /**
    * number of windows collected
    */
@@ -85,17 +83,17 @@ public class DedupingConcordanceWindowCollector extends AbstractConcordanceWindo
     windows.addAll(map.values());
     return windows;
   }
-  
+
   /**
    * Public for easy overriding.  Generate a key to be used to determine
    * whether two windows are the same.  Some implementations
    * might want to lowercase, some might want genuine case folding,
    * some might want to strip non-alphanumerics, etc.
-
-   * @param w ConcordanceWindow
+   *
+   * @param w  ConcordanceWindow
    * @param sb reuseable StringBuilder; sb.setLength(0) is called before use!
    */
-  public void buildEqualityKey(ConcordanceWindow w, StringBuilder sb){
+  public void buildEqualityKey(ConcordanceWindow w, StringBuilder sb) {
     sb.setLength(0);
     sb.append(w.getPre().toLowerCase());
     sb.append(">>>");

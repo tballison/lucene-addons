@@ -17,10 +17,10 @@ package org.apache.lucene.corpus.stats;
  */
 
 
-public class TermDF implements Comparable<TermDF>{
+public class TermDF implements Comparable<TermDF> {
   public final String term;
   public final int docFreq;
-  
+
   public TermDF(String term, int docFreq) {
     this.term = term;
     this.docFreq = docFreq;
@@ -36,9 +36,9 @@ public class TermDF implements Comparable<TermDF>{
 
   @Override
   public int compareTo(TermDF other) {
-    if (this.docFreq < other.docFreq){
+    if (this.docFreq < other.docFreq) {
       return 1;
-    } else if (this.docFreq > other.docFreq){
+    } else if (this.docFreq > other.docFreq) {
       return -1;
     }
     return this.term.compareTo(other.term);
@@ -71,6 +71,6 @@ public class TermDF implements Comparable<TermDF>{
       return false;
     return true;
   }
-  
-  
+
+
 }

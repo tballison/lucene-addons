@@ -17,15 +17,14 @@ package org.apache.lucene.corpus.stats;
  */
 
 
-import java.io.IOException;
-
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.util.BytesRef;
 
+import java.io.IOException;
+
 /**
  * Lucene-agnostic IDF calculator
- * 
  */
 
 public class IDFCalc {
@@ -35,7 +34,7 @@ public class IDFCalc {
 
   private final double UNSEEN_IDF;
   private final double[] buffered = new double[MAX_BUFF];
-  
+
   private final int D;
   private final int D_PLUS_ONE;
   private final IndexReader reader;
@@ -44,7 +43,7 @@ public class IDFCalc {
     this.reader = reader;
     D = reader.numDocs();
     //add one to avoid log of 1 = 0 in downstream calculations
-    D_PLUS_ONE = D+1;
+    D_PLUS_ONE = D + 1;
     UNSEEN_IDF = getUnbufferedIDF(DEFAULT_UNSEEN_COUNT);
     buffered[0] = UNSEEN_IDF;
     for (int i = 1; i < MAX_BUFF; i++) {
@@ -54,7 +53,7 @@ public class IDFCalc {
 
   /**
    * @param df
-   * @return inverse document frequency for @param df. 
+   * @return inverse document frequency for @param df.
    * If df <= 0, returns {@link #UNSEEN_IDF}
    */
   public double getIDF(int df) {
@@ -74,7 +73,7 @@ public class IDFCalc {
 
   /**
    * calculate the document frequency from an IDF
-   * 
+   *
    * @param idf
    * @return
    */
@@ -84,13 +83,14 @@ public class IDFCalc {
 
   /**
    * calculate the document frequency from D and an idf
+   *
    * @param totalDocs total number of documents
    * @param idf
    * @return
    */
   public double unIDF(int totalDocs, double idf) {
     return (double) (totalDocs) / (Math.pow(Math.E, idf)); // make sure the base
-                                                         // is the same as above
+    // is the same as above
   }
 
 
@@ -99,7 +99,6 @@ public class IDFCalc {
   }
 
   /**
-   * 
    * @param t
    * @return idf for a single term or {@link #UNSEEN_IDF} if term is not found in
    * index
@@ -116,18 +115,18 @@ public class IDFCalc {
    * upperbound on the actual idf of the phrase. This is fast to
    * compute and yields decent results in practice. For more exact IDF for
    * phrases, consider indexing ngrams.
-   * 
-   * Make sure to remove stop words before calculating the IDF.  
-   * A stop word will have an actual DF of 0, which will 
+   * <p/>
+   * Make sure to remove stop words before calculating the IDF.
+   * A stop word will have an actual DF of 0, which will
    * be converted to {@value #DEFAULT_UNSEEN_COUNT}.
-   * 
+   *
    * @param s
    * @param t
    * @return
    * @throws java.io.IOException
    */
   public double multiTermIDFSum(String s, Term t) throws IOException {
-   
+
     double sum = 0.0;
     Term tmp = new Term(t.field());
     BytesRef ref = tmp.bytes();
@@ -139,7 +138,6 @@ public class IDFCalc {
   }
 
   /**
-   * 
    * @param s
    * @param t
    * @return double[] of length 2, stats[0] is the sum of the individual term idfs
@@ -148,7 +146,7 @@ public class IDFCalc {
    */
   public double[] multiTermIDF(String s, Term t) throws IOException {
     // be careful: must pre-analyze and divide subterms by whitespace!!!
-    double[] stats = new double[] { 0.0, Double.MAX_VALUE }; // sum, min df, ...
+    double[] stats = new double[]{0.0, Double.MAX_VALUE}; // sum, min df, ...
     Term tmp = new Term(t.field());
     BytesRef ref = tmp.bytes();
     for (String termString : s.trim().split(" +")) {
@@ -169,12 +167,11 @@ public class IDFCalc {
   }
 
   /**
-   * 
    * @return D -- total number of docs used in IDF calculations.  Note that D+1 is
    * actually used to calculate idf to avoid idf=0.
    */
   public int getD() {
     return D;
   }
-  
+
 }

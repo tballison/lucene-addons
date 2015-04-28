@@ -27,21 +27,18 @@ import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.schema.TextField;
-import org.apache.solr.search.QParser;
 
 /**
  * Overrides features of Lucene's SpanQueryParser to enable
- * pulling the correct analyzer for each field and for 
+ * pulling the correct analyzer for each field and for
  * handling non-analyzed fields.
- * 
- * This also allows Solr non-text fields to parse the 
+ * <p/>
+ * This also allows Solr non-text fields to parse the
  * appropriate components of the query string.
- * 
+ * <p/>
  * The process could be simpler, but this returns a null analyzer
- * if the field is not text and/or has a null analyzer.  The SpanQueryParser 
+ * if the field is not text and/or has a null analyzer.  The SpanQueryParser
  * then calls the "handleNullAnalyzer..." functions when it gets a null analyzer.
- *
- * 
  */
 public class SolrSpanQueryParser extends SpanQueryParser {
 
@@ -53,13 +50,13 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   public SolrSpanQueryParser(Version matchVersion, String f, Analyzer a, IndexSchema schema, QParser nonTextParser) {
     super(matchVersion, f, a);
     this.schema = schema;
-    this.nonTextParser = nonTextParser; 
+    this.nonTextParser = nonTextParser;
   }
 
 
   @Override
   public Query handleNullAnalyzerRange(String fieldName, String start,
-      String end, boolean startInclusive, boolean endInclusive){
+                                       String end, boolean startInclusive, boolean endInclusive) {
     //lifted from SolrQueryParserBase
     SchemaField sf = schema.getFieldOrNull(fieldName);
     if (sf != null) {
@@ -71,7 +68,7 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   }
 
   @Override
-  public Query handleNullAnalyzer(String fieldName, String queryText){
+  public Query handleNullAnalyzer(String fieldName, String queryText) {
     //lifted from SolrQueryParserBase
     SchemaField sf = schema.getFieldOrNull(fieldName);
     if (sf != null) {
@@ -86,29 +83,29 @@ public class SolrSpanQueryParser extends SpanQueryParser {
     //by the time you're here, you know that the analyzer was null and/or
     //this isn't a TextField
     SchemaField sf = schema.getFieldOrNull(fieldName);
-    if (sf == null){
+    if (sf == null) {
       return new TermQuery(new Term(fieldName, prefix));
-    } 
+    }
     return sf.getType().getPrefixQuery(nonTextParser, sf, prefix);
 
   }
 
   /**
    * Returns analyzer to be used on full terms within a field.
-   * 
+   *
    * @param fieldName
-   * @return analyzer to use on a requested field for whole terms.  Returns getAnalyzer() if 
+   * @return analyzer to use on a requested field for whole terms.  Returns getAnalyzer() if
    * field is not found in wholeTermAnalyzers.
    */
   @Override
-  public Analyzer getAnalyzer(String fieldName){
+  public Analyzer getAnalyzer(String fieldName) {
     SchemaField field = schema.getFieldOrNull(fieldName);
-    if (field == null){
+    if (field == null) {
       return null;
     }
     FieldType type = field.getType();
-    if (type instanceof TextField){
-      return((TextField)type).getQueryAnalyzer();
+    if (type instanceof TextField) {
+      return ((TextField) type).getQueryAnalyzer();
     }
     return null;
   }
@@ -116,21 +113,21 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   /**
    * Returns the multiterm analyzer to be used on a specific field.
    * Override to modify behavior.
-   * 
+   *
    * @param fieldName
    * @return analyzer to use on a requested field for multiTerm terms.  Returns getMultiTermAnalyzer()
    * if field is not found in multiTermAnalyzers
    */
   @Override
-  public Analyzer getMultiTermAnalyzer(String fieldName){
+  public Analyzer getMultiTermAnalyzer(String fieldName) {
     SchemaField field = schema.getFieldOrNull(fieldName);
-    if (field == null){
+    if (field == null) {
       return null;
     }
     FieldType type = field.getType();
 
-    if (type instanceof TextField){
-      return((TextField)type).getMultiTermAnalyzer();
+    if (type instanceof TextField) {
+      return ((TextField) type).getMultiTermAnalyzer();
     }
     return null;
   }
@@ -142,7 +139,7 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   @Override
   public RewriteMethod getMultiTermRewriteMethod(String fieldName) {
     SchemaField field = schema.getFieldOrNull(fieldName);
-    if (field == null){
+    if (field == null) {
       return getMultiTermRewriteMethod();
     }
     FieldType type = field.getType();

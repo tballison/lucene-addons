@@ -24,7 +24,6 @@ import org.apache.lucene.search.concordance.classic.DocIdBuilder;
  * Simple id builder based on ephemeral Lucene doc ids.
  * Use this only if your documents do not have a unique key.
  * Then, use only with great care.
- *
  */
 public class IndexIdDocIdBuilder implements DocIdBuilder {
 
