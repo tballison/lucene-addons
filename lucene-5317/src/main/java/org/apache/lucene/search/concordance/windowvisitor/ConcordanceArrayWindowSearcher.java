@@ -126,11 +126,9 @@ public class ConcordanceArrayWindowSearcher {
 
     // iterate through documents
     while (itr.next()) {
-      System.out.println("another doc!");
       docTokenOffsets = itr.getDocTokenOffsets();
       Document document = docTokenOffsets.getDocument();
       String docId = docIdBuilder.build(document, docTokenOffsets.getUniqueDocId());
-      System.out.println("DOC ID:" + docId);
       String[] fieldValues = document.getValues(query.getField());
       if (fieldValues == null) {
         throw new IOException("Mismatched content field");
