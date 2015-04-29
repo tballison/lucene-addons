@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
- *
+ * concocted for testing only!
  *
  **/
 public class MockQuerySenderListenerReqHandler extends RequestHandlerBase {
