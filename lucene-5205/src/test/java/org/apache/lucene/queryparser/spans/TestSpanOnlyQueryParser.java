@@ -556,7 +556,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
   }
 
   public void testSingleElementInNearQuery() throws Exception {
-    //bug raised by Ather Modassar that surfaced with Lucene 5.2.1
+    //bug raised by Modassar Ather that surfaced with Lucene 5.2.1
     SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer);
     String q = "\"([eheu fugaces]~1 [labuntur anni]~1)\"";
     countSpansDocs(p, q, 2, 1);

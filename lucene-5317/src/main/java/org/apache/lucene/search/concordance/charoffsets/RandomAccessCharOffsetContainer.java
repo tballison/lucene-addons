@@ -17,8 +17,7 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
-import org.apache.lucene.util.OpenBitSet;
-
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +36,7 @@ public class RandomAccessCharOffsetContainer {
   public final static String NULL_TERM = "";
   public final static int NULL_OFFSET = -1;
 
-  private OpenBitSet set = new OpenBitSet();
+  private BitSet set = new BitSet();
   private int last = -1;
   private Map<Integer, String> terms = new HashMap<Integer, String>();
   private Map<Integer, Integer> starts = new HashMap<>();
