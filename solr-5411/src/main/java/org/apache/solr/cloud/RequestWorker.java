@@ -88,6 +88,9 @@ public class RequestWorker extends QueryRequest implements Runnable {
 
     try {
       NamedList nl = solrServer.request(this);
+      for (int i = 0; i < nl.size(); i++) {
+        System.out.println("RETURNED FROM SERVER: " + getURL() + " : " + nl.getName(i) + " ; " + nl.getVal(i));
+      }
       results.set(nl);
     } catch (SolrServerException e) {
       e.printStackTrace();

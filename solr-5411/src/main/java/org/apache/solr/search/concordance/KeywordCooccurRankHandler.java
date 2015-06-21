@@ -117,6 +117,7 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
   public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
     boolean isDistrib = isDistributed(req);
     if (isDistrib) {
+      System.out.println("DOING ZOO QUERY");
       doZooQuery(req, rsp);
     } else {
       doQuery(req, rsp);
@@ -154,14 +155,18 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 
       shards.add(shard);
     }
-
+    System.out.println("SHARDS SIZE: " + shards.size());
     RequestThreads<CooccurConfig> threads = initRequestPump(shards, req);
 
     Results results = new Results(threads.getMetadata());
 
-
+/*  //skip local
     NamedList nl = doLocalSearch(req);
-    results.add(nl, "local");
+    for (int i = 0; i < nl.size(); i++) {
+      System.out.println("RETURNED FROM SERVER: " + "LOCAL" + " : " + nl.getName(i) + " ; " + nl.getVal(i));
+    }
+
+    results.add(nl, "local");*/
 
     results = spinWait(threads, results);
 
@@ -259,8 +264,9 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 
     try {
       ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
+      System.out.println("UNIQUE KEY FIELD: " + solrUniqueKeyField);
       DocIdBuilder docIdBuilder = new FieldBasedDocIdBuilder(solrUniqueKeyField);
-
+      System.out.println("QUERY: " + query.toString());
       searcher.search(reader, field, query, queryFilter, analyzer, visitor, docIdBuilder);
     } catch (IllegalArgumentException e) {
       // TODO Auto-generated catch block
@@ -273,6 +279,7 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
     List<TermIDF> overallResults = visitor.getResults();
     NamedList results = toNamedList(overallResults);
     //needed for cloud computations, merging cores
+
     results.add("collectionSize", reader.numDocs());
     results.add("numDocsVisited", visitor.getNumDocsVisited());
     results.add("numWindowsVisited", visitor.getNumWindowsVisited());
@@ -318,7 +325,7 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 
 
   public static class Results {
-    int maxWindows = -1;
+    long maxWindows = -1;
     int maxResults = -1;
 
     Results(CooccurConfig config) {
@@ -334,8 +341,8 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
     boolean hitMax = false;
     boolean maxTerms = false;
     int size = 0;
-    int numDocs = 0;
-    int numWindows = 0;
+    long numDocs = 0;
+    long numWindows = 0;
     int numResults = 0;
 
     HashMap<String, Keyword> keywords = new HashMap<String, Keyword>();
@@ -350,7 +357,7 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
       numDocs += getInt("numDocs", nlRS);
       size += getInt("collectionSize", nlRS);
       numResults += getInt("numResults", nlRS);
-      numWindows += getInt("numWindows", nlRS);
+      numWindows += getLong("numWindows", nlRS);
 
       hitMax = numWindows >= maxWindows;
       maxTerms = numResults >= maxResults;
@@ -443,8 +450,8 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
   static class Keyword {
     String term;
     double tfidf = 0;
-    int tf = 0;
-    int df = 0;
+    long tf = 0;
+    long df = 0;
     int minDF = 0;
 
 

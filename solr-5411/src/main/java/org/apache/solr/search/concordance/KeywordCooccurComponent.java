@@ -66,6 +66,7 @@ public class KeywordCooccurComponent extends SearchComponent implements SolrCore
       isLocal = rb.shards == null || rb.shards.length < 2;
 
     if (!isLocal) {
+      System.out.println("NOT IS LOCAL");
       String thisUrl = rb.req.getCore().getCoreDescriptor().getCoreContainer().getZkController().getBaseUrl();
       List<String> shards = new ArrayList<String>(rb.shards.length);
       for (String shard : rb.shards) {
@@ -111,8 +112,10 @@ public class KeywordCooccurComponent extends SearchComponent implements SolrCore
   @Override
   public void finishStage(ResponseBuilder rb) {
     SolrParams params = rb.req.getParams();
+    System.out.println("FINISH STAGE: "+params.toNamedList().size());
     if (rb.stage != ResponseBuilder.STAGE_GET_FIELDS)
       return;
+    System.out.println("FINISH STAGE2: "+params.toNamedList().size());
 
     /**
      * it'd be awesome if this code worked, but it doesn't because

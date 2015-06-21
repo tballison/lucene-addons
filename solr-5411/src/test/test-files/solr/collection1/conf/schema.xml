@@ -448,7 +448,7 @@
    <field name="signatureField" type="string" indexed="true" stored="false"/>
    <field name="uuid" type="uuid" stored="true" />
    <field name="name" type="nametext" indexed="true" stored="true"/>
-   <field name="text" type="text" indexed="true" stored="false"/>
+   <field name="text" type="nametext" indexed="true" stored="true"/>
    <field name="subject" type="text" indexed="true" stored="true"/>
    <field name="title" type="nametext" indexed="true" stored="true"/>
    <field name="weight" type="float" indexed="true" stored="true" multiValued="false"/>

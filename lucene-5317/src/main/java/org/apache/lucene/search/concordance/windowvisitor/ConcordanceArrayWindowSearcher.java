@@ -172,7 +172,7 @@ public class ConcordanceArrayWindowSearcher {
                                  List<OffsetAttribute> offsets, String docId, ConcordanceArrayWindow window,
                                  ArrayWindowVisitor visitor, int offsetGap) throws IOException,
       TargetTokenNotFoundException {
-
+    System.out.println("VISITING: "+docId+":"+offsets.size());
     for (OffsetAttribute offset : offsets) {
       // hit max, stop now
       if (visitor.getHitMax() == true) {

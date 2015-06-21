@@ -92,6 +92,32 @@
       <str name="hidden">bogus.txt</str>
     </lst>
   </requestHandler>
+    <requestHandler name="/concordance" class="org.apache.solr.search.concordance.KWICRequestHandler">
+
+    </requestHandler>
+    <requestHandler name="/kwCooccur" class="org.apache.solr.search.concordance.KeywordCooccurRankHandler">
+        <lst name="defaults">
+            <str name="echoParams">explicit</str>
+            <str name="defType">spanquery</str>
+            <str name="f">text</str>
+            <str name="df">text</str>
+            <str name="wt">xml</str>
+            <int name="minNGram">1</int>
+            <int name="maxNGram">1</int>
+            <int name="minTF">1</int>
+            <int name="minDF">1</int>
+            <double name="minIDF">-1.0f</double>
+            <int name="numResults">50</int>
+            <int name="maxWindows">100000</int>
+            <int name="tokensBefore">10</int>
+            <int name="tokensAfter">10</int>
+        </lst>
+        <lst name="invariants">
+            <str name="prop1">value1</str>
+            <int name="prop2">2</int>
+            <!-- ... more config items here ... -->
+        </lst>
+    </requestHandler>
 
   <updateRequestProcessorChain name="distrib-dup-test-chain-explicit">
     <!-- explicit test using processors before and after distrib -->

@@ -49,6 +49,7 @@ public class CooccurTest extends SolrTestCaseJ4 {
   public void printlnForBuildingTests() throws Exception {
     SolrQueryRequest r = req("qt", requestUri, "q", CONCORDANCE_FIELD + ":" + TARGET,
         "maxNGram", "3");
+    System.out.println(r.toString());
     System.out.println(h.query(r));
     String response = JQ(r);
     System.out.println(response);

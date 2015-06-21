@@ -22,7 +22,7 @@ public class TermIDF extends TermDFTF {
   private double idf;
   private double tfidf;
 
-  public TermIDF(String term, int docFreq, long termFreq, double idf) {
+  public TermIDF(String term, int docFreq, int termFreq, double idf) {
     super(term, docFreq, termFreq);
     this.idf = idf;
     this.tfidf = termFreq * idf;
