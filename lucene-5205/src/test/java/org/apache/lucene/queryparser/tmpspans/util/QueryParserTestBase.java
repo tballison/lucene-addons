@@ -17,6 +17,10 @@ package org.apache.lucene.queryparser.tmpspans.util;
  * limitations under the License.
  */
 
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
@@ -46,12 +50,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.RegExp;
-
-import java.io.Reader;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Locale;
-import java.util.TimeZone;
 
 /**
  * Base Test class for QueryParser subclasses, that implement the historical lucene queryparser behavior.
@@ -174,8 +172,8 @@ public abstract class QueryParserTestBase extends QueryParserTestCase {
     // +,-,! should be directly adjacent to operand (i.e. not separated by whitespace) to be treated as an operator
     Analyzer a = new Analyzer() {
       @Override
-      public TokenStreamComponents createComponents(String fieldName, Reader r) {
-        return new TokenStreamComponents(new MockTokenizer(r, MockTokenizer.WHITESPACE, false));
+      public TokenStreamComponents createComponents(String fieldName) {
+        return new TokenStreamComponents(new MockTokenizer(MockTokenizer.WHITESPACE, false));
       }
     };
     assertQueryEquals("a - b", a, "a - b");
@@ -621,7 +619,7 @@ public abstract class QueryParserTestBase extends QueryParserTestCase {
     q.setRewriteMethod(MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE);
     assertInstanceOf(getQuery("/[A-Z][123]/^0.5", qp), RegexpQuery.class);
     assertQueryEquals(q, getQuery("/[A-Z][123]/^0.5", qp));
-    qp.setMultiTermRewriteMethod(MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT);
+    qp.setMultiTermRewriteMethod(MultiTermQuery.CONSTANT_SCORE_REWRITE);
 
     Query escaped2 = new RegexpQuery(new Term("field", "[a-z]\\*[123]"));
     assertQueryEquals(escaped2, getQuery("/[a-z]\\*[123]/", qp));
@@ -855,7 +853,7 @@ public abstract class QueryParserTestBase extends QueryParserTestCase {
 
 
     //testRange
-    assertEquals(MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT, ((TermRangeQuery) getQuery("[ a TO z]")).getRewriteMethod());
+    assertEquals(MultiTermQuery.CONSTANT_SCORE_BOOLEAN_REWRITE, ((TermRangeQuery) getQuery("[ a TO z]")).getRewriteMethod());
     qp = getParserConfig(new MockAnalyzer(random(), MockTokenizer.SIMPLE, true));
     qp.setMultiTermRewriteMethod(MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE);
     assertEquals(MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE, ((TermRangeQuery) getQuery("[ a TO z]", qp)).getRewriteMethod());

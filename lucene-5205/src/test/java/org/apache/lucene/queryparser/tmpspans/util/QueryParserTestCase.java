@@ -17,6 +17,13 @@ package org.apache.lucene.queryparser.tmpspans.util;
  * limitations under the License.
  */
 
+import java.io.IOException;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenizer;
@@ -35,15 +42,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.util.LuceneTestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.text.DateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Locale;
-import java.util.TimeZone;
 
 /**
  * Utilities and so on for testing queryparsers
@@ -286,8 +284,8 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
    */
   public static final class QPTestAnalyzer extends Analyzer {
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader r) {
-      Tokenizer tokenizer = new MockTokenizer(r, MockTokenizer.SIMPLE, true);
+    public TokenStreamComponents createComponents(String fieldName) {
+      Tokenizer tokenizer = new MockTokenizer(MockTokenizer.SIMPLE, true);
       return new TokenStreamComponents(tokenizer, new QPTestFilter(tokenizer));
     }
   }
@@ -327,10 +325,6 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
   public static class SimpleCJKTokenizer extends Tokenizer {
     private CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
 
-    public SimpleCJKTokenizer(Reader r) {
-      super(r);
-    }
-
     @Override
     public final boolean incrementToken() throws IOException {
       int ch = input.read();
@@ -369,8 +363,8 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
    */
   public final class MockCollationAnalyzer extends Analyzer {
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader r) {
-      Tokenizer tokenizer = new MockTokenizer(r, MockTokenizer.WHITESPACE, true);
+    public TokenStreamComponents createComponents(String fieldName) {
+      Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE, true);
       return new TokenStreamComponents(tokenizer, new MockCollationFilter(tokenizer));
     }
   }
@@ -380,8 +374,8 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
    */
   public final class Analyzer1 extends Analyzer {
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader r) {
-      Tokenizer tokenizer = new MockTokenizer(r, MockTokenizer.WHITESPACE, true);
+    public TokenStreamComponents createComponents(String fieldName) {
+      Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE, true);
       return new TokenStreamComponents(tokenizer, new MockSynonymFilter(tokenizer));
     }
   }
@@ -391,15 +385,15 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
    */
   public final class Analyzer2 extends Analyzer {
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader r) {
-      return new TokenStreamComponents(new MockTokenizer(r, MockTokenizer.WHITESPACE, true));
+    public TokenStreamComponents createComponents(String fieldName) {
+      return new TokenStreamComponents(new MockTokenizer(MockTokenizer.WHITESPACE, true));
     }
   }
 
   public class SimpleCJKAnalyzer extends Analyzer {
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader r) {
-      return new TokenStreamComponents(new SimpleCJKTokenizer(r));
+    public TokenStreamComponents createComponents(String fieldName) {
+      return new TokenStreamComponents(new SimpleCJKTokenizer());
     }
   }
 }

@@ -16,14 +16,12 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.CharStream;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.spans.SpanQuery;
-import org.apache.lucene.util.Version;
-
-import java.util.List;
 
 /**
  * This is a toy class that enables easy testing of the span only
@@ -44,8 +42,8 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
    * @param f default field
    * @param a analyzer to use
    */
-  public SpanOnlyParser(Version matchVersion, String f, Analyzer a) {
-    init(matchVersion, f, a);
+  public SpanOnlyParser(String f, Analyzer a) {
+    init(f, a);
   }
 
   /**
@@ -55,8 +53,8 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
    * @param a                 analyzer to use for full terms
    * @param multitermAnalyzer analyzer to use for multiterm analysis
    */
-  public SpanOnlyParser(Version matchVersion, String f, Analyzer a, Analyzer multitermAnalyzer) {
-    init(matchVersion, f, a, multitermAnalyzer);
+  public SpanOnlyParser(String f, Analyzer a, Analyzer multitermAnalyzer) {
+    init(f, a, multitermAnalyzer);
   }
 
   @Override

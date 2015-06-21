@@ -646,8 +646,12 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     OffsetAttribute offsetAtt = null;
     int numTokens = 0;
 
-    buffer.reset();
-
+/*    try {
+      buffer.reset();
+    } catch (IOException e) {
+      throw new ParseException(e.getMessage());
+    }
+*/
     if (buffer.hasAttribute(TermToBytesRefAttribute.class)) {
       termAtt = buffer.getAttribute(TermToBytesRefAttribute.class);
     }
@@ -903,8 +907,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       //if single child is itself a SpanNearQuery, inherit slop and inorder
       if (child instanceof SpanNearQuery) {
         SpanQuery[] childsClauses = ((SpanNearQuery) child).getClauses();
-        child = new SpanNearQuery(childsClauses, slop, inOrder);
+        return new SpanNearQuery(childsClauses, slop, inOrder);
       }
+      return child;
     }
 
     if (slop == UNSPECIFIED_SLOP) {

@@ -110,7 +110,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     searcher = newSearcher(reader);
     writer.close();
 
-    parser = new SpanQueryParser(TEST_VERSION_CURRENT, FIELD1, analyzer);
+    parser = new SpanQueryParser(FIELD1, analyzer);
   }
 
   @AfterClass
@@ -193,7 +193,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     compareHits("f1:brown f2:(three four) f2:five", 0, 1, 2, 3, 4, 5);
     compareHits("f1:brown f2:(f1:three four) f2:five", 0, 1, 2, 4, 5);
 
-    SpanQueryParser p = new SpanQueryParser(TEST_VERSION_CURRENT, FIELD2, analyzer);
+    SpanQueryParser p = new SpanQueryParser(FIELD2, analyzer);
     compareHits(p, "f1:brown three four", 0, 1, 2, 3, 4);
     compareHits(p, "f1:brown (three four)", 0, 1, 2, 3, 4);
     compareHits(p, "f1:brown (three four) five", 0, 1, 2, 3, 4, 5);
@@ -225,12 +225,12 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
   }
 
   private void compareHits(String s, int... docids) throws Exception {
-    compareHits(new SpanQueryParser(TEST_VERSION_CURRENT, FIELD1, analyzer), s, docids);
+    compareHits(new SpanQueryParser(FIELD1, analyzer), s, docids);
   }
 
   private void compareHits(SpanQueryParser p, String s, int... docids) throws Exception {
     Query q = p.parse(s);
-    TopScoreDocCollector results = TopScoreDocCollector.create(1000, true);
+    TopScoreDocCollector results = TopScoreDocCollector.create(1000);
     searcher.search(q, results);
     ScoreDoc[] scoreDocs = results.topDocs().scoreDocs;
     Set<Integer> hits = new HashSet<Integer>();
@@ -333,7 +333,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     IndexReader r = w.getReader();
     IndexSearcher s = newSearcher(r);
     w.close();
-    SpanQueryParser p = new SpanQueryParser(TEST_VERSION_CURRENT, FIELD1, stopsAnalyzer);
+    SpanQueryParser p = new SpanQueryParser(FIELD1, stopsAnalyzer);
     assertHits("-ab +the +cd", p, s, 0);
     assertHits("+ab +the +cd", p, s, 2);
     assertHits("+the", p, s, 0);
@@ -362,7 +362,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
   private void assertHits(String qString, SpanQueryParser p, IndexSearcher s, int expected) throws Exception {
     Query q = p.parse(qString);
-    TopScoreDocCollector results = TopScoreDocCollector.create(1000, true);
+    TopScoreDocCollector results = TopScoreDocCollector.create(1000);
     s.search(q, results);
     ScoreDoc[] scoreDocs = results.topDocs().scoreDocs;
     assertEquals(qString, expected, scoreDocs.length);
