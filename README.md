@@ -4,6 +4,7 @@ lucene-addons
 Standalone versions of LUCENE-5205 and other patches.
 
 Main Branches:
+
 1. solr-collab tracks with Lucene/Solr 4.x
 2. solr-collab-5x tracks with Lucene/Solr 5.x
 3. master tracks with Lucene/Solr 6.0.0-SNAPSHOT
