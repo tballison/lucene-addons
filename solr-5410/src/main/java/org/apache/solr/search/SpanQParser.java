@@ -59,12 +59,12 @@ public class SpanQParser extends QParser {
 
     SchemaField sf = schema.getField(defaultFieldName);
     if (sf != null && sf.getType() != null)
-      analyzer = sf.getType().getAnalyzer();
+      analyzer = sf.getType().getQueryAnalyzer();
     else
-      analyzer = schema.getAnalyzer();  //default analyzer?
+      analyzer = schema.getQueryAnalyzer();  //default analyzer?
 
     //initialize the parser
-    parser = new SolrSpanQueryParser(schema.getDefaultLuceneMatchVersion(), defaultFieldName, analyzer, schema, this);
+    parser = new SolrSpanQueryParser(defaultFieldName, analyzer, schema, this);
 
     //now set the params
     SolrParams solrParams = SolrParams.wrapDefaults(localParams, params);
