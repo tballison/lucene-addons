@@ -15,7 +15,8 @@ public class SQPTestingConfig implements CommonQueryParserConfiguration {
   private boolean lowercaseExpandedTerms;
   private boolean allowLeadingWildcard;
   private boolean enablePositionIncrements;
-  private MultiTermQuery.RewriteMethod multiTermRewriteMethod = MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT;
+  private MultiTermQuery.RewriteMethod multiTermRewriteMethod =
+      MultiTermQuery.CONSTANT_SCORE_REWRITE;
   private int fuzzyPrefixLength = FuzzyQuery.defaultPrefixLength;
   private Locale locale;
   private TimeZone timeZone;
@@ -41,8 +42,8 @@ public class SQPTestingConfig implements CommonQueryParserConfiguration {
     p.setDefaultOperator(getDefaultOperator());
     p.setAllowLeadingWildcard(getAllowLeadingWildcard());
     p.setMultiTermRewriteMethod(getMultiTermRewriteMethod());
-    p.setPrefixLength(getFuzzyPrefixLength());
-    p.setMaxEdits((int)getFuzzyMinSim());
+    p.setFuzzyPrefixLength(getFuzzyPrefixLength());
+    p.setFuzzyMaxEdits((int)getFuzzyMinSim());
     p.setAutoGeneratePhraseQueries(autoGeneratePhraseQueries);
     return p;
   }

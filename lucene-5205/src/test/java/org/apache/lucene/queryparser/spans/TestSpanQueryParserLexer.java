@@ -19,9 +19,9 @@ package org.apache.lucene.queryparser.spans;
 
 import java.util.Date;
 import java.util.List;
-
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.util.LuceneTestCase;
+import org.junit.Ignore;
 
 /**
  * Low level tests of the lexer.
@@ -38,6 +38,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
   }
 
+  @Ignore
   public void testSingleDebug() throws Exception {
     String s = "*:*^2.0";
     List<SQPToken> tokens = lexer.getTokens(s);

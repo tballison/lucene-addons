@@ -85,7 +85,7 @@ public class TestComplexPhraseQuery extends LuceneTestCase {
   }
 
   public Query getQuery(String qString) throws Exception {
-    QueryParser qp = new ComplexPhraseQueryParser(TEST_VERSION_CURRENT, defaultFieldName, analyzer);
+    QueryParser qp = new ComplexPhraseQueryParser(defaultFieldName, analyzer);
     return qp.parse(qString);
     
   }
@@ -139,7 +139,7 @@ public class TestComplexPhraseQuery extends LuceneTestCase {
 
 
   public void testHashcodeEquals() throws Exception {
-    ComplexPhraseQueryParser qp = new ComplexPhraseQueryParser(TEST_VERSION_CURRENT, defaultFieldName, analyzer);
+    ComplexPhraseQueryParser qp = new ComplexPhraseQueryParser(defaultFieldName, analyzer);
     qp.setInOrder(true);
     qp.setFuzzyPrefixLength(1);
 

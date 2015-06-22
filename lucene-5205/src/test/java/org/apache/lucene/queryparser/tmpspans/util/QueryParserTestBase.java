@@ -20,14 +20,12 @@ package org.apache.lucene.queryparser.tmpspans.util;
 
 //copied from trunk r1644776 12/11/2014
 import java.io.IOException;
-import java.io.Reader;
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
@@ -142,8 +140,8 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
 
     /** Filters MockTokenizer with StopFilter. */
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader reader) {
-      Tokenizer tokenizer = new MockTokenizer(reader, MockTokenizer.SIMPLE, true);
+    public TokenStreamComponents createComponents(String fieldName) {
+      Tokenizer tokenizer = new MockTokenizer(MockTokenizer.SIMPLE, true);
       return new TokenStreamComponents(tokenizer, new QPTestFilter(tokenizer));
     }
   }
@@ -306,9 +304,8 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
   //individual CJK chars as terms, like StandardAnalyzer
   protected static class SimpleCJKTokenizer extends Tokenizer {
     private CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
+    public SimpleCJKTokenizer() {
 
-    public SimpleCJKTokenizer(Reader reader) {
-      super(reader);
     }
 
     @Override
@@ -324,8 +321,8 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
 
   public class SimpleCJKAnalyzer extends Analyzer {
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader reader) {
-      return new TokenStreamComponents(new SimpleCJKTokenizer(reader));
+    public TokenStreamComponents createComponents(String fieldName) {
+      return new TokenStreamComponents(new SimpleCJKTokenizer());
     }
   }
 
@@ -447,8 +444,8 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
     // +,-,! should be directly adjacent to operand (i.e. not separated by whitespace) to be treated as an operator
     Analyzer a = new Analyzer() {
       @Override
-      public TokenStreamComponents createComponents(String fieldName, Reader reader) {
-        return new TokenStreamComponents(new MockTokenizer(reader, MockTokenizer.WHITESPACE, false));
+      public TokenStreamComponents createComponents(String fieldName) {
+        return new TokenStreamComponents(new MockTokenizer(MockTokenizer.WHITESPACE, false));
       }
     };
     assertQueryEquals("a - b", a, "a - b");
@@ -1029,7 +1026,7 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
 
     assertEquals(q, getQuery("/[A-Z][123]/^0.5", qp));
     //now set back to the default rewrite method for RegexpQuery
-    qp.setMultiTermRewriteMethod(MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT);
+    qp.setMultiTermRewriteMethod(MultiTermQuery.CONSTANT_SCORE_REWRITE);
 
     Query re = new RegexpQuery(new Term("field", "http.*"));
     assertEquals(re, getQuery("field:/http.*/",qp));
@@ -1169,8 +1166,8 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
       super();
     }
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader reader) {
-      Tokenizer tokenizer = new MockTokenizer(reader, MockTokenizer.WHITESPACE, true);
+    public TokenStreamComponents createComponents(String fieldName) {
+      Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE, true);
       return new TokenStreamComponents(tokenizer, new MockSynonymFilter(tokenizer));
     }
   }
@@ -1181,8 +1178,8 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
       super();
     }
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader reader) {
-      return new TokenStreamComponents(new MockTokenizer(reader, MockTokenizer.WHITESPACE, true));
+    public TokenStreamComponents createComponents(String fieldName) {
+      return new TokenStreamComponents(new MockTokenizer(MockTokenizer.WHITESPACE, true));
     }
   }
 
@@ -1213,8 +1210,8 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
 
   public class MockCollationAnalyzer extends Analyzer {
     @Override
-    public TokenStreamComponents createComponents(String fieldName, Reader reader) {
-      Tokenizer tokenizer = new MockTokenizer(reader, MockTokenizer.WHITESPACE, true);
+    public TokenStreamComponents createComponents(String fieldName) {
+      Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE, true);
       return new TokenStreamComponents(tokenizer, new MockCollationFilter(tokenizer));
     }
   }
@@ -1382,14 +1379,10 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
   }
 
   private String whichRewriteMethod(MultiTermQuery.RewriteMethod method) {
-    if (method == MultiTermQuery.CONSTANT_SCORE_FILTER_REWRITE) {
-      return "CONSTANT_SCORE_FILTER_REWRITE";
-    } else if (method == MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT) {
-      return "CONSTANT_SCORE_AUTO_REWRITE_DEFAULT";
-    } else if (method == MultiTermQuery.CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE) {
-      return "CONSTANT_SCORE_BOOLEAN_QUERY_REWRITE";
-    } else if (method == MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE) {
-      return "SCORING_BOOLEAN_QUERY_REWRITE";
+    if (method == MultiTermQuery.CONSTANT_SCORE_REWRITE) {
+      return "CONSTANT_SCORE_REWRITE";
+    } else if (method == MultiTermQuery.SCORING_BOOLEAN_REWRITE) {
+      return "SCORING_BOOLEAN_REWRITE";
     }
     return "UNKNOWN";
   }

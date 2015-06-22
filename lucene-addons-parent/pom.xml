@@ -31,7 +31,7 @@
 
   <groupId>org.apache.lucene</groupId>
   <artifactId>lucene-addons-parent</artifactId>
-  <version>1.0</version>
+  <version>5x-1.0</version>
   <packaging>pom</packaging>
 
   <name>lucene addons parent</name>
@@ -43,9 +43,9 @@
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd</maven.build.timestamp.format>
 -->
-        <maven.compile.source>1.7src</maven.compile.source>
-        <maven.compile.target>1.7targ</maven.compile.target>
-        <lucene.version>4.10.4</lucene.version>
+        <maven.compile.source>1.7</maven.compile.source>
+        <maven.compile.target>1.7</maven.compile.target>
+        <lucene.version>5.2.1</lucene.version>
     </properties>
 
 
@@ -86,6 +86,12 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.10</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analyzers-common</artifactId>
+            <version>${lucene.version}</version>
             <scope>test</scope>
         </dependency>
 

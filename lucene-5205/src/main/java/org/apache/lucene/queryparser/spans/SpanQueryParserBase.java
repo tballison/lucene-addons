@@ -82,8 +82,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   private int spanNearMaxDistance = 100;
   private int spanNotNearMaxDistance = 50;
   private int maxExpansions = FuzzyQuery.defaultMaxExpansions;
-  private int absoluteMaxEdits = FuzzyQuery.defaultMaxEdits;
-  private int prefixLength = FuzzyQuery.defaultPrefixLength;
+  private int fuzzyMaxEdits = FuzzyQuery.defaultMaxEdits;
+  private int fuzzyPrefixLength = FuzzyQuery.defaultPrefixLength;
   private boolean fuzzyIsTranspositions = FuzzyQuery.defaultTranspositions;
 
   private boolean analyzeRangeTerms = true;
@@ -138,8 +138,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
           || autoGeneratePhraseQueries, 0);
     } else if (terminal instanceof SQPFuzzyTerm) {
       SQPFuzzyTerm ft = (SQPFuzzyTerm) terminal;
-      int tmpPrefixLen = (ft.getPrefixLength() != null) ? ft.getPrefixLength() : getPrefixLength();
-      int tmpMaxEdits = (ft.getMaxEdits() != null) ? Math.min(absoluteMaxEdits, ft.getMaxEdits()) : getMaxEdits();
+      int tmpPrefixLen = (ft.getPrefixLength() != null) ? ft.getPrefixLength() :
+          getFuzzyPrefixLength();
+      int tmpMaxEdits = (ft.getMaxEdits() != null) ? Math.min(fuzzyMaxEdits, ft.getMaxEdits()) : getFuzzyMaxEdits();
       ret = newFuzzyQuery(fieldName, ft.getString(), tmpMaxEdits, tmpPrefixLen,
           getMaxExpansions(), ft.isTranspositions());
     } else if (terminal instanceof SQPWildcardTerm) {
@@ -327,7 +328,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   protected Query newRangeQuery(String fieldName, String lowerTerm, String upperTerm,
                                 boolean includeLower, boolean includeUpper) throws ParseException {
     Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
-    System.out.println("mtANALYZER:"+mtAnalyzer);
     if (mtAnalyzer == null) {
       return handleNullAnalyzerRange(fieldName, lowerTerm, upperTerm, includeLower, includeUpper);
     }
@@ -340,7 +340,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
   protected Query newFuzzyQuery(String fieldName, String termText,
       int maxEdits, int prefixLen, int maxExpansions, boolean transpositions) throws ParseException {
-    maxEdits = Math.min(maxEdits, absoluteMaxEdits);
+    maxEdits = Math.min(maxEdits, getFuzzyMaxEdits());
     Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
     String analyzed = termText;
     if (mtAnalyzer != null) {
@@ -485,8 +485,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       //if single child is itself a SpanNearQuery, inherit slop and inorder
       if (child instanceof SpanNearQuery) {
         SpanQuery[] childsClauses = ((SpanNearQuery) child).getClauses();
-        child = new SpanNearQuery(childsClauses, slop, inOrder);
+        return new SpanNearQuery(childsClauses, slop, inOrder);
       }
+      return child;
     }
 
     if (slop == null) {
@@ -658,16 +659,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     this.allowLeadingWildcard = allowLeadingWildcard;
   }
 
-  public int getMaxEdits() {
-    return absoluteMaxEdits;
-  }
-
-  public void setMaxEdits(int absoluteMaxEdits) {
-    this.absoluteMaxEdits = absoluteMaxEdits;
-  }
-
-  public int getPrefixLength() { return prefixLength; }
-  public void setPrefixLength(int prefixLength) { this.prefixLength = prefixLength; }
+  public int getFuzzyPrefixLength() { return fuzzyPrefixLength; }
+  public void setFuzzyPrefixLength(int fuzzyPrefixLength) { this.fuzzyPrefixLength = fuzzyPrefixLength; }
 
   public boolean getFuzzyIsTranspositions() {
     return fuzzyIsTranspositions;
@@ -677,5 +670,12 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     this.defaultOperator = defaultOperator;
     this.singleTermBooleanOperator = (defaultOperator == QueryParser.Operator.OR) ?
         BooleanClause.Occur.SHOULD : BooleanClause.Occur.MUST;
+  }
+
+  public int getFuzzyMaxEdits() {
+    return fuzzyMaxEdits;
+  }
+  public void setFuzzyMaxEdits(int fuzzyMaxEdits) {
+    this.fuzzyMaxEdits = fuzzyMaxEdits;
   }
 }

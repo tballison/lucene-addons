@@ -45,7 +45,7 @@ public class TestSpanQParserPlugin extends SolrTestCaseJ4 {
     
     //test maxedit > 2
     assertJQ(req("defType", "span", "q", "text1:abcd~3"), "/response/numFound==0");
-    assertJQ(req("defType", "span", "q", "text1:abcd~3", "mfd", "3"), "/response/numFound==1");
+    assertJQ(req("defType", "span", "q", "text1:abcd~3", "mfe", "3"), "/response/numFound==1");
 
     //test date field is doing the parsing
     assertJQ(req("defType", "span", "q", "date:'2011-12-01T08:08:08Z/DAY'"), "/response/numFound==1");

@@ -26,14 +26,14 @@
     <parent>
         <groupId>org.apache.lucene</groupId>
         <artifactId>lucene-addons-parent</artifactId>
-        <version>1.0</version>
+        <version>5x-1.0</version>
         <relativePath>../lucene-addons-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>lucene-5205</artifactId>
     <packaging>jar</packaging>
 
-    <version>1.0</version>
+    <version>5x-1.1</version>
 
 
     <dependencies>
@@ -71,7 +71,6 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-analyzers-common</artifactId>
-            <version>4.10.2</version>
             <scope>test</scope>
         </dependency>
 

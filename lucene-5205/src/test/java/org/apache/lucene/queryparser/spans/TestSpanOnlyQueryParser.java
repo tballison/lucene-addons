@@ -17,18 +17,15 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import static org.apache.lucene.util.automaton.Automata.makeString;
+
 import java.io.IOException;
-import java.io.Reader;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
@@ -40,35 +37,23 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.index.AtomicReaderContext;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexReaderContext;
+import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermContext;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.Spans;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.util.LuceneTestCase;
-import org.apache.lucene.util.OpenBitSet;
 import org.apache.lucene.util.TestUtil;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import static org.apache.lucene.util.automaton.Automata.makeString;
+public class TestSpanOnlyQueryParser extends SQPTestBase {
 
-public class TestSpanOnlyQueryParser extends LuceneTestCase {
-
-  private static IndexReader reader;
-  private static IndexSearcher searcher;
-  private static Directory directory;
   private static Analyzer stopAnalyzer;
   private static Analyzer noStopAnalyzer;
   private static Analyzer lcMultiTermAnalyzer;
@@ -94,8 +79,8 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     lcMultiTermAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
     noStopAnalyzer = new Analyzer() {
       @Override
-      public TokenStreamComponents createComponents(String fieldName, Reader r) {
-        Tokenizer tokenizer = new MockTokenizer(r, MockTokenizer.WHITESPACE,
+      public TokenStreamComponents createComponents(String fieldName) {
+        Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE,
             true);
         TokenFilter filter = new MockStandardTokenizerFilter(tokenizer);
         return new TokenStreamComponents(tokenizer, filter);
@@ -104,8 +89,8 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
     stopAnalyzer = new Analyzer() {
       @Override
-      public TokenStreamComponents createComponents(String fieldName, Reader r) {
-        Tokenizer tokenizer = new MockTokenizer(r, MockTokenizer.WHITESPACE,
+      public TokenStreamComponents createComponents(String fieldName) {
+        Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE,
             true);
         TokenFilter filter = new MockStandardTokenizerFilter(tokenizer);
         filter = new MockTokenFilter(filter, STOP_WORDS);
@@ -347,7 +332,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     //default should reduce 3 to 2 and therefore not have any hits
     countSpansDocs(p, "abcdefgh~3", 0, 0);
 
-    p.setMaxEdits(3);
+    p.setFuzzyMaxEdits(3);
 
     testOffsetForSingleSpanMatch(p, "abcdefgh~3", 3, 0, 1);
 
@@ -364,7 +349,7 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     countSpansDocs(p, "crown~3,1", 0, 0);
     countSpansDocs(p, "brwn~1,1", 3, 2);
 
-    p.setMaxEdits(2);;
+    p.setFuzzyMaxEdits(2);;
 
     countSpansDocs(p, "brwon~2", 3, 2);
 
@@ -471,10 +456,12 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     testOffsetForSingleSpanMatch(noStopsParser,
         "[\u666E\u6797\u65AF\u5B66]~2", 6, 0, 6);
 
-    //If someone enters in a space delimited phrase within a phrase,
+/*    //If someone enters in a space delimited phrase within a phrase,
     //treat it literally. There should be no matches.
     countSpansDocs(noStopsParser, "[[lazy dog] ]~4", 0, 0);
-
+*/
+    //changed behavior with 5.2.1
+    countSpansDocs(noStopsParser, "[[lazy dog] ]~4", 1, 1);
     noStopsParser.setAutoGeneratePhraseQueries(false);
 
     // characters split into 2 tokens and treated as an "or" query
@@ -599,64 +586,21 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     }
     assertTrue(q, ex);
   }
-  
-  private void countSpansDocs(SpanOnlyParser p, String s, int spanCount,
+
+  void countSpansDocs(AbstractSpanQueryParser p, String s, int spanCount,
       int docCount) throws Exception {
     SpanQuery q = (SpanQuery)p.parse(s);
-    assertEquals("spanCount: " + s, spanCount, countSpans(q));
-    assertEquals("docCount: " + s, docCount, countDocs(q));
+    assertEquals("spanCount: " + s, spanCount, countSpans(FIELD, q));
+    assertEquals("docCount: " + s, docCount, countDocs(FIELD, q));
   }
 
-  private long countSpans(SpanQuery q) throws Exception {
-    List<AtomicReaderContext> ctxs = reader.leaves();
-    assert (ctxs.size() == 1);
-    AtomicReaderContext ctx = ctxs.get(0);
-    q = (SpanQuery) q.rewrite(ctx.reader());
-    Spans spans = q.getSpans(ctx, null, new HashMap<Term, TermContext>());
-
-    long i = 0;
-    while (spans.next()) {
-      i++;
-    }
-    return i;
-  }
-
-  private long countDocs(SpanQuery q) throws Exception {
-    OpenBitSet docs = new OpenBitSet();
-    List<AtomicReaderContext> ctxs = reader.leaves();
-    assert (ctxs.size() == 1);
-    AtomicReaderContext ctx = ctxs.get(0);
-    IndexReaderContext parentCtx = reader.getContext();
-    q = (SpanQuery) q.rewrite(ctx.reader());
-
-    Set<Term> qTerms = new HashSet<Term>();
-    q.extractTerms(qTerms);
-    Map<Term, TermContext> termContexts = new HashMap<Term, TermContext>();
-
-    for (Term t : qTerms) {
-      TermContext c = TermContext.build(parentCtx, t);
-      termContexts.put(t, c);
-    }
-
-    Spans spans = q.getSpans(ctx, null, termContexts);
-
-    while (spans.next()) {
-      docs.set(spans.doc());
-    }
-    long spanDocHits = docs.cardinality();
-    // double check with a regular searcher
-    TotalHitCountCollector coll = new TotalHitCountCollector();
-    searcher.search(q, coll);
-    assertEquals(coll.getTotalHits(), spanDocHits);
-    return spanDocHits;
-  }
 
   private void testOffsetForSingleSpanMatch(SpanOnlyParser p, String s,
       int trueDocID, int trueSpanStart, int trueSpanEnd) throws Exception {
     SpanQuery q = (SpanQuery)p.parse(s);
-    List<AtomicReaderContext> ctxs = reader.leaves();
+    List<LeafReaderContext> ctxs = reader.leaves();
     assert (ctxs.size() == 1);
-    AtomicReaderContext ctx = ctxs.get(0);
+    LeafReaderContext ctx = ctxs.get(0);
     q = (SpanQuery) q.rewrite(ctx.reader());
     Spans spans = q.getSpans(ctx, null, new HashMap<Term, TermContext>());
 
@@ -664,11 +608,14 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     int spanStart = -1;
     int spanEnd = -1;
     int docID = -1;
-    while (spans.next()) {
-      spanStart = spans.start();
-      spanEnd = spans.end();
-      docID = spans.doc();
-      i++;
+
+    while (spans.nextDoc() != Spans.NO_MORE_DOCS) {
+      while (spans.nextStartPosition() != Spans.NO_MORE_POSITIONS) {
+        spanStart = spans.startPosition();
+        spanEnd = spans.endPosition();
+        docID = spans.docID();
+        i++;
+      }
     }
     assertEquals("should only be one matching span", 1, i);
     assertEquals("doc id", trueDocID, docID);

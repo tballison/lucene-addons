@@ -1,8 +1,6 @@
 package org.apache.lucene.queryparser.classic;
 
 import java.io.IOException;
-import java.io.Reader;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenizer;
@@ -321,8 +319,8 @@ public class TestQueryParser extends QueryParserTestBase {
   /** adds synonym of "dog" for "dogs". */
   static class MockSynonymAnalyzer extends Analyzer {
     @Override
-    protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
-      MockTokenizer tokenizer = new MockTokenizer(reader);
+    protected TokenStreamComponents createComponents(String fieldName) {
+      MockTokenizer tokenizer = new MockTokenizer();
       return new TokenStreamComponents(tokenizer, new MockSynonymFilter(tokenizer));
     }
   }
@@ -391,8 +389,8 @@ public class TestQueryParser extends QueryParserTestBase {
 
   static class MockCJKSynonymAnalyzer extends Analyzer {
     @Override
-    protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
-      Tokenizer tokenizer = new SimpleCJKTokenizer(reader);
+    protected TokenStreamComponents createComponents(String fieldName) {
+      Tokenizer tokenizer = new SimpleCJKTokenizer();
       return new TokenStreamComponents(tokenizer, new MockCJKSynonymFilter(tokenizer));
     }
   }

@@ -234,7 +234,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
   private void compareHits(SpanQueryParser p, String s, int ... docids ) throws Exception{
     Query q = p.parse(s);
-    TopScoreDocCollector results = TopScoreDocCollector.create(1000, true);
+    TopScoreDocCollector results = TopScoreDocCollector.create(1000);
     searcher.search(q, results);
     ScoreDoc[] scoreDocs = results.topDocs().scoreDocs;
     Set<Integer> hits = new HashSet<Integer>();
@@ -363,7 +363,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
   
   private void assertHits(String qString, SpanQueryParser p, IndexSearcher s, int expected) throws Exception {
     Query q = p.parse(qString);
-    TopScoreDocCollector results = TopScoreDocCollector.create(1000, true);
+    TopScoreDocCollector results = TopScoreDocCollector.create(1000);
     s.search(q, results);
     ScoreDoc[] scoreDocs = results.topDocs().scoreDocs;
     assertEquals(qString, expected, scoreDocs.length);
