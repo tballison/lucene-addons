@@ -45,10 +45,19 @@
 -->
         <maven.compile.source>1.7</maven.compile.source>
         <maven.compile.target>1.7</maven.compile.target>
-        <lucene.version>4.10.4</lucene.version>
+        <lucene.version>6.0.0-SNAPSHOT</lucene.version>
     </properties>
 <!--test-->
-
+    <repositories>
+        <repository>
+            <id>apache.snapshots</id>
+            <name>Apache Snapshot Repository</name>
+            <url>http://repository.apache.org/snapshots</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
   <dependencyManagement>
     <dependencies>
         <dependency>
