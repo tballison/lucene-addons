@@ -36,4 +36,23 @@ class SQPWildcardTerm extends SQPTerminal {
         "term='" + term + '\'' +
         '}';
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
+
+    SQPWildcardTerm that = (SQPWildcardTerm) o;
+
+    return !(term != null ? !term.equals(that.term) : that.term != null);
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (term != null ? term.hashCode() : 0);
+    return result;
+  }
 }

@@ -23,6 +23,7 @@ import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
@@ -57,13 +58,26 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     
   }
 
+
   @Override
   public CommonQueryParserConfiguration getParserConfig(Analyzer a)
       throws Exception {
-    if (a == null) a = new MockAnalyzer(random(), MockTokenizer.SIMPLE, true);
-    Analyzer mtAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
+    return getParserConfig(a, null);
+  }
+
+  public CommonQueryParserConfiguration getParserConfig(Analyzer a, Analyzer mtAnalyzer)
+      throws Exception {
+    if (a == null) {
+      a = new MockAnalyzer(random(), MockTokenizer.SIMPLE, true);
+    }
+    if (mtAnalyzer == null) {
+      mtAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
+    }
+
     SQPTestingConfig qp = new SQPTestingConfig(getDefaultField(), a, mtAnalyzer);
     qp.setDefaultOperator(QueryParserBase.OR_OPERATOR);
+    qp.setLowercaseExpandedTerms(true);
+    qp.setAnalyzeRangeTerms(true);
     return qp;
   }
 
@@ -111,7 +125,8 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   @Override
   public Query getQuery(String query, Analyzer a) throws Exception {
     SQPTestingConfig config = (SQPTestingConfig)getParserConfig(a);
-
+    //default
+    config.setLowercaseExpandedTerms(true);
     return config.getConfiguredParser().parse(query);
   }
   
@@ -203,7 +218,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     }
     super.assertQueryEquals(expected, test);
   }
-  
+/*
   @Override
   public void assertFuzzyQueryEquals(String field, String term, int maxEdits, int prefixLen, Query query) {
     assert(query instanceof SpanMultiTermQueryWrapper);
@@ -211,7 +226,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     Query wrapped = ((SpanMultiTermQueryWrapper)query).getWrappedQuery();
     super.assertFuzzyQueryEquals(field, term, maxEdits, prefixLen, wrapped);
   }
-  
+  */
   @Override
   public void assertWildcardQueryEquals(String query, boolean lowercase, String result, boolean allowLeadingWildcard) throws Exception {
     CommonQueryParserConfiguration cqpC = getParserConfig(null);
@@ -250,7 +265,15 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   /**
    * Overridden tests follow
    */
-  
+
+  @Override
+  public void testCollatedRange() throws Exception {
+    CommonQueryParserConfiguration qp = getParserConfig(new MockCollationAnalyzer(), new MockCollationAnalyzer());
+    Query expected = TermRangeQuery.newStringRange(getDefaultField(), "collatedabc", "collateddef", true, true);
+    Query actual = getQuery("[abc TO def]", qp);
+    assertQueryEquals(expected, actual);
+  }
+
   @Override
   public void testCJKTerm() throws Exception {
     // individual CJK chars as terms
@@ -269,16 +292,12 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   public void testCJKBoostedTerm() throws Exception {
     // individual CJK chars as terms
     SimpleCJKAnalyzer analyzer = new SimpleCJKAnalyzer();
-    
-    SpanOrQuery expected = new SpanOrQuery( 
-        new SpanTermQuery[] {
-            new SpanTermQuery(new Term("field", "中")),
-            new SpanTermQuery(new Term("field", "国"))
-        
-        }
-    );
-    expected.setBoost(0.5f);
-    assertEquals(expected, getQuery("中国^0.5", analyzer));
+    BooleanQuery bq = new BooleanQuery();
+
+    bq.add(new TermQuery(new Term("field", "中")), BooleanClause.Occur.SHOULD);
+    bq.add(new TermQuery(new Term("field", "国")), BooleanClause.Occur.SHOULD);
+    bq.setBoost(0.5f);
+    assertEquals(bq, getQuery("中国^0.5", analyzer));
   }
 
   @Override
@@ -417,11 +436,6 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
 
 
 
-    assertQueryEquals("[ a TO z] OR bar", null, "SpanMultiTermQueryWrapper([a TO z]) bar");
-    assertQueryEquals("[ a TO z] AND bar", null, "+SpanMultiTermQueryWrapper([a TO z]) +bar");
-    assertQueryEquals("( bar blar { a TO z}) ", null, "bar blar SpanMultiTermQueryWrapper({a TO z})");
-    assertQueryEquals("gack ( bar blar { a TO z}) ", null, "gack (bar blar SpanMultiTermQueryWrapper({a TO z}))");
-    
     //testSlop
     assertQueryEquals("\"term germ\"~2 flork", null, "spanNear([term, germ], 2, false) flork");
 
@@ -456,4 +470,22 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     assertQueryEquals("a OR !b", null, "a -b");
     
   }
+
+  @Override
+  public void testException() throws Exception {
+    assertParseException("term~0.7");
+    super.testException();
+  }
+
+  @Override
+  public void assertEmpty(Query q) {
+    boolean e = false;
+    if (q instanceof BooleanQuery && ((BooleanQuery)q).getClauses().length == 0) {
+      e = true;
+    } else if (q instanceof SpanOrQuery && ((SpanOrQuery)q).getClauses().length == 0) {
+      e = true;
+    }
+    assertTrue("Empty: "+q.toString(), e);
+  }
+
 }

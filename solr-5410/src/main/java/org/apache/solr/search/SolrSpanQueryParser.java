@@ -22,12 +22,10 @@ import org.apache.lucene.queryparser.spans.SpanQueryParser;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.util.Version;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.schema.TextField;
-import org.apache.solr.search.QParser;
 
 /**
  * Overrides features of Lucene's SpanQueryParser to enable
@@ -50,8 +48,8 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   private final QParser nonTextParser;
   //  private static Logger log = LoggerFactory.getLogger(SolrCore.class);
 
-  public SolrSpanQueryParser(Version matchVersion, String f, Analyzer a, IndexSchema schema, QParser nonTextParser) {
-    super(matchVersion, f, a);
+  public SolrSpanQueryParser(String f, Analyzer a, IndexSchema schema, QParser nonTextParser) {
+    super(f, a, null);
     this.schema = schema;
     this.nonTextParser = nonTextParser; 
   }

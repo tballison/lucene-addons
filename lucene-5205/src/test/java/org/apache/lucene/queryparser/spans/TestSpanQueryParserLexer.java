@@ -39,7 +39,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
   }
 
   public void testSingleDebug() throws Exception {
-    String s = " [ a TO z]";
+    String s = "(term)^2.0";
     List<SQPToken> tokens = lexer.getTokens(s);
     for (SQPToken t : tokens) {
       System.out.println(t.getClass() + " : " + t);
@@ -215,8 +215,23 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         0,
         truth
     );
-
   }
+
+  public void testWildcardEscapes() throws ParseException {
+    //if not wildcard, strip escapes
+    executeSingleTokenTest(
+        "f\\ox",
+        0,
+        new SQPTerm("fox", false)
+    );
+
+    executeSingleTokenTest(
+        "f\\o?x",
+        0,
+        new SQPWildcardTerm("f\\o?x")
+    );
+  }
+
   public void testSingleQuotes() throws ParseException {
 
     executeSingleTokenTest(
@@ -1001,6 +1016,24 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         0,
         new SQPTerm(s, false)
     );
+  }
+
+  public void testEscapedOperators() throws Exception {
+    executeSingleTokenTest("foo \\AND bar",
+        1,
+        new SQPTerm("AND", false)
+    );
+
+    executeSingleTokenTest("foo \\AND",
+        1,
+        new SQPTerm("AND", false)
+    );
+
+    executeSingleTokenTest("foo \\OR bar",
+        1,
+        new SQPTerm("OR", false)
+    );
+
   }
 /*
   @Test(timeout = 1000)

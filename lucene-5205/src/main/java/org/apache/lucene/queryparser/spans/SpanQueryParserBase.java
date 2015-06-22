@@ -86,6 +86,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   private int prefixLength = FuzzyQuery.defaultPrefixLength;
   private boolean fuzzyIsTranspositions = FuzzyQuery.defaultTranspositions;
 
+  private boolean analyzeRangeTerms = true;
+
   public SpanQueryParserBase(Analyzer analyzer, Analyzer multiTermAnalyzer) {
     super(analyzer, multiTermAnalyzer);
   }
@@ -108,12 +110,19 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
+   *
+   * @return default multitermrewritemethod
+   */
+  public RewriteMethod getMultiTermRewriteMethod() { return multiTermRewriteMethod;}
+  /**
    * This currently sets the method for all fields.
    * @param method
    */
   public void setMultiTermRewriteMethod(MultiTermQuery.RewriteMethod method) {
     this.multiTermRewriteMethod = method;
   }
+
+
 
   /**
    *
@@ -318,6 +327,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   protected Query newRangeQuery(String fieldName, String lowerTerm, String upperTerm,
                                 boolean includeLower, boolean includeUpper) throws ParseException {
     Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
+    System.out.println("mtANALYZER:"+mtAnalyzer);
     if (mtAnalyzer == null) {
       return handleNullAnalyzerRange(fieldName, lowerTerm, upperTerm, includeLower, includeUpper);
     }

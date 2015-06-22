@@ -18,15 +18,16 @@ package org.apache.lucene.queryparser.spans;
 
 import java.io.IOException;
 import java.io.PushbackReader;
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Stack;
-
 import org.apache.lucene.queryparser.classic.ParseException;
 
 class SpanQueryLexer {
+
 
   private enum TOKEN_TYPE {
     UNSPECIFIED, //nothing special, for a token, this is EXACT
@@ -39,6 +40,9 @@ class SpanQueryLexer {
   private static final String AND = "AND";
   private static final String NOT = "NOT";
   private static final String OR = "OR"; //silently removed from queries...beware!
+  private static final String ESCAPED_AND = "\\AND";
+  private static final String ESCAPED_NOT = "\\NOT";
+  private static final String ESCAPED_OR = "\\OR";
 
   private static final int DQUOTE = (int) '"';
   private static final int SQUOTE = (int) '\'';
@@ -57,15 +61,24 @@ class SpanQueryLexer {
   private static final int PLUS = (int) '+';
   private static final int MINUS = (int) '-';
   private static final int EXCLAMATION = (int) '!';
+  private static final int AMPERSAND = '&';
+  private static final int PIPE = '|';
   private static final int COMMA = (int) ',';
   private static final int GREATER_THAN = (int) '>';
   private static final int DECIMAL_POINT = (int)'.';
   private static final int STAR = (int)'*';
   private static final int QMARK = (int)'?';
+  private static final int CHAR_O = (int)'O';
+  private static final int CHAR_T = (int)'T';
+  private static final int CHAR_N = (int)'N';
+  private static final int CHAR_D = (int)'D';
+  private static final int CHAR_R = (int)'R';
+  private static final int CHAR_A = (int)'A';
 
 
   boolean inDQuote = false;
   int wildcardChars = 0;
+  int wildcardQuestionMarks = 0;
   TOKEN_TYPE type = TOKEN_TYPE.UNSPECIFIED;
 
   int nearDepth = 0;
@@ -124,6 +137,7 @@ class SpanQueryLexer {
 
         case QMARK :
           wildcardChars++;
+          wildcardQuestionMarks++;
           break;
 
         case TILDE :
@@ -134,7 +148,7 @@ class SpanQueryLexer {
           }
           break;
 
-        case CARET :                            // hit boost marker, unread it
+        case CARET :                            // hit boost marker...TODO: can you ever hit this?
           if (tokenBuffer.length() > 0) {
             Float boost = tryToReadUnsignedFloat();
             flushBuffer(boost);
@@ -159,6 +173,8 @@ class SpanQueryLexer {
           } else if (next == U) {
             tryToReadEscapedUnicode();
           } else {
+            //need to append it for now
+            tokenBuffer.appendCodePoint(BACK_SLASH);
             tokenBuffer.appendCodePoint(next);
           }
           c = reader.read();
@@ -227,6 +243,46 @@ class SpanQueryLexer {
             return true;
           }
           break;
+
+        case EXCLAMATION :
+          if (tokenBuffer.length() == 0 && ! isNextBreak()) {
+            flushBuffer();
+            SQPBooleanOpToken notToken = new SQPBooleanOpToken(SpanQueryParserBase.MOD_NOT);
+            testBooleanTokens(tokens, notToken);
+            tokens.add(notToken);
+            return true;
+          }
+          break;
+
+        case AMPERSAND :
+          if (tokenBuffer.length() == 0) {
+            int n = reader.read();
+            if (n == AMPERSAND && isNextBreak()) {
+              flushBuffer();
+              SQPBooleanOpToken andToken = new SQPBooleanOpToken(SpanQueryParserBase.CONJ_AND);
+              testBooleanTokens(tokens, andToken);
+              tokens.add(andToken);
+              return true;
+            } else {
+              tryToUnread(n);
+            }
+          }
+          break;
+
+        case PIPE :
+          if (tokenBuffer.length() == 0) {
+            int n = reader.read();
+            if (n == PIPE && isNextBreak()) {
+              flushBuffer();
+              SQPBooleanOpToken orToken = new SQPBooleanOpToken(SpanQueryParserBase.CONJ_OR);
+              testBooleanTokens(tokens, orToken);
+              tokens.add(orToken);
+              return true;
+            } else {
+              tryToUnread(n);
+            }
+          }
+        break;
       }
       tokenBuffer.appendCodePoint(c);
 
@@ -235,7 +291,7 @@ class SpanQueryLexer {
   }
 
   private void handleFuzzyTerm() throws ParseException, IOException {
-    SQPFuzzyTerm term = new SQPFuzzyTerm(tokenBuffer.toString());
+    SQPFuzzyTerm term = new SQPFuzzyTerm(stripEscapes(tokenBuffer.toString()));
 
     if (wildcardChars > 0) {
       throw new ParseException("Need to escape wildcards in fuzzy terms.");
@@ -369,7 +425,6 @@ class SpanQueryLexer {
         }
       }
     }
-
     Float boost = tryToReadBoost();
     if (boost != null) {
       newClause.setBoost(boost);
@@ -438,7 +493,16 @@ class SpanQueryLexer {
   private Float tryToReadBoost() throws ParseException, IOException {
     int c = reader.read();
     if (c == CARET) {
-      return tryToReadUnsignedFloat();
+      Float boost = tryToReadUnsignedFloat();
+      if (boost == null) {
+        return boost;
+      }
+      int next = reader.read();
+      if (next == CARET) {
+        throw new ParseException("Can't end boost with caret");
+      }
+      tryToUnread(next);
+      return boost;
     } else {
       tryToUnread(c);
     }
@@ -645,9 +709,10 @@ class SpanQueryLexer {
       return;
     }
     String term = tokenBuffer.toString();
+
     //The regex over-captures on a term...Term could be:
     //AND or NOT boolean defaultOperator; and term could have boost
-
+    boolean checkForEscapedOperators = false;
     //does the term == AND or NOT or OR
     if (nearDepth == 0 && type == TOKEN_TYPE.UNSPECIFIED) {
       SQPToken token = null;
@@ -661,13 +726,22 @@ class SpanQueryLexer {
 
       if (token != null) {
         if (boost != null) {
-          throw new ParseException("Can't have boost on a boolean defaultOperator (AND|NOT|OR)");
+          throw new ParseException("Can't have boost on a boolean operator (AND|NOT|OR)");
         }
         testBooleanTokens(tokens, (SQPBooleanOpToken)token);
         tokens.add(token);
         resetTokenBuffer();
         return;
+      } else {
+        //only check for escaped operators if they're where you'd need to escape them
+        checkForEscapedOperators = true;
       }
+    }
+    //now trim escapes if there are no wildcard characters
+    if (wildcardQuestionMarks == 0) {
+      System.out.println("NO WILD CARD: "+tokenBuffer.toString());
+      term = stripEscapes(tokenBuffer.toString());
+      System.out.println("AFTER: "+term);
     }
 
     SQPToken token = null;
@@ -677,6 +751,16 @@ class SpanQueryLexer {
       token = buildWildcard(term);
     } else if (type == TOKEN_TYPE.QUOTED) {
       token = new SQPTerm(term, true);
+    } else if (checkForEscapedOperators) {
+      if (term.equals(ESCAPED_AND)) {
+        token = new SQPTerm(AND, false);
+      } else if (term.equals(ESCAPED_NOT)) {
+        token = new SQPTerm(NOT, false);
+      } else if (term.equals(ESCAPED_OR)) {
+        token = new SQPTerm(OR, false);
+      } else {
+        token = new SQPTerm(term, false);
+      }
     } else {
       token = new SQPTerm(term, false);
     }
@@ -685,6 +769,23 @@ class SpanQueryLexer {
     }
     tokens.add(token);
     resetTokenBuffer();
+  }
+
+  private String stripEscapes(String term) throws IOException {
+    Reader r = new StringReader(term);
+    StringBuilder sb = new StringBuilder();
+    int c = r.read();
+    while (c != -1) {
+      if (c == BACK_SLASH) {
+        c = r.read();
+        if (c == -1) {
+          break;
+        }
+      }
+      sb.appendCodePoint(c);
+      c = r.read();
+    }
+    return sb.toString();
   }
 
   SQPTerminal buildWildcard(String term) {
@@ -702,10 +803,11 @@ class SpanQueryLexer {
   void resetTokenBuffer() {
     tokenBuffer.setLength(0);
     wildcardChars = 0;
+    wildcardQuestionMarks = 0;
     type = TOKEN_TYPE.UNSPECIFIED;
   }
 
-  private void tryToAddField(String term) throws ParseException {
+  private void tryToAddField(String term) throws ParseException, IOException {
 
     if (term.length() == 0) {
       throw new ParseException("Field name must have length > 0");
@@ -718,7 +820,7 @@ class SpanQueryLexer {
       throw new ParseException("A field must contain a terminal");
     }
 
-    SQPToken token = new SQPField(term);
+    SQPToken token = new SQPField(stripEscapes(term));
     tokens.add(token);
   }
   /**
