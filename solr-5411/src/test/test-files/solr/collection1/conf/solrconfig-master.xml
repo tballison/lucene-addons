@@ -18,55 +18,55 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>  
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
-  <dataDir>${solr.data.dir:}</dataDir>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <dataDir>${solr.data.dir:}</dataDir>
 
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
 
-  <updateHandler class="solr.DirectUpdateHandler2">
-  </updateHandler>
+    <updateHandler class="solr.DirectUpdateHandler2">
+    </updateHandler>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler">
-    <bool name="httpCaching">true</bool>
-  </requestHandler>
+    <requestHandler name="standard" class="solr.StandardRequestHandler">
+        <bool name="httpCaching">true</bool>
+    </requestHandler>
 
-  <requestHandler name="/replication" class="solr.ReplicationHandler">
-    <lst name="master">
-      <str name="replicateAfter">commit</str>
-      <!-- we don't really need dummy.xsl, but we want to be sure subdir 
-           files replicate (see SOLR-3809)
-      -->
-      <str name="confFiles">schema.xml,xslt/dummy.xsl</str>
-    </lst>
-  </requestHandler>
+    <requestHandler name="/replication" class="solr.ReplicationHandler">
+        <lst name="master">
+            <str name="replicateAfter">commit</str>
+            <!-- we don't really need dummy.xsl, but we want to be sure subdir
+                 files replicate (see SOLR-3809)
+            -->
+            <str name="confFiles">schema.xml,xslt/dummy.xsl</str>
+        </lst>
+    </requestHandler>
 
-  <!-- test query parameter defaults -->
-  <requestHandler name="defaults" class="solr.StandardRequestHandler">
-    <lst name="defaults">
-      <int name="rows">4</int>
-      <bool name="hl">true</bool>
-      <str name="hl.fl">text,name,subject,title,whitetok</str>
-    </lst>
-  </requestHandler>
+    <!-- test query parameter defaults -->
+    <requestHandler name="defaults" class="solr.StandardRequestHandler">
+        <lst name="defaults">
+            <int name="rows">4</int>
+            <bool name="hl">true</bool>
+            <str name="hl.fl">text,name,subject,title,whitetok</str>
+        </lst>
+    </requestHandler>
 
-  <!-- test query parameter defaults -->
-  <requestHandler name="lazy" class="solr.StandardRequestHandler" startup="lazy">
-    <lst name="defaults">
-      <int name="rows">4</int>
-      <bool name="hl">true</bool>
-      <str name="hl.fl">text,name,subject,title,whitetok</str>
-    </lst>
-  </requestHandler>
+    <!-- test query parameter defaults -->
+    <requestHandler name="lazy" class="solr.StandardRequestHandler" startup="lazy">
+        <lst name="defaults">
+            <int name="rows">4</int>
+            <bool name="hl">true</bool>
+            <str name="hl.fl">text,name,subject,title,whitetok</str>
+        </lst>
+    </requestHandler>
 
-  <requestHandler name="/update" class="solr.UpdateRequestHandler"  />
+    <requestHandler name="/update" class="solr.UpdateRequestHandler"/>
 
-  <!-- enable streaming for testing... -->
-  <requestDispatcher handleSelect="true">
-    <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048"/>
-    <httpCaching lastModifiedFrom="openTime" etagSeed="Solr" never304="false">
-      <cacheControl>max-age=30, public</cacheControl>
-    </httpCaching>
-  </requestDispatcher>
+    <!-- enable streaming for testing... -->
+    <requestDispatcher handleSelect="true">
+        <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048"/>
+        <httpCaching lastModifiedFrom="openTime" etagSeed="Solr" never304="false">
+            <cacheControl>max-age=30, public</cacheControl>
+        </httpCaching>
+    </requestDispatcher>
 
 </config>

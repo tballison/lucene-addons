@@ -16,17 +16,15 @@
  */
 package org.apache.solr.core;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.solr.common.util.NamedList;
 import org.apache.solr.handler.RequestHandlerBase;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.response.SolrQueryResponse;
-import org.apache.solr.common.util.NamedList;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 
 /**
  * concocted for testing only!
- *
  **/
 public class MockQuerySenderListenerReqHandler extends RequestHandlerBase {
   public SolrQueryRequest req;
@@ -64,5 +62,5 @@ public class MockQuerySenderListenerReqHandler extends RequestHandlerBase {
     lst.add("initCount", initCounter.intValue());
     return lst;
   }
- 
+
 }

@@ -17,13 +17,12 @@ package org.apache.lucene.search.concordance.classic.impl;
  * limitations under the License.
  */
 
-import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
-import org.apache.lucene.search.concordance.classic.ConcordanceWindow;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
+import org.apache.lucene.search.concordance.classic.ConcordanceWindow;
 
 /**
  * Like ConcordanceWindowCollector, but this collector

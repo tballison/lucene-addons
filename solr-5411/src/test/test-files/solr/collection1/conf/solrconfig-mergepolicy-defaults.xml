@@ -18,15 +18,15 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <indexConfig>
-    <!-- do not put any merge policy, merge factor 
-         or CFS related settings here 
-    -->
-  </indexConfig>
+    <indexConfig>
+        <!-- do not put any merge policy, merge factor
+             or CFS related settings here
+        -->
+    </indexConfig>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
+    <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
 
 </config>

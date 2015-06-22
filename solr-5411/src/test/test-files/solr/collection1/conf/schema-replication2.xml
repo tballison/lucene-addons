@@ -26,24 +26,24 @@
   -->
 
 <schema name="test" version="1.2">
-  <types>
+    <types>
 
-    <fieldType name="integer" class="solr.IntField"/>
-    <fieldtype name="string" class="solr.StrField" sortMissingLast="true"/>
+        <fieldType name="integer" class="solr.IntField"/>
+        <fieldtype name="string" class="solr.StrField" sortMissingLast="true"/>
 
-  </types>
-
-
-  <fields>
-    <field name="id" type="integer" indexed="true" stored="true" multiValued="false" required="false"/>
-    <field name="name" type="string" indexed="true" stored="true"/>
-
-    <!--adding new field newname in replication test.-->
-    <field name="newname" type="string" indexed="true" stored="true"/>
+    </types>
 
 
-  </fields>
+    <fields>
+        <field name="id" type="integer" indexed="true" stored="true" multiValued="false" required="false"/>
+        <field name="name" type="string" indexed="true" stored="true"/>
 
-  <uniqueKey>id</uniqueKey>
+        <!--adding new field newname in replication test.-->
+        <field name="newname" type="string" indexed="true" stored="true"/>
+
+
+    </fields>
+
+    <uniqueKey>id</uniqueKey>
 
 </schema>

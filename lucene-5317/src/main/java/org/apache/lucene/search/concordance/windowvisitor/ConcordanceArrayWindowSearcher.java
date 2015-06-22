@@ -17,6 +17,10 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
@@ -39,11 +43,6 @@ import org.apache.lucene.search.concordance.classic.impl.FieldBasedDocIdBuilder;
 import org.apache.lucene.search.concordance.util.ConcordanceSearcherUtil;
 import org.apache.lucene.search.spans.SimpleSpanQueryConverter;
 import org.apache.lucene.search.spans.SpanQuery;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Calculates term statistics for the tokens before and after a given query
@@ -172,7 +171,7 @@ public class ConcordanceArrayWindowSearcher {
                                  List<OffsetAttribute> offsets, String docId, ConcordanceArrayWindow window,
                                  ArrayWindowVisitor visitor, int offsetGap) throws IOException,
       TargetTokenNotFoundException {
-    System.out.println("VISITING: "+docId+":"+offsets.size());
+    System.out.println("VISITING: " + docId + ":" + offsets.size());
     for (OffsetAttribute offset : offsets) {
       // hit max, stop now
       if (visitor.getHitMax() == true) {

@@ -17,79 +17,79 @@
 -->
 
 <config>
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-   <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <!--  The DirectoryFactory to use for indexes.
-        solr.StandardDirectoryFactory, the default, is filesystem based.
-        solr.RAMDirectoryFactory is memory based and not persistent. -->
-  <dataDir>${solr.data.dir:}</dataDir>
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <!--  The DirectoryFactory to use for indexes.
+          solr.StandardDirectoryFactory, the default, is filesystem based.
+          solr.RAMDirectoryFactory is memory based and not persistent. -->
+    <dataDir>${solr.data.dir:}</dataDir>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <updateHandler class="solr.DirectUpdateHandler2"/>
+    <updateHandler class="solr.DirectUpdateHandler2"/>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler" />
+    <requestHandler name="standard" class="solr.StandardRequestHandler"/>
 
-  <searchComponent class="solr.SuggestComponent" name="suggest">
-    
-  	<!-- Suggest component (default index based dictionary) -->
-    <lst name="suggester">
-      <str name="name">suggest_fuzzy_with_high_freq_dict</str>
-      <str name="lookupImpl">FuzzyLookupFactory</str>
-      <str name="field">cat</str>
-      <str name="storeDir">suggest_fuzzy_with_high_freq_dict</str>
-      <str name="suggestAnalyzerFieldType">text</str>
-      <str name="buildOnCommit">true</str>
+    <searchComponent class="solr.SuggestComponent" name="suggest">
 
-      <!-- Suggester properties -->
-      <float name="threshold">0.0</float>
-    </lst>
-	
-	<!-- Suggest component (default file based dictionary) -->
-    <lst name="suggester">
-      <str name="name">suggest_fuzzy_file_based</str>
-      <str name="lookupImpl">FuzzyLookupFactory</str>
-      <str name="sourceLocation">fuzzysuggest.txt</str>
-      <str name="storeDir">suggest_fuzzy_file_based</str>
-      <str name="suggestAnalyzerFieldType">text</str>
-      <str name="buildOnCommit">true</str>
-    </lst>
+        <!-- Suggest component (default index based dictionary) -->
+        <lst name="suggester">
+            <str name="name">suggest_fuzzy_with_high_freq_dict</str>
+            <str name="lookupImpl">FuzzyLookupFactory</str>
+            <str name="field">cat</str>
+            <str name="storeDir">suggest_fuzzy_with_high_freq_dict</str>
+            <str name="suggestAnalyzerFieldType">text</str>
+            <str name="buildOnCommit">true</str>
 
-	<!-- Suggest component (Document Dictionary) -->
-    <lst name="suggester">
-      <str name="name">suggest_fuzzy_doc_dict</str>
-      <str name="lookupImpl">FuzzyLookupFactory</str>
-      <str name="dictionaryImpl">DocumentDictionaryFactory</str>
-      <str name="field">cat</str>
-      <str name="weightField">price</str>
-      <str name="storeDir">suggest_fuzzy_doc_dict_payload</str>
-      <str name="suggestAnalyzerFieldType">text</str>
-      <str name="buildOnCommit">true</str>
-    </lst>
+            <!-- Suggester properties -->
+            <float name="threshold">0.0</float>
+        </lst>
 
-	<!-- Suggest component (Document Expression Dictionary) -->
-    <lst name="suggester">
-      <str name="name">suggest_fuzzy_doc_expr_dict</str>
-      <str name="dictionaryImpl">DocumentExpressionDictionaryFactory</str>
-      <str name="lookupImpl">FuzzyLookupFactory</str>
-      <str name="field">cat</str>
-      <str name="weightExpression">((price * 2) + weight)</str>
-      <str name="sortField">weight</str>
-      <str name="sortField">price</str>
-      <str name="storeDir">suggest_fuzzy_doc_expr_dict</str>
-      <str name="suggestAnalyzerFieldType">text</str>
-      <str name="buildOnCommit">true</str>
-    </lst>
-  </searchComponent>
+        <!-- Suggest component (default file based dictionary) -->
+        <lst name="suggester">
+            <str name="name">suggest_fuzzy_file_based</str>
+            <str name="lookupImpl">FuzzyLookupFactory</str>
+            <str name="sourceLocation">fuzzysuggest.txt</str>
+            <str name="storeDir">suggest_fuzzy_file_based</str>
+            <str name="suggestAnalyzerFieldType">text</str>
+            <str name="buildOnCommit">true</str>
+        </lst>
 
-  <requestHandler name="/suggest" class="org.apache.solr.handler.component.SearchHandler">
-    <lst name="defaults">
-      <str name="suggest">true</str>
-    </lst>
-    <arr name="components">
-      <str>suggest</str>
-    </arr>
-  </requestHandler>
-  
-  <requestHandler name="/update" class="solr.UpdateRequestHandler" />
+        <!-- Suggest component (Document Dictionary) -->
+        <lst name="suggester">
+            <str name="name">suggest_fuzzy_doc_dict</str>
+            <str name="lookupImpl">FuzzyLookupFactory</str>
+            <str name="dictionaryImpl">DocumentDictionaryFactory</str>
+            <str name="field">cat</str>
+            <str name="weightField">price</str>
+            <str name="storeDir">suggest_fuzzy_doc_dict_payload</str>
+            <str name="suggestAnalyzerFieldType">text</str>
+            <str name="buildOnCommit">true</str>
+        </lst>
+
+        <!-- Suggest component (Document Expression Dictionary) -->
+        <lst name="suggester">
+            <str name="name">suggest_fuzzy_doc_expr_dict</str>
+            <str name="dictionaryImpl">DocumentExpressionDictionaryFactory</str>
+            <str name="lookupImpl">FuzzyLookupFactory</str>
+            <str name="field">cat</str>
+            <str name="weightExpression">((price * 2) + weight)</str>
+            <str name="sortField">weight</str>
+            <str name="sortField">price</str>
+            <str name="storeDir">suggest_fuzzy_doc_expr_dict</str>
+            <str name="suggestAnalyzerFieldType">text</str>
+            <str name="buildOnCommit">true</str>
+        </lst>
+    </searchComponent>
+
+    <requestHandler name="/suggest" class="org.apache.solr.handler.component.SearchHandler">
+        <lst name="defaults">
+            <str name="suggest">true</str>
+        </lst>
+        <arr name="components">
+            <str>suggest</str>
+        </arr>
+    </requestHandler>
+
+    <requestHandler name="/update" class="solr.UpdateRequestHandler"/>
 
 </config>

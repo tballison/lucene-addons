@@ -17,13 +17,12 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
-import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 
 /**
  * In some versions of Lucene, getSpans returned overlapping spans. This class

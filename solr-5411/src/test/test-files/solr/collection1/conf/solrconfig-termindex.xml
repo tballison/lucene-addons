@@ -18,41 +18,42 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <!-- see TestConfig.testLib() -->
-  <lib dir="../../lib-dirs/a" />
-  <lib dir="../../lib-dirs/b" regex="b." />
-  <lib dir="../../lib-dirs/c" regex="c1" />
-  <lib path="../../lib-dirs/d/d1/" />
-  
-  <!--  The DirectoryFactory to use for indexes.
-        solr.StandardDirectoryFactory, the default, is filesystem based.
-        solr.RAMDirectoryFactory is memory based and not persistent. -->
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <!-- see TestConfig.testLib() -->
+    <lib dir="../../lib-dirs/a"/>
+    <lib dir="../../lib-dirs/b" regex="b."/>
+    <lib dir="../../lib-dirs/c" regex="c1"/>
+    <lib path="../../lib-dirs/d/d1/"/>
 
-  <indexConfig>
-    <useCompoundFile>${useCompoundFile:false}</useCompoundFile>
-    <termIndexInterval>256</termIndexInterval>
-    <mergePolicy class="org.apache.lucene.index.TieredMergePolicy"/>
-    <mergeScheduler class="org.apache.lucene.index.ConcurrentMergeScheduler"/>
-  </indexConfig>
+    <!--  The DirectoryFactory to use for indexes.
+          solr.StandardDirectoryFactory, the default, is filesystem based.
+          solr.RAMDirectoryFactory is memory based and not persistent. -->
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <updateHandler class="solr.DirectUpdateHandler2">
-  </updateHandler>
+    <indexConfig>
+        <useCompoundFile>${useCompoundFile:false}</useCompoundFile>
+        <termIndexInterval>256</termIndexInterval>
+        <mergePolicy class="org.apache.lucene.index.TieredMergePolicy"/>
+        <mergeScheduler class="org.apache.lucene.index.ConcurrentMergeScheduler"/>
+    </indexConfig>
 
-  <indexReaderFactory name="IndexReaderFactory" class="org.apache.solr.core.StandardIndexReaderFactory">
-    <int name="setTermIndexDivisor">12</int>
-  </indexReaderFactory >
+    <updateHandler class="solr.DirectUpdateHandler2">
+    </updateHandler>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
+    <indexReaderFactory name="IndexReaderFactory" class="org.apache.solr.core.StandardIndexReaderFactory">
+        <int name="setTermIndexDivisor">12</int>
+    </indexReaderFactory>
 
-  <admin>
-    <defaultQuery>solr</defaultQuery>
-    <gettableFiles>solrconfig.xml schema.xml admin-extra.html</gettableFiles>
-  </admin>
+    <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
 
-  <!-- test getting system property -->
-  <propTest attr1="${solr.test.sys.prop1}-$${literal}"
-            attr2="${non.existent.sys.prop:default-from-config}">prefix-${solr.test.sys.prop2}-suffix</propTest>
+    <admin>
+        <defaultQuery>solr</defaultQuery>
+        <gettableFiles>solrconfig.xml schema.xml admin-extra.html</gettableFiles>
+    </admin>
+
+    <!-- test getting system property -->
+    <propTest attr1="${solr.test.sys.prop1}-$${literal}"
+              attr2="${non.existent.sys.prop:default-from-config}">prefix-${solr.test.sys.prop2}-suffix
+    </propTest>
 
 </config>

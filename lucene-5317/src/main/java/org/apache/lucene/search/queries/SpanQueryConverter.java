@@ -17,6 +17,10 @@ package org.apache.lucene.search.queries;
  * limitations under the License.
  */
 
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queries.CommonTermsQuery;
 import org.apache.lucene.search.Query;
@@ -24,11 +28,6 @@ import org.apache.lucene.search.spans.SimpleSpanQueryConverter;
 import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
-
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
 
 /**
  * This adds CommonTermsQuery to SimpleSpanQueryConverter.

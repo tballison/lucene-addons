@@ -26,21 +26,21 @@
   -->
 
 <schema name="test" version="1.2">
-  <types>
+    <types>
 
-    <fieldType name="integer" class="solr.IntField"/>
-    <fieldtype name="string" class="solr.StrField" sortMissingLast="true"/>
-
-
-  </types>
+        <fieldType name="integer" class="solr.IntField"/>
+        <fieldtype name="string" class="solr.StrField" sortMissingLast="true"/>
 
 
-  <fields>
-    <field name="id" type="integer" indexed="true" stored="true" multiValued="false" required="false"/>
-    <field name="name" type="string" indexed="true" stored="true"/>
+    </types>
 
-  </fields>
 
-  <uniqueKey>id</uniqueKey>
+    <fields>
+        <field name="id" type="integer" indexed="true" stored="true" multiValued="false" required="false"/>
+        <field name="name" type="string" indexed="true" stored="true"/>
+
+    </fields>
+
+    <uniqueKey>id</uniqueKey>
 
 </schema>

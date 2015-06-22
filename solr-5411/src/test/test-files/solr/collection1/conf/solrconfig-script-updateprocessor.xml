@@ -22,91 +22,91 @@
 
   -->
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
+    <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <updateRequestProcessorChain name="force-script-engine" default="true">
-    <processor class="solr.StatelessScriptUpdateProcessorFactory">
-      <str name="engine">javascript</str>
-      <str name="script">missleading.extension.updateprocessor.js.txt</str>
-    </processor>
-    <processor class="solr.RunUpdateProcessorFactory" />
-  </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="force-script-engine" default="true">
+        <processor class="solr.StatelessScriptUpdateProcessorFactory">
+            <str name="engine">javascript</str>
+            <str name="script">missleading.extension.updateprocessor.js.txt</str>
+        </processor>
+        <processor class="solr.RunUpdateProcessorFactory"/>
+    </updateRequestProcessorChain>
 
-  <updateRequestProcessorChain name="run-no-scripts">
-    <!-- for bypassing all scripts -->
-    <processor class="solr.RunUpdateProcessorFactory" />
-  </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="run-no-scripts">
+        <!-- for bypassing all scripts -->
+        <processor class="solr.RunUpdateProcessorFactory"/>
+    </updateRequestProcessorChain>
 
-  <updateRequestProcessorChain name="single-script">
-    <processor class="solr.StatelessScriptUpdateProcessorFactory">
-      <str name="script">trivial.updateprocessor0.js</str>
-      <lst name="params">
-        <bool name="boolValue">true</bool>
-        <int name="intValue">1</int>
-      </lst>
-    </processor>
-    <processor class="solr.RunUpdateProcessorFactory" />
-  </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="single-script">
+        <processor class="solr.StatelessScriptUpdateProcessorFactory">
+            <str name="script">trivial.updateprocessor0.js</str>
+            <lst name="params">
+                <bool name="boolValue">true</bool>
+                <int name="intValue">1</int>
+            </lst>
+        </processor>
+        <processor class="solr.RunUpdateProcessorFactory"/>
+    </updateRequestProcessorChain>
 
-  <updateRequestProcessorChain name="dual-scripts-arr">
-    <processor class="solr.StatelessScriptUpdateProcessorFactory">
-      <arr name="script">
-        <str>trivial.updateprocessor0.js</str>
-        <str>trivial.updateprocessor1.js</str>
-      </arr>
-      <lst name="params">
-        <bool name="boolValue">true</bool>
-        <int name="intValue">1</int>
-      </lst>
-    </processor>
-    <processor class="solr.RunUpdateProcessorFactory" />
-  </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="dual-scripts-arr">
+        <processor class="solr.StatelessScriptUpdateProcessorFactory">
+            <arr name="script">
+                <str>trivial.updateprocessor0.js</str>
+                <str>trivial.updateprocessor1.js</str>
+            </arr>
+            <lst name="params">
+                <bool name="boolValue">true</bool>
+                <int name="intValue">1</int>
+            </lst>
+        </processor>
+        <processor class="solr.RunUpdateProcessorFactory"/>
+    </updateRequestProcessorChain>
 
-  <updateRequestProcessorChain name="dual-scripts-strs">
-    <processor class="solr.StatelessScriptUpdateProcessorFactory">
-      <str name="script">trivial.updateprocessor0.js</str>
-      <str name="script">trivial.updateprocessor1.js</str>
-      <lst name="params">
-        <bool name="boolValue">true</bool>
-        <int name="intValue">1</int>
-      </lst>
-    </processor>
-    <processor class="solr.RunUpdateProcessorFactory" />
-  </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="dual-scripts-strs">
+        <processor class="solr.StatelessScriptUpdateProcessorFactory">
+            <str name="script">trivial.updateprocessor0.js</str>
+            <str name="script">trivial.updateprocessor1.js</str>
+            <lst name="params">
+                <bool name="boolValue">true</bool>
+                <int name="intValue">1</int>
+            </lst>
+        </processor>
+        <processor class="solr.RunUpdateProcessorFactory"/>
+    </updateRequestProcessorChain>
 
-  <updateRequestProcessorChain name="conditional-scripts">
-    <!-- multiple scripts, 
-         test that the first one can conditionally stop execution -->
-    <processor class="solr.StatelessScriptUpdateProcessorFactory">
-      <str name="script">conditional.updateprocessor.js</str>
-      <str name="script">addfields.updateprocessor.js</str>
-    </processor>
-  </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="conditional-scripts">
+        <!-- multiple scripts,
+             test that the first one can conditionally stop execution -->
+        <processor class="solr.StatelessScriptUpdateProcessorFactory">
+            <str name="script">conditional.updateprocessor.js</str>
+            <str name="script">addfields.updateprocessor.js</str>
+        </processor>
+    </updateRequestProcessorChain>
 
-  <updateRequestProcessorChain name="conditional-script">
-    <!-- single script, followed by another processor 
-         (that happens to be a script). 
-         test that the first one can conditionally stop execution -->
-    <processor class="solr.StatelessScriptUpdateProcessorFactory">
-      <str name="script">conditional.updateprocessor.js</str>
-    </processor>
-    <processor class="solr.StatelessScriptUpdateProcessorFactory">
-      <str name="script">addfields.updateprocessor.js</str>
-    </processor>
-  </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="conditional-script">
+        <!-- single script, followed by another processor
+             (that happens to be a script).
+             test that the first one can conditionally stop execution -->
+        <processor class="solr.StatelessScriptUpdateProcessorFactory">
+            <str name="script">conditional.updateprocessor.js</str>
+        </processor>
+        <processor class="solr.StatelessScriptUpdateProcessorFactory">
+            <str name="script">addfields.updateprocessor.js</str>
+        </processor>
+    </updateRequestProcessorChain>
 
-  <updateRequestProcessorChain name="error-on-add">
-    <processor class="solr.StatelessScriptUpdateProcessorFactory">
-      <str name="script">throw.error.on.add.updateprocessor.js</str>
-    </processor>
-  </updateRequestProcessorChain>
-  <updateRequestProcessorChain name="missing-functions">
-    <processor class="solr.StatelessScriptUpdateProcessorFactory">
-      <str name="script">missing.functions.updateprocessor.js</str>
-    </processor>
-  </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="error-on-add">
+        <processor class="solr.StatelessScriptUpdateProcessorFactory">
+            <str name="script">throw.error.on.add.updateprocessor.js</str>
+        </processor>
+    </updateRequestProcessorChain>
+    <updateRequestProcessorChain name="missing-functions">
+        <processor class="solr.StatelessScriptUpdateProcessorFactory">
+            <str name="script">missing.functions.updateprocessor.js</str>
+        </processor>
+    </updateRequestProcessorChain>
 
 </config>

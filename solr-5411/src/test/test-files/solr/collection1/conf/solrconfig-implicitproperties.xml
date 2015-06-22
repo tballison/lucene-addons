@@ -17,63 +17,63 @@
   limitations under the License.
   -->
 
-    <!-- For testing, I need to create some custom directories on the fly, particularly for some of the new
-     discovery-based core configuration. Trying a minimal configuration to cut down the setup time.
-     use in conjunction with schema-minimal.xml perhaps? -->
+<!-- For testing, I need to create some custom directories on the fly, particularly for some of the new
+ discovery-based core configuration. Trying a minimal configuration to cut down the setup time.
+ use in conjunction with schema-minimal.xml perhaps? -->
 <config>
-  <luceneMatchVersion>LUCENE_4_1</luceneMatchVersion>
+    <luceneMatchVersion>LUCENE_4_1</luceneMatchVersion>
 
-  <dataDir>${solr.data.dir:}</dataDir>
+    <dataDir>${solr.data.dir:}</dataDir>
 
-  <directoryFactory name="DirectoryFactory"
-                    class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}"/>
+    <directoryFactory name="DirectoryFactory"
+                      class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}"/>
 
-  <xi:include href="./solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="./solrconfig.snippet.randomindexconfig.xml"/>
 
-  <jmx/>
-  <updateHandler class="solr.DirectUpdateHandler2">
-    <!--updateLog>
-      <str name="dir">${solr.ulog.dir:}</str>
-    </updateLog-->
-  </updateHandler>
+    <jmx/>
+    <updateHandler class="solr.DirectUpdateHandler2">
+        <!--updateLog>
+          <str name="dir">${solr.ulog.dir:}</str>
+        </updateLog-->
+    </updateHandler>
 
-  <query>
-    <enableLazyFieldLoading>true</enableLazyFieldLoading>
-    <queryResultWindowSize>20</queryResultWindowSize>
-    <queryResultMaxDocsCached>20</queryResultMaxDocsCached>
+    <query>
+        <enableLazyFieldLoading>true</enableLazyFieldLoading>
+        <queryResultWindowSize>20</queryResultWindowSize>
+        <queryResultMaxDocsCached>20</queryResultMaxDocsCached>
 
-    <useColdSearcher>true</useColdSearcher>
+        <useColdSearcher>true</useColdSearcher>
 
-    <maxWarmingSearchers>1</maxWarmingSearchers>
+        <maxWarmingSearchers>1</maxWarmingSearchers>
 
-  </query>
+    </query>
 
-  <requestHandler name="/admin/" class="solr.admin.AdminHandlers" />
+    <requestHandler name="/admin/" class="solr.admin.AdminHandlers"/>
 
-  <requestDispatcher handleSelect="false">
-    <httpCaching never304="true"/>
-  </requestDispatcher>
+    <requestDispatcher handleSelect="false">
+        <httpCaching never304="true"/>
+    </requestDispatcher>
 
-  <requestHandler name="/select" class="solr.SearchHandler">
-    <lst name="defaults">
-      <str name="echoParams">all</str>
-      <str name="df">text</str>
-      <str name="dummy1">${solr.core.name}</str>
-      <str name="dummy2">${solr.core.dataDir}</str>
-      <str name="dummy3">${solr.core.config}</str>
-      <str name="dummy4">${solr.core.schema}</str>
-      <str name="dummy5">${solr.core.transient}</str>
-    </lst>
+    <requestHandler name="/select" class="solr.SearchHandler">
+        <lst name="defaults">
+            <str name="echoParams">all</str>
+            <str name="df">text</str>
+            <str name="dummy1">${solr.core.name}</str>
+            <str name="dummy2">${solr.core.dataDir}</str>
+            <str name="dummy3">${solr.core.config}</str>
+            <str name="dummy4">${solr.core.schema}</str>
+            <str name="dummy5">${solr.core.transient}</str>
+        </lst>
 
-  </requestHandler>
-  <requestHandler name="/update" class="solr.UpdateRequestHandler">
-  </requestHandler>
+    </requestHandler>
+    <requestHandler name="/update" class="solr.UpdateRequestHandler">
+    </requestHandler>
 
-  <queryResponseWriter name="json" class="solr.JSONResponseWriter">
-    <!-- For the purposes of the tutorial, JSON responses are written as
-     plain text so that they are easy to read in *any* browser.
-     If you expect a MIME type of "application/json" just remove this override.
-    -->
-    <str name="content-type">text/plain; charset=UTF-8</str>
-  </queryResponseWriter>
+    <queryResponseWriter name="json" class="solr.JSONResponseWriter">
+        <!-- For the purposes of the tutorial, JSON responses are written as
+         plain text so that they are easy to read in *any* browser.
+         If you expect a MIME type of "application/json" just remove this override.
+        -->
+        <str name="content-type">text/plain; charset=UTF-8</str>
+    </queryResponseWriter>
 </config>

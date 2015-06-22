@@ -16,106 +16,106 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-                                                           
+
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
 
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
 
-  <schemaFactory class="ManagedIndexSchemaFactory">
-    <bool name="mutable">${managed.schema.mutable}</bool>
-    <str name="managedSchemaResourceName">managed-schema</str>
-  </schemaFactory>
+    <schemaFactory class="ManagedIndexSchemaFactory">
+        <bool name="mutable">${managed.schema.mutable}</bool>
+        <str name="managedSchemaResourceName">managed-schema</str>
+    </schemaFactory>
 
-  <codecFactory class="solr.SchemaCodecFactory"/>
+    <codecFactory class="solr.SchemaCodecFactory"/>
 
-  <updateHandler>
-    <updateLog enable="${enable.update.log}">
-      <str name="dir">${solr.ulog.dir:}</str>
-    </updateLog> 
-  </updateHandler>
+    <updateHandler>
+        <updateLog enable="${enable.update.log}">
+            <str name="dir">${solr.ulog.dir:}</str>
+        </updateLog>
+    </updateHandler>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler">
-    <bool name="httpCaching">true</bool>
-  </requestHandler>
+    <requestHandler name="standard" class="solr.StandardRequestHandler">
+        <bool name="httpCaching">true</bool>
+    </requestHandler>
 
-  <requestHandler name="/get" class="solr.RealTimeGetHandler">
-    <lst name="defaults">
-      <str name="omitHeader">true</str>
-    </lst>
-  </requestHandler>
-  <requestHandler name="/admin/" class="org.apache.solr.handler.admin.AdminHandlers" />
-  <requestHandler name="/update" class="solr.UpdateRequestHandler">
-    <lst name="defaults">
-      <str name="update.chain">add-unknown-fields-to-the-schema</str>
-    </lst>
-  </requestHandler>
+    <requestHandler name="/get" class="solr.RealTimeGetHandler">
+        <lst name="defaults">
+            <str name="omitHeader">true</str>
+        </lst>
+    </requestHandler>
+    <requestHandler name="/admin/" class="org.apache.solr.handler.admin.AdminHandlers"/>
+    <requestHandler name="/update" class="solr.UpdateRequestHandler">
+        <lst name="defaults">
+            <str name="update.chain">add-unknown-fields-to-the-schema</str>
+        </lst>
+    </requestHandler>
 
-  <requestHandler name="/replication" class="solr.ReplicationHandler" startup="lazy" />
+    <requestHandler name="/replication" class="solr.ReplicationHandler" startup="lazy"/>
 
-  <!-- Add unknown fields to the schema 
-  
-       An example field type guessing update processor that will
-       attempt to parse string-typed field values as Booleans, Longs,
-       Doubles, or Dates, and then add schema fields with the guessed
-       field types.  
-       
-       This requires that the schema is both managed and mutable, by
-       declaring schemaFactory as ManagedIndexSchemaFactory, with
-       mutable specified as true. 
-       
-       See http://wiki.apache.org/solr/GuessingFieldTypes
-    -->
-  <updateRequestProcessorChain name="add-unknown-fields-to-the-schema">
-    <processor class="solr.LogUpdateProcessorFactory"/>
-    <processor class="solr.DistributedUpdateProcessorFactory" />
-    <processor class="solr.RemoveBlankFieldUpdateProcessorFactory"/>
-    <processor class="solr.ParseBooleanFieldUpdateProcessorFactory"/>
-    <processor class="solr.ParseLongFieldUpdateProcessorFactory"/>
-    <processor class="solr.ParseDoubleFieldUpdateProcessorFactory"/>
-    <processor class="solr.ParseDateFieldUpdateProcessorFactory">
-      <arr name="format">
-        <str>yyyy-MM-dd'T'HH:mm:ss.SSSZ</str>
-        <str>yyyy-MM-dd'T'HH:mm:ss,SSSZ</str>
-        <str>yyyy-MM-dd'T'HH:mm:ss.SSS</str>
-        <str>yyyy-MM-dd'T'HH:mm:ss,SSS</str>
-        <str>yyyy-MM-dd'T'HH:mm:ssZ</str>
-        <str>yyyy-MM-dd'T'HH:mm:ss</str>
-        <str>yyyy-MM-dd'T'HH:mmZ</str>
-        <str>yyyy-MM-dd'T'HH:mm</str>
-        <str>yyyy-MM-dd HH:mm:ss.SSSZ</str>
-        <str>yyyy-MM-dd HH:mm:ss,SSSZ</str>
-        <str>yyyy-MM-dd HH:mm:ss.SSS</str>
-        <str>yyyy-MM-dd HH:mm:ss,SSS</str>
-        <str>yyyy-MM-dd HH:mm:ssZ</str>
-        <str>yyyy-MM-dd HH:mm:ss</str>
-        <str>yyyy-MM-dd HH:mmZ</str>
-        <str>yyyy-MM-dd HH:mm</str>
-        <str>yyyy-MM-dd</str>
-      </arr>
-    </processor>
-     
-    <processor class="solr.AddSchemaFieldsUpdateProcessorFactory">
-      <str name="defaultFieldType">text_general</str>
-      <lst name="typeMapping">
-        <str name="valueClass">java.lang.Boolean</str>
-        <str name="fieldType">boolean</str>
-      </lst>
-      <lst name="typeMapping">
-        <str name="valueClass">java.util.Date</str>
-        <str name="fieldType">tdate</str>
-      </lst>
-      <lst name="typeMapping">
-        <str name="valueClass">java.lang.Long</str>
-        <str name="valueClass">java.lang.Integer</str>
-        <str name="fieldType">tlong</str>
-      </lst>
-      <lst name="typeMapping">
-        <str name="valueClass">java.lang.Number</str>
-        <str name="fieldType">tdouble</str>
-      </lst>
-    </processor>
-    <processor class="solr.RunUpdateProcessorFactory"/>
-  </updateRequestProcessorChain>
+    <!-- Add unknown fields to the schema
+
+         An example field type guessing update processor that will
+         attempt to parse string-typed field values as Booleans, Longs,
+         Doubles, or Dates, and then add schema fields with the guessed
+         field types.
+
+         This requires that the schema is both managed and mutable, by
+         declaring schemaFactory as ManagedIndexSchemaFactory, with
+         mutable specified as true.
+
+         See http://wiki.apache.org/solr/GuessingFieldTypes
+      -->
+    <updateRequestProcessorChain name="add-unknown-fields-to-the-schema">
+        <processor class="solr.LogUpdateProcessorFactory"/>
+        <processor class="solr.DistributedUpdateProcessorFactory"/>
+        <processor class="solr.RemoveBlankFieldUpdateProcessorFactory"/>
+        <processor class="solr.ParseBooleanFieldUpdateProcessorFactory"/>
+        <processor class="solr.ParseLongFieldUpdateProcessorFactory"/>
+        <processor class="solr.ParseDoubleFieldUpdateProcessorFactory"/>
+        <processor class="solr.ParseDateFieldUpdateProcessorFactory">
+            <arr name="format">
+                <str>yyyy-MM-dd'T'HH:mm:ss.SSSZ</str>
+                <str>yyyy-MM-dd'T'HH:mm:ss,SSSZ</str>
+                <str>yyyy-MM-dd'T'HH:mm:ss.SSS</str>
+                <str>yyyy-MM-dd'T'HH:mm:ss,SSS</str>
+                <str>yyyy-MM-dd'T'HH:mm:ssZ</str>
+                <str>yyyy-MM-dd'T'HH:mm:ss</str>
+                <str>yyyy-MM-dd'T'HH:mmZ</str>
+                <str>yyyy-MM-dd'T'HH:mm</str>
+                <str>yyyy-MM-dd HH:mm:ss.SSSZ</str>
+                <str>yyyy-MM-dd HH:mm:ss,SSSZ</str>
+                <str>yyyy-MM-dd HH:mm:ss.SSS</str>
+                <str>yyyy-MM-dd HH:mm:ss,SSS</str>
+                <str>yyyy-MM-dd HH:mm:ssZ</str>
+                <str>yyyy-MM-dd HH:mm:ss</str>
+                <str>yyyy-MM-dd HH:mmZ</str>
+                <str>yyyy-MM-dd HH:mm</str>
+                <str>yyyy-MM-dd</str>
+            </arr>
+        </processor>
+
+        <processor class="solr.AddSchemaFieldsUpdateProcessorFactory">
+            <str name="defaultFieldType">text_general</str>
+            <lst name="typeMapping">
+                <str name="valueClass">java.lang.Boolean</str>
+                <str name="fieldType">boolean</str>
+            </lst>
+            <lst name="typeMapping">
+                <str name="valueClass">java.util.Date</str>
+                <str name="fieldType">tdate</str>
+            </lst>
+            <lst name="typeMapping">
+                <str name="valueClass">java.lang.Long</str>
+                <str name="valueClass">java.lang.Integer</str>
+                <str name="fieldType">tlong</str>
+            </lst>
+            <lst name="typeMapping">
+                <str name="valueClass">java.lang.Number</str>
+                <str name="fieldType">tdouble</str>
+            </lst>
+        </processor>
+        <processor class="solr.RunUpdateProcessorFactory"/>
+    </updateRequestProcessorChain>
 
 </config>

@@ -17,12 +17,6 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
-import org.apache.lucene.corpus.stats.IDFCalc;
-import org.apache.lucene.corpus.stats.TFIDFPriorityQueue;
-import org.apache.lucene.corpus.stats.TermIDF;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.util.mutable.MutableValueInt;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +24,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.lucene.corpus.stats.IDFCalc;
+import org.apache.lucene.corpus.stats.TFIDFPriorityQueue;
+import org.apache.lucene.corpus.stats.TermIDF;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.util.mutable.MutableValueInt;
 
 /**
  * Class to count cooccurrences for targets

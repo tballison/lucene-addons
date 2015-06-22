@@ -21,6 +21,7 @@ abstract class SQPClause extends SQPBoostableToken {
 
   private final int tokenOffsetStart;
   private int tokenOffsetEnd;
+
   public SQPClause(int tokenOffsetStart) {
     this.tokenOffsetStart = tokenOffsetStart;
   }

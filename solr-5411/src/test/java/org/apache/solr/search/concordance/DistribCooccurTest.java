@@ -1,5 +1,7 @@
 package org.apache.solr.search.concordance;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.solr.SolrTestCaseJ4;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.request.QueryRequest;
@@ -9,9 +11,6 @@ import org.apache.solr.common.util.NamedList;
 import org.junit.After;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by tallison on 4/28/2015.
@@ -36,6 +35,7 @@ public class DistribCooccurTest extends AbstractFullDistribZkTestBase {
     super.setUp();
 //    System.setProperty("solr.xml.persist", "true");
   }
+
   @Override
   @After
   public void tearDown() throws Exception {
@@ -85,7 +85,7 @@ public class DistribCooccurTest extends AbstractFullDistribZkTestBase {
     NamedList<Object> results = cloudClient.request(solrRequest);
 
     for (int i = 0; i < results.size(); i++) {
-      System.out.println("RESULTS: "+i+" "+results.getName(i) + " : " + results.getVal(i));
+      System.out.println("RESULTS: " + i + " " + results.getName(i) + " : " + results.getVal(i));
     }
     assertTrue("MADE IT HERE!", true);
   }

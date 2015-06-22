@@ -26,44 +26,45 @@
   -->
 
 <schema name="test" version="1.2">
-  <types>
+    <types>
 
-    <!-- field type definitions... note that the "name" attribute is
-         just a label to be used by field definitions.  The "class"
-         attribute and any other attributes determine the real type and
-         behavior of the fieldtype.
-      -->
+        <!-- field type definitions... note that the "name" attribute is
+             just a label to be used by field definitions.  The "class"
+             attribute and any other attributes determine the real type and
+             behavior of the fieldtype.
+          -->
 
-    <!-- numeric field types that store and index the text
-         value verbatim (and hence don't sort correctly or support range queries.)
-         These are provided more for backward compatability, allowing one
-         to create a schema that matches an existing lucene index.
-    -->
-    <fieldType name="integer" class="solr.IntField"/>
-    <fieldType name="long" class="solr.LongField"/>
-    <fieldtype name="float" class="solr.FloatField"/>
-    <fieldType name="double" class="solr.DoubleField"/>
-    <fieldType name="customfield" class="org.apache.solr.schema.MyCrazyCustomField" multiValued="true" positionIncrementGap="100">
-    <analyzer>
-      <tokenizer class="solr.StandardTokenizerFactory"/>
-    </analyzer>
-    </fieldType>
+        <!-- numeric field types that store and index the text
+             value verbatim (and hence don't sort correctly or support range queries.)
+             These are provided more for backward compatability, allowing one
+             to create a schema that matches an existing lucene index.
+        -->
+        <fieldType name="integer" class="solr.IntField"/>
+        <fieldType name="long" class="solr.LongField"/>
+        <fieldtype name="float" class="solr.FloatField"/>
+        <fieldType name="double" class="solr.DoubleField"/>
+        <fieldType name="customfield" class="org.apache.solr.schema.MyCrazyCustomField" multiValued="true"
+                   positionIncrementGap="100">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+            </analyzer>
+        </fieldType>
 
-    <fieldType name="customtrieintfield" class="org.apache.solr.schema.TrieIntPrefixActsAsRangeQueryFieldType"/>
+        <fieldType name="customtrieintfield" class="org.apache.solr.schema.TrieIntPrefixActsAsRangeQueryFieldType"/>
 
- </types>
+    </types>
 
- <fields>
-   <field name="id" type="integer" indexed="true" stored="true" multiValued="false" required="true"/>
-   <field name="intfield" type="integer" indexed="true" stored="true"/>
-   <field name="swap_foo_bar_in_prefix_query" type="customfield" indexed="true" stored="true" multiValued="true"/>
-   <field name="int_prefix_as_range" type="customtrieintfield" indexed="true" stored="true"/>
+    <fields>
+        <field name="id" type="integer" indexed="true" stored="true" multiValued="false" required="true"/>
+        <field name="intfield" type="integer" indexed="true" stored="true"/>
+        <field name="swap_foo_bar_in_prefix_query" type="customfield" indexed="true" stored="true" multiValued="true"/>
+        <field name="int_prefix_as_range" type="customtrieintfield" indexed="true" stored="true"/>
 
-   <field name="_version_" type="long" indexed="true" stored="true" multiValued="false" />
+        <field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/>
 
- </fields>
+    </fields>
 
- <uniqueKey>id</uniqueKey>
+    <uniqueKey>id</uniqueKey>
 
 
 </schema>

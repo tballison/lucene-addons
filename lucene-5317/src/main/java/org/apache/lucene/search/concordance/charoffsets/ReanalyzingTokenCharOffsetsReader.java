@@ -17,14 +17,13 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
+import java.io.IOException;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
-
-import java.io.IOException;
 
 /**
  * TokenCharOffsetsReader that captures character offsets by reanalyzing a

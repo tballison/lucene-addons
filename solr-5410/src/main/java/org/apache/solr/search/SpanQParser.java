@@ -35,8 +35,6 @@ import org.apache.solr.schema.SchemaField;
  */
 public class SpanQParser extends QParser {
 
-  private SolrSpanQueryParser parser;
-  private String defaultFieldName;
   private final String MIN_FUZZY_DIST = "mfd";
   private final String NORMMULTITERMS = "nmt";
   private final String NEAR_MAX = "nmax";
@@ -46,6 +44,8 @@ public class SpanQParser extends QParser {
   private final String AUTO_GENERATE_PHRASE = "ap";
   private final String PHRASE_SLOP = "ps";
   private final String PREFIX_LENGTH = "pl";
+  private SolrSpanQueryParser parser;
+  private String defaultFieldName;
 
 
   public SpanQParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) {

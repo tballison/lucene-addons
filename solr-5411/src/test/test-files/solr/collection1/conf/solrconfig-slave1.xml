@@ -18,40 +18,40 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <dataDir>${solr.data.dir:}</dataDir>
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <dataDir>${solr.data.dir:}</dataDir>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
 
-  <updateHandler class="solr.DirectUpdateHandler2">
-  </updateHandler>
+    <updateHandler class="solr.DirectUpdateHandler2">
+    </updateHandler>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler">
-    <bool name="httpCaching">true</bool>
-  </requestHandler>
+    <requestHandler name="standard" class="solr.StandardRequestHandler">
+        <bool name="httpCaching">true</bool>
+    </requestHandler>
 
-  <!-- test query parameter defaults -->
-  <requestHandler name="defaults" class="solr.StandardRequestHandler">
+    <!-- test query parameter defaults -->
+    <requestHandler name="defaults" class="solr.StandardRequestHandler">
 
-  </requestHandler>
+    </requestHandler>
 
-  <!-- test query parameter defaults -->
-  <requestHandler name="lazy" class="solr.StandardRequestHandler" startup="lazy">
-  </requestHandler>
+    <!-- test query parameter defaults -->
+    <requestHandler name="lazy" class="solr.StandardRequestHandler" startup="lazy">
+    </requestHandler>
 
-  <requestHandler name="/update" class="solr.UpdateRequestHandler"  />
+    <requestHandler name="/update" class="solr.UpdateRequestHandler"/>
 
-  <requestHandler name="/replication" class="solr.ReplicationHandler">
+    <requestHandler name="/replication" class="solr.ReplicationHandler">
 
-  </requestHandler>
+    </requestHandler>
 
-  <!-- enable streaming for testing... -->
-  <requestDispatcher handleSelect="true">
-    <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048"/>
-    <httpCaching lastModifiedFrom="openTime" etagSeed="Solr" never304="false">
-      <cacheControl>max-age=30, public</cacheControl>
-    </httpCaching>
-  </requestDispatcher>
+    <!-- enable streaming for testing... -->
+    <requestDispatcher handleSelect="true">
+        <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048"/>
+        <httpCaching lastModifiedFrom="openTime" etagSeed="Solr" never304="false">
+            <cacheControl>max-age=30, public</cacheControl>
+        </httpCaching>
+    </requestDispatcher>
 
 </config>

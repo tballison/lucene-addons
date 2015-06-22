@@ -17,52 +17,51 @@ package org.apache.lucene.analysis;
  * limitations under the License.
  */
 
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 /**
- *   This allows for easy mocking of normalization filters
- *   like ascii or icu normalization. 
- *   <p>
- *   If a token is reduced to zero-length through this process, 
- *   the token will not be returned.
- *   <p>
- *   Under the hood, a LinkedHashMap is used to maintain the insertion order
- *   of replacements.entrySet() that is passed in via initialization.
- *   <p>
- *   Regexes are case sensitive.  Make sure to add (?i) if you want 
- *   case insensitivity.
+ * This allows for easy mocking of normalization filters
+ * like ascii or icu normalization.
+ * <p/>
+ * If a token is reduced to zero-length through this process,
+ * the token will not be returned.
+ * <p/>
+ * Under the hood, a LinkedHashMap is used to maintain the insertion order
+ * of replacements.entrySet() that is passed in via initialization.
+ * <p/>
+ * Regexes are case sensitive.  Make sure to add (?i) if you want
+ * case insensitivity.
  */
 public class MockRegexReplacementFilter extends TokenFilter {
-  
+
   private final CharTermAttribute termAtt;
   private final LinkedHashMap<Pattern, String> replacements;
-  
+
   public MockRegexReplacementFilter(TokenStream in, Map<String, String> replacements) {
     super(in);
     this.replacements = new LinkedHashMap<Pattern, String>();
     termAtt = addAttribute(CharTermAttribute.class);
-    for (Map.Entry<String, String> entry : replacements.entrySet()){
+    for (Map.Entry<String, String> entry : replacements.entrySet()) {
       Pattern p = Pattern.compile(entry.getKey());
-      this.replacements.put(p,  entry.getValue());
+      this.replacements.put(p, entry.getValue());
     }
   }
 
   @Override
   public final boolean incrementToken() throws IOException {
 
-    while (input.incrementToken()){
+    while (input.incrementToken()) {
       String text = termAtt.toString().toLowerCase();
-      for (Map.Entry<Pattern, String> entry : replacements.entrySet()){
+      for (Map.Entry<Pattern, String> entry : replacements.entrySet()) {
         Matcher m = entry.getKey().matcher(text);
         text = m.replaceAll(entry.getValue());
       }
-      if (text.length() > 0){
+      if (text.length() > 0) {
         termAtt.setEmpty().append(text);
         return true;
       }

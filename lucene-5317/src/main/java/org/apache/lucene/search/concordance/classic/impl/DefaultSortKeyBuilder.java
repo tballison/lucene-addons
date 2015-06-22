@@ -17,12 +17,11 @@ package org.apache.lucene.search.concordance.classic.impl;
  * limitations under the License.
  */
 
+import java.util.Map;
 import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
 import org.apache.lucene.search.concordance.classic.ConcordanceSortKey;
 import org.apache.lucene.search.concordance.classic.ConcordanceSortOrder;
 import org.apache.lucene.search.concordance.classic.SortKeyBuilder;
-
-import java.util.Map;
 
 /**
  * Builds basic sort key for the values available in ConcordanceSortOrder

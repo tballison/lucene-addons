@@ -16,6 +16,13 @@
  */
 package org.apache.solr.search.concordance;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.corpus.stats.IDFCalc;
 import org.apache.lucene.corpus.stats.TermIDF;
@@ -47,9 +54,6 @@ import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.SolrIndexSearcher;
-
-import java.util.*;
-import java.util.Map.Entry;
 
 
 /**
@@ -92,94 +96,13 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
   public static final String DefaultName = "/kwCo";
 
   public static final String NODE = "contextKeywords";
-
-  @Override
-  public void init(@SuppressWarnings("rawtypes") NamedList args) {
-    super.init(args);
-    // this.prop1 = invariants.get("prop1");
-  }
-
-  ;
-
-  @Override
-  public String getDescription() {
-    return "Returns tokens that frequently co-occur within concordance windows";
-  }
-
-  @Override
-  public String getSource() {
-    return "https://issues.apache.org/jira/browse/SOLR-5411 - https://github.com/tballison/lucene-addons";
-  }
-
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
-    boolean isDistrib = isDistributed(req);
-    if (isDistrib) {
-      System.out.println("DOING ZOO QUERY");
-      doZooQuery(req, rsp);
-    } else {
-      doQuery(req, rsp);
-    }
-  }
-
-
-  @SuppressWarnings("unchecked")
-  private void doZooQuery(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
-    SolrParams params = req.getParams();
-    String field = getField(params);
-    CooccurConfig config = configureParams(field, params);
-
-
-    boolean debug = params.getBool("debug", false);
-    NamedList nlDebug = new SimpleOrderedMap();
-
-
-    if (debug)
-      rsp.add("DEBUG", nlDebug);
-
-    ZkController zoo = req.getCore().getCoreDescriptor().getCoreContainer().getZkController();
-    Set<String> nodes = zoo.getClusterState().getLiveNodes();
-
-
-    List<String> shards = new ArrayList<String>(nodes.size());
-    String thisUrl = req.getCore().getCoreDescriptor().getCoreContainer().getZkController().getBaseUrl();
-
-    for (String node : nodes) {
-      String shard = node.replace("_", "/");
-      if (thisUrl.contains(shard))
-        continue;
-
-      shard += "/" + req.getCore().getName();
-
-      shards.add(shard);
-    }
-    System.out.println("SHARDS SIZE: " + shards.size());
-    RequestThreads<CooccurConfig> threads = initRequestPump(shards, req);
-
-    Results results = new Results(threads.getMetadata());
-
-/*  //skip local
-    NamedList nl = doLocalSearch(req);
-    for (int i = 0; i < nl.size(); i++) {
-      System.out.println("RETURNED FROM SERVER: " + "LOCAL" + " : " + nl.getName(i) + " ; " + nl.getVal(i));
-    }
-
-    results.add(nl, "local");*/
-
-    results = spinWait(threads, results);
-
-    rsp.add(NODE, results.toNamedList());
-
-  }
-
-
   /**
    * Max number of request threads to spawn.  Since this service wasn't intended to return
    * ALL possible results, it seems reasonable to cap this at something
    */
   public final static int MAX_THREADS = 25;
+
+  ;
 
   static public RequestThreads<CooccurConfig> initRequestPump(List<String> shards, SolrQueryRequest req) {
     return initRequestPump(shards, req, MAX_THREADS);
@@ -289,192 +212,6 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
     return results;
   }
 
-/*
-
-    public void search(IndexReader reader, String fieldName,
-      Query query, Filter filter, Analyzer analyzer,
-      ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder ) throws IllegalArgumentException
-    {
-
-        try {
-            ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
-			searcher.search(reader, fieldName, query, filter, analyzer, visitor, docIdBuilder );
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (TargetTokenNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        //xx copy consturctor instead?
-        CooccurVisitor covisitor = (CooccurVisitor)visitor;
-        List<TermIDF>  overallResults = covisitor.getResults();
-		NamedList results = toNamedList(overallResults);
-        results.add("collectionSize", reader.numDocs());
-        results.add("numDocsVisited", covisitor.getNumDocsVisited());
-        results.add("numWindowsVisited", covisitor.getNumWindowsVisited());
-        results.add("numResults", overallResults.size());
-        results.add("minTF", covisitor.getMinTermFreq());
-
-        //TODO: convert results to docIdBuilder? xx
-		//xx return results;
-	}
-
-*/
-
-
-  public static class Results {
-    long maxWindows = -1;
-    int maxResults = -1;
-
-    Results(CooccurConfig config) {
-      this.maxWindows = config.getMaxWindows();
-      this.maxResults = config.getNumResults();
-    }
-
-    Results(int maxWindows, int maxResults) {
-      this.maxWindows = maxWindows;
-      this.maxResults = maxResults;
-    }
-
-    boolean hitMax = false;
-    boolean maxTerms = false;
-    int size = 0;
-    long numDocs = 0;
-    long numWindows = 0;
-    int numResults = 0;
-
-    HashMap<String, Keyword> keywords = new HashMap<String, Keyword>();
-
-    void add(NamedList nl, String extra) {
-      NamedList nlRS = (NamedList) nl.get(NODE);
-
-      if (nlRS == null)
-        nlRS = nl;
-
-
-      numDocs += getInt("numDocs", nlRS);
-      size += getInt("collectionSize", nlRS);
-      numResults += getInt("numResults", nlRS);
-      numWindows += getLong("numWindows", nlRS);
-
-      hitMax = numWindows >= maxWindows;
-      maxTerms = numResults >= maxResults;
-
-      Object o = nlRS.get("results");
-      if (o != null) {
-        NamedList nlRes = (NamedList) o;
-
-        List<NamedList> res = nlRes.getAll("result");
-
-        for (NamedList nlTerm : res) {
-          Keyword tmp = new Keyword(nlTerm);
-
-          Keyword kw = keywords.get(tmp.term);
-
-          if (kw == null)
-            keywords.put(tmp.term, tmp);
-          else {
-            kw.tf += tmp.tf;
-            kw.df += tmp.df;
-            kw.minDF += tmp.minDF;
-          }
-        }
-      }
-    }
-
-
-    NamedList toNamedList() {
-      NamedList nl = new SimpleOrderedMap<>();
-      nl.add("hitMax", hitMax);
-      nl.add("maxTerms", maxTerms);
-      nl.add("numDocs", numDocs);
-      nl.add("collectionSize", size);
-      nl.add("numWindows", numWindows);
-      nl.add("numResults", numResults);
-
-      if (keywords.size() > 0) {
-
-        //sort by new tf-idf's
-        Integer[] idxs = new Integer[keywords.size()];
-        final double[] tfidfs = new double[keywords.size()];
-        final Keyword[] terms = new Keyword[keywords.size()];
-
-        int i = 0;
-        for (Entry<String, Keyword> kv : keywords.entrySet()) {
-          idxs[i] = i;
-          Keyword kw = kv.getValue();
-          terms[i] = kw;
-
-          tfidfs[i] = kw.tf * Math.log(size / kw.df);
-          i++;
-        }
-
-        //System.out.println(terms);
-        //System.out.println(Arrays.toString(terms));
-        //System.out.println(tfidfs);
-        //System.out.println(Arrays.toString(tfidfs));
-
-        Arrays.sort(idxs, new Comparator<Integer>() {
-          public int compare(Integer a, Integer b) {
-            int ret = Double.compare(tfidfs[b], tfidfs[a]);
-            if (ret == 0)
-              ret = Double.compare(terms[b].df, terms[a].df);
-            return ret;
-
-          }
-        });
-
-        NamedList<NamedList> nlResults = new SimpleOrderedMap<NamedList>();
-        for (i = 0; i < idxs.length && i < maxResults; i++) {
-          Keyword kw = terms[idxs[i]];
-          NamedList nlKw = new SimpleOrderedMap<Object>();
-
-          nlKw.add("term", kw.term);
-          nlKw.add("tfidf", tfidfs[idxs[i]]);
-          nlKw.add("orig_tfidf", kw.tfidf);
-          nlKw.add("tf", kw.tf);
-          nlKw.add("df", kw.df);
-          nlKw.add("minDF", kw.minDF);
-
-          nlResults.add("result", nlKw);
-        }
-        nl.add("results", nlResults);
-      }
-      return nl;
-    }
-  }
-
-
-  static class Keyword {
-    String term;
-    double tfidf = 0;
-    long tf = 0;
-    long df = 0;
-    int minDF = 0;
-
-
-    Keyword(NamedList nl) {
-      term = nl.get("term").toString();
-      tf = getInt("tf", nl);
-      df = getInt("df", nl);
-      minDF = getInt("minDF", nl);
-      tfidf = getDouble("tfidf", nl);
-    }
-
-    @Override
-    public String toString() {
-      return term;
-    }
-
-  }
-
-  private void doQuery(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception, IllegalArgumentException, ParseException, TargetTokenNotFoundException {
-    NamedList results = doLocalSearch(req);
-    rsp.add(NODE, results);
-  }
-
   public static ModifiableSolrParams getWorkerParams(String field, String q, SolrParams parent, Integer maxWindows) {
     ModifiableSolrParams params = new ModifiableSolrParams();
 
@@ -551,16 +288,6 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
 
     return results;
   }
-
-  ;
-
-  @Override
-  protected String getHandlerName(SolrQueryRequest req) {
-    return getHandlerName(req, DefaultName, this.getClass());
-  }
-
-  ;
-
 
   public static CooccurConfig configureParams(String field, SolrParams params) {
     CooccurConfig config = new CooccurConfig(field);
@@ -671,7 +398,6 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
     return config;
   }
 
-
   @SuppressWarnings({"rawtypes", "unchecked"})
   public static NamedList toNamedList(List<TermIDF> results) {
     SimpleOrderedMap ret = new SimpleOrderedMap();
@@ -698,6 +424,39 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
     return ret;
   }
 
+/*
+
+    public void search(IndexReader reader, String fieldName,
+      Query query, Filter filter, Analyzer analyzer,
+      ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder ) throws IllegalArgumentException
+    {
+
+        try {
+            ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
+			searcher.search(reader, fieldName, query, filter, analyzer, visitor, docIdBuilder );
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		} catch (TargetTokenNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        //xx copy consturctor instead?
+        CooccurVisitor covisitor = (CooccurVisitor)visitor;
+        List<TermIDF>  overallResults = covisitor.getResults();
+		NamedList results = toNamedList(overallResults);
+        results.add("collectionSize", reader.numDocs());
+        results.add("numDocsVisited", covisitor.getNumDocsVisited());
+        results.add("numWindowsVisited", covisitor.getNumWindowsVisited());
+        results.add("numResults", overallResults.size());
+        results.add("minTF", covisitor.getMinTermFreq());
+
+        //TODO: convert results to docIdBuilder? xx
+		//xx return results;
+	}
+
+*/
 
   public static String getField(SolrParams params) {
     String fieldName = params.get(CommonParams.FIELD);
@@ -716,6 +475,239 @@ public class KeywordCooccurRankHandler extends SolrConcordanceBase {
       }
     }
     return fieldName;
+  }
+
+  @Override
+  public void init(@SuppressWarnings("rawtypes") NamedList args) {
+    super.init(args);
+    // this.prop1 = invariants.get("prop1");
+  }
+
+  @Override
+  public String getDescription() {
+    return "Returns tokens that frequently co-occur within concordance windows";
+  }
+
+  @Override
+  public String getSource() {
+    return "https://issues.apache.org/jira/browse/SOLR-5411 - https://github.com/tballison/lucene-addons";
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
+    boolean isDistrib = isDistributed(req);
+    if (isDistrib) {
+      System.out.println("DOING ZOO QUERY");
+      doZooQuery(req, rsp);
+    } else {
+      doQuery(req, rsp);
+    }
+  }
+
+  @SuppressWarnings("unchecked")
+  private void doZooQuery(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
+    SolrParams params = req.getParams();
+    String field = getField(params);
+    CooccurConfig config = configureParams(field, params);
+
+
+    boolean debug = params.getBool("debug", false);
+    NamedList nlDebug = new SimpleOrderedMap();
+
+
+    if (debug)
+      rsp.add("DEBUG", nlDebug);
+
+    ZkController zoo = req.getCore().getCoreDescriptor().getCoreContainer().getZkController();
+    Set<String> nodes = zoo.getClusterState().getLiveNodes();
+
+
+    List<String> shards = new ArrayList<String>(nodes.size());
+    String thisUrl = req.getCore().getCoreDescriptor().getCoreContainer().getZkController().getBaseUrl();
+
+    for (String node : nodes) {
+      String shard = node.replace("_", "/");
+      if (thisUrl.contains(shard))
+        continue;
+
+      shard += "/" + req.getCore().getName();
+
+      shards.add(shard);
+    }
+    System.out.println("SHARDS SIZE: " + shards.size());
+    RequestThreads<CooccurConfig> threads = initRequestPump(shards, req);
+
+    Results results = new Results(threads.getMetadata());
+
+/*  //skip local
+    NamedList nl = doLocalSearch(req);
+    for (int i = 0; i < nl.size(); i++) {
+      System.out.println("RETURNED FROM SERVER: " + "LOCAL" + " : " + nl.getName(i) + " ; " + nl.getVal(i));
+    }
+
+    results.add(nl, "local");*/
+
+    results = spinWait(threads, results);
+
+    rsp.add(NODE, results.toNamedList());
+
+  }
+
+  ;
+
+  private void doQuery(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception, IllegalArgumentException, ParseException, TargetTokenNotFoundException {
+    NamedList results = doLocalSearch(req);
+    rsp.add(NODE, results);
+  }
+
+  ;
+
+  @Override
+  protected String getHandlerName(SolrQueryRequest req) {
+    return getHandlerName(req, DefaultName, this.getClass());
+  }
+
+  public static class Results {
+    long maxWindows = -1;
+    int maxResults = -1;
+    boolean hitMax = false;
+    boolean maxTerms = false;
+    int size = 0;
+    long numDocs = 0;
+    long numWindows = 0;
+    int numResults = 0;
+    HashMap<String, Keyword> keywords = new HashMap<String, Keyword>();
+    Results(CooccurConfig config) {
+      this.maxWindows = config.getMaxWindows();
+      this.maxResults = config.getNumResults();
+    }
+
+    Results(int maxWindows, int maxResults) {
+      this.maxWindows = maxWindows;
+      this.maxResults = maxResults;
+    }
+
+    void add(NamedList nl, String extra) {
+      NamedList nlRS = (NamedList) nl.get(NODE);
+
+      if (nlRS == null)
+        nlRS = nl;
+
+
+      numDocs += getInt("numDocs", nlRS);
+      size += getInt("collectionSize", nlRS);
+      numResults += getInt("numResults", nlRS);
+      numWindows += getLong("numWindows", nlRS);
+
+      hitMax = numWindows >= maxWindows;
+      maxTerms = numResults >= maxResults;
+
+      Object o = nlRS.get("results");
+      if (o != null) {
+        NamedList nlRes = (NamedList) o;
+
+        List<NamedList> res = nlRes.getAll("result");
+
+        for (NamedList nlTerm : res) {
+          Keyword tmp = new Keyword(nlTerm);
+
+          Keyword kw = keywords.get(tmp.term);
+
+          if (kw == null)
+            keywords.put(tmp.term, tmp);
+          else {
+            kw.tf += tmp.tf;
+            kw.df += tmp.df;
+            kw.minDF += tmp.minDF;
+          }
+        }
+      }
+    }
+
+
+    NamedList toNamedList() {
+      NamedList nl = new SimpleOrderedMap<>();
+      nl.add("hitMax", hitMax);
+      nl.add("maxTerms", maxTerms);
+      nl.add("numDocs", numDocs);
+      nl.add("collectionSize", size);
+      nl.add("numWindows", numWindows);
+      nl.add("numResults", numResults);
+
+      if (keywords.size() > 0) {
+
+        //sort by new tf-idf's
+        Integer[] idxs = new Integer[keywords.size()];
+        final double[] tfidfs = new double[keywords.size()];
+        final Keyword[] terms = new Keyword[keywords.size()];
+
+        int i = 0;
+        for (Entry<String, Keyword> kv : keywords.entrySet()) {
+          idxs[i] = i;
+          Keyword kw = kv.getValue();
+          terms[i] = kw;
+
+          tfidfs[i] = kw.tf * Math.log(size / kw.df);
+          i++;
+        }
+
+        //System.out.println(terms);
+        //System.out.println(Arrays.toString(terms));
+        //System.out.println(tfidfs);
+        //System.out.println(Arrays.toString(tfidfs));
+
+        Arrays.sort(idxs, new Comparator<Integer>() {
+          public int compare(Integer a, Integer b) {
+            int ret = Double.compare(tfidfs[b], tfidfs[a]);
+            if (ret == 0)
+              ret = Double.compare(terms[b].df, terms[a].df);
+            return ret;
+
+          }
+        });
+
+        NamedList<NamedList> nlResults = new SimpleOrderedMap<NamedList>();
+        for (i = 0; i < idxs.length && i < maxResults; i++) {
+          Keyword kw = terms[idxs[i]];
+          NamedList nlKw = new SimpleOrderedMap<Object>();
+
+          nlKw.add("term", kw.term);
+          nlKw.add("tfidf", tfidfs[idxs[i]]);
+          nlKw.add("orig_tfidf", kw.tfidf);
+          nlKw.add("tf", kw.tf);
+          nlKw.add("df", kw.df);
+          nlKw.add("minDF", kw.minDF);
+
+          nlResults.add("result", nlKw);
+        }
+        nl.add("results", nlResults);
+      }
+      return nl;
+    }
+  }
+
+  static class Keyword {
+    String term;
+    double tfidf = 0;
+    long tf = 0;
+    long df = 0;
+    int minDF = 0;
+
+
+    Keyword(NamedList nl) {
+      term = nl.get("term").toString();
+      tf = getInt("tf", nl);
+      df = getInt("df", nl);
+      minDF = getInt("minDF", nl);
+      tfidf = getDouble("tfidf", nl);
+    }
+
+    @Override
+    public String toString() {
+      return term;
+    }
+
   }
 
 }

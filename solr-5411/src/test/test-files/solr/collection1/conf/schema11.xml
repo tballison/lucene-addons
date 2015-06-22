@@ -30,12 +30,12 @@
 -->
 
 <schema name="example" version="1.1">
-  <!-- attribute "name" is the name of this schema and is only used for display purposes.
-       Applications should change this to reflect the nature of the search collection.
-       version="1.1" is Solr's version number for the schema syntax and semantics.  It should
-       not normally be changed by applications.
-       1.0: multiValued attribute did not exist, all fields are multiValued by nature
-       1.1: multiValued attribute introduced, false by default -->
+    <!-- attribute "name" is the name of this schema and is only used for display purposes.
+         Applications should change this to reflect the nature of the search collection.
+         version="1.1" is Solr's version number for the schema syntax and semantics.  It should
+         not normally be changed by applications.
+         1.0: multiValued attribute did not exist, all fields are multiValued by nature
+         1.1: multiValued attribute introduced, false by default -->
 
 
     <!-- field type definitions. The "name" attribute is
@@ -67,7 +67,7 @@
        - If sortMissingLast="false" and sortMissingFirst="false" (the default),
          then default lucene sorting will be used which places docs without the
          field first in an ascending sort and last in a descending sort.
-    -->    
+    -->
 
 
     <!-- numeric field types that store and index the text
@@ -123,7 +123,7 @@
          for the same version of the index, use a dynamicField and
          change the name
      -->
-    <fieldType name="random" class="solr.RandomSortField" indexed="true" />
+    <fieldType name="random" class="solr.RandomSortField" indexed="true"/>
 
     <!-- solr.TextField allows the specification of custom text analyzers
          specified as a tokenizer and a list of token filters. Different
@@ -146,9 +146,9 @@
 
     <!-- A text field that only splits on whitespace for exact matching of words -->
     <fieldType name="text_ws" class="solr.TextField" positionIncrementGap="100">
-      <analyzer>
-        <tokenizer class="solr.MockTokenizerFactory"/>
-      </analyzer>
+        <analyzer>
+            <tokenizer class="solr.MockTokenizerFactory"/>
+        </analyzer>
     </fieldType>
 
     <!-- A text field that uses WordDelimiterFilter to enable splitting and matching of
@@ -159,44 +159,47 @@
         WordDelim parts) are removed.
         -->
     <fieldType name="text" class="solr.TextField" positionIncrementGap="100">
-      <analyzer type="index">
-        <tokenizer class="solr.MockTokenizerFactory"/>
-        <!-- in this example, we will only use synonyms at query time
-        <filter class="solr.SynonymFilterFactory" synonyms="index_synonyms.txt" ignoreCase="true" expand="false"/>
-        -->
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
-        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
-        <filter class="solr.PorterStemFilterFactory"/>
-        <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
-      </analyzer>
-      <analyzer type="query">
-        <tokenizer class="solr.MockTokenizerFactory"/>
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
-        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1" catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
-        <filter class="solr.PorterStemFilterFactory"/>
-        <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
-      </analyzer>
+        <analyzer type="index">
+            <tokenizer class="solr.MockTokenizerFactory"/>
+            <!-- in this example, we will only use synonyms at query time
+            <filter class="solr.SynonymFilterFactory" synonyms="index_synonyms.txt" ignoreCase="true" expand="false"/>
+            -->
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1"
+                    catenateWords="1" catenateNumbers="1" catenateAll="0" splitOnCaseChange="1"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+            <filter class="solr.PorterStemFilterFactory"/>
+            <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
+        </analyzer>
+        <analyzer type="query">
+            <tokenizer class="solr.MockTokenizerFactory"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="true"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="1" generateNumberParts="1"
+                    catenateWords="0" catenateNumbers="0" catenateAll="0" splitOnCaseChange="1"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+            <filter class="solr.PorterStemFilterFactory"/>
+            <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
+        </analyzer>
     </fieldType>
 
 
     <!-- Less flexible matching, but less false matches.  Probably not ideal for product names,
          but may be good for SKUs.  Can insert dashes in the wrong place and still match. -->
-    <fieldType name="textTight" class="solr.TextField" positionIncrementGap="100" >
-      <analyzer>
-        <tokenizer class="solr.MockTokenizerFactory"/>
-        <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false"/>
-        <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
-        <filter class="solr.WordDelimiterFilterFactory" generateWordParts="0" generateNumberParts="0" catenateWords="1" catenateNumbers="1" catenateAll="0"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
-        <filter class="solr.EnglishMinimalStemFilterFactory"/>
-        <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
-      </analyzer>
+    <fieldType name="textTight" class="solr.TextField" positionIncrementGap="100">
+        <analyzer>
+            <tokenizer class="solr.MockTokenizerFactory"/>
+            <filter class="solr.SynonymFilterFactory" synonyms="synonyms.txt" ignoreCase="true" expand="false"/>
+            <filter class="solr.StopFilterFactory" ignoreCase="true" words="stopwords.txt"/>
+            <filter class="solr.WordDelimiterFilterFactory" generateWordParts="0" generateNumberParts="0"
+                    catenateWords="1" catenateNumbers="1" catenateAll="0"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.KeywordMarkerFilterFactory" protected="protwords.txt"/>
+            <filter class="solr.EnglishMinimalStemFilterFactory"/>
+            <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
+        </analyzer>
     </fieldType>
 
     <!-- This is an example of using the KeywordTokenizer along
@@ -204,57 +207,65 @@
          that does not include some properties of the source text
       -->
     <fieldType name="alphaOnlySort" class="solr.TextField" sortMissingLast="true" omitNorms="true">
-      <analyzer>
-        <!-- KeywordTokenizer does no actual tokenizing, so the entire
-             input string is preserved as a single token
-          -->
-        <tokenizer class="solr.MockTokenizerFactory" pattern="keyword"/>
-        <!-- The LowerCase TokenFilter does what you expect, which can be
-             when you want your sorting to be case insensitive
-          -->
-        <filter class="solr.LowerCaseFilterFactory" />
-        <!-- The TrimFilter removes any leading or trailing whitespace -->
-        <filter class="solr.TrimFilterFactory" />
-        <!-- The PatternReplaceFilter gives you the flexibility to use
-             Java Regular expression to replace any sequence of characters
-             matching a pattern with an arbitrary replacement string, 
-             which may include back refrences to portions of the orriginal
-             string matched by the pattern.
-             
-             See the Java Regular Expression documentation for more
-             infomation on pattern and replacement string syntax.
-             
-             http://docs.oracle.com/javase/7/docs/api/java/util/regex/package-summary.html
-          -->
-        <filter class="solr.PatternReplaceFilterFactory"
-                pattern="([^a-z])" replacement="" replace="all"
-        />
-      </analyzer>
+        <analyzer>
+            <!-- KeywordTokenizer does no actual tokenizing, so the entire
+                 input string is preserved as a single token
+              -->
+            <tokenizer class="solr.MockTokenizerFactory" pattern="keyword"/>
+            <!-- The LowerCase TokenFilter does what you expect, which can be
+                 when you want your sorting to be case insensitive
+              -->
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <!-- The TrimFilter removes any leading or trailing whitespace -->
+            <filter class="solr.TrimFilterFactory"/>
+            <!-- The PatternReplaceFilter gives you the flexibility to use
+                 Java Regular expression to replace any sequence of characters
+                 matching a pattern with an arbitrary replacement string,
+                 which may include back refrences to portions of the orriginal
+                 string matched by the pattern.
+
+                 See the Java Regular Expression documentation for more
+                 infomation on pattern and replacement string syntax.
+
+                 http://docs.oracle.com/javase/7/docs/api/java/util/regex/package-summary.html
+              -->
+            <filter class="solr.PatternReplaceFilterFactory"
+                    pattern="([^a-z])" replacement="" replace="all"
+                    />
+        </analyzer>
     </fieldType>
 
     <!-- since fields of this type are by default not stored or indexed, any data added to 
          them will be ignored outright 
-     --> 
-    <fieldType name="ignored" stored="false" indexed="false" class="solr.StrField" /> 
+     -->
+    <fieldType name="ignored" stored="false" indexed="false" class="solr.StrField"/>
 
-    <fieldType name="file" keyField="id" defVal="1" stored="false" indexed="false" class="solr.ExternalFileField" valType="float"/>
+    <fieldType name="file" keyField="id" defVal="1" stored="false" indexed="false" class="solr.ExternalFileField"
+               valType="float"/>
 
-    <fieldType name="sfile" keyField="sfile_s" defVal="1" stored="false" indexed="false" class="solr.ExternalFileField" valType="float"/>
+    <fieldType name="sfile" keyField="sfile_s" defVal="1" stored="false" indexed="false" class="solr.ExternalFileField"
+               valType="float"/>
 
 
-    <fieldType name="tint" class="solr.TrieIntField"  omitNorms="true" positionIncrementGap="0"/>
-    <fieldType name="tfloat" class="solr.TrieFloatField"  omitNorms="true" positionIncrementGap="0"/>
-    <fieldType name="tlong" class="solr.TrieLongField"  omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="tint" class="solr.TrieIntField" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="tfloat" class="solr.TrieFloatField" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="tlong" class="solr.TrieLongField" omitNorms="true" positionIncrementGap="0"/>
     <fieldType name="tdouble" class="solr.TrieDoubleField" omitNorms="true" positionIncrementGap="0"/>
-    <fieldType name="tdouble4" class="solr.TrieDoubleField" precisionStep="4" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="tdouble4" class="solr.TrieDoubleField" precisionStep="4" omitNorms="true"
+               positionIncrementGap="0"/>
     <fieldType name="tdate" class="solr.TrieDateField" omitNorms="true" positionIncrementGap="0"/>
 
 
-    <fieldType name="tints" class="solr.TrieIntField" omitNorms="true" positionIncrementGap="0" precisionStep="0" multiValued="true" />
-    <fieldType name="tfloats" class="solr.TrieFloatField" omitNorms="true" positionIncrementGap="0" precisionStep="0" multiValued="true"/>
-    <fieldType name="tlongs" class="solr.TrieLongField" omitNorms="true" positionIncrementGap="0" precisionStep="0" multiValued="true"/>
-    <fieldType name="tdoubles" class="solr.TrieDoubleField" omitNorms="true" positionIncrementGap="0" precisionStep="0" multiValued="true" />
-    <fieldType name="tdates" class="solr.TrieDateField" omitNorms="true" positionIncrementGap="0" precisionStep="0" multiValued="true" />
+    <fieldType name="tints" class="solr.TrieIntField" omitNorms="true" positionIncrementGap="0" precisionStep="0"
+               multiValued="true"/>
+    <fieldType name="tfloats" class="solr.TrieFloatField" omitNorms="true" positionIncrementGap="0" precisionStep="0"
+               multiValued="true"/>
+    <fieldType name="tlongs" class="solr.TrieLongField" omitNorms="true" positionIncrementGap="0" precisionStep="0"
+               multiValued="true"/>
+    <fieldType name="tdoubles" class="solr.TrieDoubleField" omitNorms="true" positionIncrementGap="0" precisionStep="0"
+               multiValued="true"/>
+    <fieldType name="tdates" class="solr.TrieDateField" omitNorms="true" positionIncrementGap="0" precisionStep="0"
+               multiValued="true"/>
 
     <!-- Poly field -->
     <fieldType name="xy" class="solr.PointType" dimension="2" subFieldType="double"/>
@@ -267,7 +278,7 @@
 valued. -->
     <fieldType name="location" class="solr.LatLonType" subFieldSuffix="_coordinate"/>
 
-     <!-- These should pass right through and insure that we can declare external field types -->
+    <!-- These should pass right through and insure that we can declare external field types -->
     <fieldType name="pfloat" class="solr.FloatField" omitNorms="true"/>
     <fieldType name="eff_float" keyField="id" defVal="0"
                stored="false" indexed="true"
@@ -286,135 +297,135 @@ valued. -->
                stored="false" indexed="true"
                class="solr.ExternalFileField"/>
 
-    <fieldType name="text_no_analyzer" stored="false" indexed="true" class="solr.TextField" />
+    <fieldType name="text_no_analyzer" stored="false" indexed="true" class="solr.TextField"/>
 
     <fieldtype name="text_length" class="solr.TextField">
-      <analyzer>
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StandardFilterFactory"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.LengthFilterFactory" min="2" max="32768"/>
-      </analyzer>
-    </fieldtype>  
+        <analyzer>
+            <tokenizer class="solr.StandardTokenizerFactory"/>
+            <filter class="solr.StandardFilterFactory"/>
+            <filter class="solr.LowerCaseFilterFactory"/>
+            <filter class="solr.LengthFilterFactory" min="2" max="32768"/>
+        </analyzer>
+    </fieldtype>
 
 
-   <!-- Valid attributes for fields:
-     name: mandatory - the name for the field
-     type: mandatory - the name of a previously defined type from the <types> section
-     indexed: true if this field should be indexed (searchable or sortable)
-     stored: true if this field should be retrievable
-     multiValued: true if this field may contain multiple values per document
-     omitNorms: (expert) set to true to omit the norms associated with
-       this field (this disables length normalization and index-time
-       boosting for the field, and saves some memory).  Only full-text
-       fields or fields that need an index-time boost need norms.
-     termVectors: [false] set to true to store the term vector for a given field.
-       When using MoreLikeThis, fields used for similarity should be stored for 
-       best performance.
-   -->
+    <!-- Valid attributes for fields:
+      name: mandatory - the name for the field
+      type: mandatory - the name of a previously defined type from the <types> section
+      indexed: true if this field should be indexed (searchable or sortable)
+      stored: true if this field should be retrievable
+      multiValued: true if this field may contain multiple values per document
+      omitNorms: (expert) set to true to omit the norms associated with
+        this field (this disables length normalization and index-time
+        boosting for the field, and saves some memory).  Only full-text
+        fields or fields that need an index-time boost need norms.
+      termVectors: [false] set to true to store the term vector for a given field.
+        When using MoreLikeThis, fields used for similarity should be stored for
+        best performance.
+    -->
 
-   <!-- for testing, a type that does a transform to see if it's correctly done everywhere -->
-   <field name="id" type="sfloat" indexed="true" stored="true" required="true" /> 
-   <field name="text" type="text" indexed="true" stored="false" />
+    <!-- for testing, a type that does a transform to see if it's correctly done everywhere -->
+    <field name="id" type="sfloat" indexed="true" stored="true" required="true"/>
+    <field name="text" type="text" indexed="true" stored="false"/>
 
-   <!-- Test a point field for distances -->
-   <field name="point" type="xy" indexed="true" stored="true" multiValued="false"/>
-   <field name="pointD" type="xyd" indexed="true" stored="true" multiValued="false"/>
+    <!-- Test a point field for distances -->
+    <field name="point" type="xy" indexed="true" stored="true" multiValued="false"/>
+    <field name="pointD" type="xyd" indexed="true" stored="true" multiValued="false"/>
 
-   <field name="point_hash" type="geohash" indexed="true" stored="true" multiValued="false"/>
+    <field name="point_hash" type="geohash" indexed="true" stored="true" multiValued="false"/>
 
-   <field name="signatureField" type="string" indexed="true" stored="false"/>
+    <field name="signatureField" type="string" indexed="true" stored="false"/>
 
-   <field name="eff_trie" type="eff_tfloat" />
+    <field name="eff_trie" type="eff_tfloat"/>
 
-   <field name="text_no_analyzer" type="text_no_analyzer" indexed="true" />
+    <field name="text_no_analyzer" type="text_no_analyzer" indexed="true"/>
 
-   <field name="_version_" type="long" indexed="true" stored="true" multiValued="false" />
+    <field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/>
 
-   <field name="cat" type="string" indexed="true" stored="true" multiValued="true"/>
-   <field name="cat_docValues" type="string"  indexed="true" stored="true" docValues="true" multiValued="true" />
-   <field name="cat_intDocValues" type="tint"  indexed="true" stored="true" docValues="true" multiValued="true" />
-   <field name="cat_floatDocValues" type="tfloat"  indexed="true" stored="true" docValues="true" multiValued="true" />
-   <field name="cat_length" type="text_length" indexed="true" stored="true" multiValued="true"/>
+    <field name="cat" type="string" indexed="true" stored="true" multiValued="true"/>
+    <field name="cat_docValues" type="string" indexed="true" stored="true" docValues="true" multiValued="true"/>
+    <field name="cat_intDocValues" type="tint" indexed="true" stored="true" docValues="true" multiValued="true"/>
+    <field name="cat_floatDocValues" type="tfloat" indexed="true" stored="true" docValues="true" multiValued="true"/>
+    <field name="cat_length" type="text_length" indexed="true" stored="true" multiValued="true"/>
 
-   <!-- Dynamic field definitions.  If a field name is not found, dynamicFields
-        will be used if the name matches any of the patterns.
-        RESTRICTION: the glob-like pattern in the name attribute must have
-        a "*" only at the start or the end.
-        EXAMPLE:  name="*_i" will match any field ending in _i (like myid_i, z_i)
-        Longer patterns will be matched first.  if equal size patterns
-        both match, the first appearing in the schema will be used.  -->
-   <dynamicField name="*_s"  	type="string"  indexed="true"  stored="true"/>
-   <dynamicField name="*_s_dv"  type="string"  indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_ss"  	type="string"  indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="*_sS" 	type="string"  indexed="false" stored="true"/>
-   <dynamicField name="*_i"     type="sint"    indexed="true"  stored="true"/>
-   <dynamicField name="*_is"    type="sint"    indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="*_ii" 	type="integer"    indexed="true"  stored="true" multiValued="true"/>
-   <dynamicField name="*_l"  	type="slong"   indexed="true"  stored="true"/>
-   <dynamicField name="*_f"  	type="sfloat"  indexed="true"  stored="true"/>
-   <dynamicField name="*_d"  	type="sdouble" indexed="true"  stored="true"/>
-   
-   <dynamicField name="*_pi"  type="integer" indexed="true"  stored="true"/>
-   <dynamicField name="*_pl"  type="long"   indexed="true"  stored="true"/>
-   <dynamicField name="*_pf"  type="float"  indexed="true"  stored="true"/>
-   <dynamicField name="*_pd"  type="double" indexed="true"  stored="true"/>
+    <!-- Dynamic field definitions.  If a field name is not found, dynamicFields
+         will be used if the name matches any of the patterns.
+         RESTRICTION: the glob-like pattern in the name attribute must have
+         a "*" only at the start or the end.
+         EXAMPLE:  name="*_i" will match any field ending in _i (like myid_i, z_i)
+         Longer patterns will be matched first.  if equal size patterns
+         both match, the first appearing in the schema will be used.  -->
+    <dynamicField name="*_s" type="string" indexed="true" stored="true"/>
+    <dynamicField name="*_s_dv" type="string" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_ss" type="string" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="*_sS" type="string" indexed="false" stored="true"/>
+    <dynamicField name="*_i" type="sint" indexed="true" stored="true"/>
+    <dynamicField name="*_is" type="sint" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="*_ii" type="integer" indexed="true" stored="true" multiValued="true"/>
+    <dynamicField name="*_l" type="slong" indexed="true" stored="true"/>
+    <dynamicField name="*_f" type="sfloat" indexed="true" stored="true"/>
+    <dynamicField name="*_d" type="sdouble" indexed="true" stored="true"/>
 
-   <dynamicField name="*_ti"  		type="tint"    indexed="true"  stored="true"/>
-   <dynamicField name="*_ti_dv" 	type="tint"    indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_ti_ni_dv" 	type="tint"    indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_tl"  		type="tlong"   indexed="true"  stored="true"/>
-   <dynamicField name="*_tl_dv"  	type="tlong"   indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_tl_ni_dv" 	type="tlong"   indexed="false"  stored="true" docValues="true"/>
-   <dynamicField name="*_tf"  		type="tfloat"  indexed="true"  stored="true"/>
-   <dynamicField name="*_tf_dv"  	type="tfloat"  indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_tf_ni_dv" 	type="tfloat"  indexed="false"  stored="true" docValues="true"/>
-   <dynamicField name="*_td"  		type="tdouble" indexed="true"  stored="true"/>
-   <dynamicField name="*_td_dv"  	type="tdouble" indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_td_ni_dv" 	type="tdouble" indexed="false"  stored="true" docValues="true"/>
-   <dynamicField name="*_tdt" 		type="tdate"   indexed="true"  stored="true"/>
-   <dynamicField name="*_tdt_dv" 	type="tdate"   indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_tdt_ni_dv"	type="tdate"   indexed="false"  stored="true" docValues="true"/>
+    <dynamicField name="*_pi" type="integer" indexed="true" stored="true"/>
+    <dynamicField name="*_pl" type="long" indexed="true" stored="true"/>
+    <dynamicField name="*_pf" type="float" indexed="true" stored="true"/>
+    <dynamicField name="*_pd" type="double" indexed="true" stored="true"/>
 
-   <dynamicField name="*_tis"  		type="tints"    indexed="true"  stored="true"/>
-   <dynamicField name="*_tis_dv"  	type="tints"    indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_tis_ni_dv"	type="tints"    indexed="false"  stored="true" docValues="true"/>
-   <dynamicField name="*_tls"  		type="tlongs"   indexed="true"  stored="true"/>
-   <dynamicField name="*_tls_dv"  	type="tlongs"   indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_tls_ni_dv"	type="tlongs"   indexed="false"  stored="true" docValues="true"/>
-   <dynamicField name="*_tfs"  		type="tfloats"  indexed="true"  stored="true"/>
-   <dynamicField name="*_tfs_dv"  	type="tfloats"  indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_tfs_ni_dv" type="tfloats"  indexed="false"  stored="true" docValues="true"/>
-   <dynamicField name="*_tds"  		type="tdoubles" indexed="true"  stored="true"/>
-   <dynamicField name="*_tds_dv"  	type="tdoubles" indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_tds_ni_dv" type="tdoubles" indexed="false"  stored="true" docValues="true"/>
-   <dynamicField name="*_tdts" 		type="tdates"   indexed="true"  stored="true"/>
-   <dynamicField name="*_tdts_dv" 	type="tdates"   indexed="true"  stored="true" docValues="true"/>
-   <dynamicField name="*_tdts_ni_dv" type="tdates"   indexed="false"  stored="true" docValues="true"/>
+    <dynamicField name="*_ti" type="tint" indexed="true" stored="true"/>
+    <dynamicField name="*_ti_dv" type="tint" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_ti_ni_dv" type="tint" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_tl" type="tlong" indexed="true" stored="true"/>
+    <dynamicField name="*_tl_dv" type="tlong" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_tl_ni_dv" type="tlong" indexed="false" stored="true" docValues="true"/>
+    <dynamicField name="*_tf" type="tfloat" indexed="true" stored="true"/>
+    <dynamicField name="*_tf_dv" type="tfloat" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_tf_ni_dv" type="tfloat" indexed="false" stored="true" docValues="true"/>
+    <dynamicField name="*_td" type="tdouble" indexed="true" stored="true"/>
+    <dynamicField name="*_td_dv" type="tdouble" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_td_ni_dv" type="tdouble" indexed="false" stored="true" docValues="true"/>
+    <dynamicField name="*_tdt" type="tdate" indexed="true" stored="true"/>
+    <dynamicField name="*_tdt_dv" type="tdate" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_tdt_ni_dv" type="tdate" indexed="false" stored="true" docValues="true"/>
 
-   <dynamicField name="*_t"  type="text"    indexed="true"  stored="true"/>
-   <dynamicField name="*_b"  type="boolean" indexed="true"  stored="true"/>
-   <dynamicField name="*_dt" type="date"    indexed="true"  stored="true"/>
-   <dynamicField name="*_ws" type="text_ws" indexed="true"  stored="true"/>
+    <dynamicField name="*_tis" type="tints" indexed="true" stored="true"/>
+    <dynamicField name="*_tis_dv" type="tints" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_tis_ni_dv" type="tints" indexed="false" stored="true" docValues="true"/>
+    <dynamicField name="*_tls" type="tlongs" indexed="true" stored="true"/>
+    <dynamicField name="*_tls_dv" type="tlongs" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_tls_ni_dv" type="tlongs" indexed="false" stored="true" docValues="true"/>
+    <dynamicField name="*_tfs" type="tfloats" indexed="true" stored="true"/>
+    <dynamicField name="*_tfs_dv" type="tfloats" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_tfs_ni_dv" type="tfloats" indexed="false" stored="true" docValues="true"/>
+    <dynamicField name="*_tds" type="tdoubles" indexed="true" stored="true"/>
+    <dynamicField name="*_tds_dv" type="tdoubles" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_tds_ni_dv" type="tdoubles" indexed="false" stored="true" docValues="true"/>
+    <dynamicField name="*_tdts" type="tdates" indexed="true" stored="true"/>
+    <dynamicField name="*_tdts_dv" type="tdates" indexed="true" stored="true" docValues="true"/>
+    <dynamicField name="*_tdts_ni_dv" type="tdates" indexed="false" stored="true" docValues="true"/>
 
-   <dynamicField name="*_extf" type="file"/>
-   <dynamicField name="*_extfs" type="sfile"/>
+    <dynamicField name="*_t" type="text" indexed="true" stored="true"/>
+    <dynamicField name="*_b" type="boolean" indexed="true" stored="true"/>
+    <dynamicField name="*_dt" type="date" indexed="true" stored="true"/>
+    <dynamicField name="*_ws" type="text_ws" indexed="true" stored="true"/>
 
-   <dynamicField name="*_random" type="random" />
+    <dynamicField name="*_extf" type="file"/>
+    <dynamicField name="*_extfs" type="sfile"/>
 
-   <!-- uncomment the following to ignore any fields that don't already match an existing 
-        field name or dynamic field, rather than reporting them as an error. 
-        alternately, change the type="ignored" to some other type e.g. "text" if you want 
-        unknown fields indexed and/or stored by default --> 
-   <!--dynamicField name="*" type="ignored" /-->
-   
+    <dynamicField name="*_random" type="random"/>
 
- <!-- Field to use to determine and enforce document uniqueness. 
-      Unless this field is marked with required="false", it will be a required field
-   -->
- <uniqueKey>id</uniqueKey>
+    <!-- uncomment the following to ignore any fields that don't already match an existing
+         field name or dynamic field, rather than reporting them as an error.
+         alternately, change the type="ignored" to some other type e.g. "text" if you want
+         unknown fields indexed and/or stored by default -->
+    <!--dynamicField name="*" type="ignored" /-->
 
- <!-- field for the QueryParser to use when an explicit fieldname is absent -->
- <defaultSearchField>text</defaultSearchField>
+
+    <!-- Field to use to determine and enforce document uniqueness.
+         Unless this field is marked with required="false", it will be a required field
+      -->
+    <uniqueKey>id</uniqueKey>
+
+    <!-- field for the QueryParser to use when an explicit fieldname is absent -->
+    <defaultSearchField>text</defaultSearchField>
 
 </schema>

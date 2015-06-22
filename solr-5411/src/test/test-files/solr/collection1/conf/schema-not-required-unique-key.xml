@@ -22,25 +22,25 @@
 
   -->
 <schema name="test" version="1.0">
-  <types>
-    <fieldType name="string" class="solr.StrField"/>
-    <fieldtype name="sint" class="solr.SortableIntField" />
-    <fieldtype name="text" class="solr.TextField">
-      <analyzer>
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StandardFilterFactory"/>
-      </analyzer>
-    </fieldtype>
- </types>
+    <types>
+        <fieldType name="string" class="solr.StrField"/>
+        <fieldtype name="sint" class="solr.SortableIntField"/>
+        <fieldtype name="text" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.StandardFilterFactory"/>
+            </analyzer>
+        </fieldtype>
+    </types>
 
 
- <fields>
-   <field name="id" type="sint" multiValued="false" indexed="true" stored="true" required="false"/>
-   <field name="subject" type="text" indexed="true" stored="true"/>
-   <field name="signatureField" type="string" indexed="true" stored="false"/>
-   <dynamicField name="*_sS" type="string"  indexed="false" stored="true"/>
- </fields>
+    <fields>
+        <field name="id" type="sint" multiValued="false" indexed="true" stored="true" required="false"/>
+        <field name="subject" type="text" indexed="true" stored="true"/>
+        <field name="signatureField" type="string" indexed="true" stored="false"/>
+        <dynamicField name="*_sS" type="string" indexed="false" stored="true"/>
+    </fields>
 
- <defaultSearchField>subject</defaultSearchField>
- <uniqueKey>id</uniqueKey>
+    <defaultSearchField>subject</defaultSearchField>
+    <uniqueKey>id</uniqueKey>
 </schema>

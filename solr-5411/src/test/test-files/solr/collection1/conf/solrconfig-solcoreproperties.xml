@@ -18,18 +18,18 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <dataDir>${solr.data.dir:}</dataDir>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <dataDir>${solr.data.dir:}</dataDir>
 
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
 
-  <requestHandler name="/select" class="solr.StandardRequestHandler">
-    <lst name="defaults">
-      <str name="p1">${foo.foo1}</str>
-      <str name="p2">${foo.foo2}</str>
-    </lst>
-  </requestHandler>
+    <requestHandler name="/select" class="solr.StandardRequestHandler">
+        <lst name="defaults">
+            <str name="p1">${foo.foo1}</str>
+            <str name="p2">${foo.foo2}</str>
+        </lst>
+    </requestHandler>
 
 </config>

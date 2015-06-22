@@ -16,25 +16,25 @@
  limitations under the License.
 -->
 <schema name="test" version="1.2">
-  <types>
+    <types>
 
-    <fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+        <fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
 
-    <fieldtype name="nametext" class="solr.TextField">
-      <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
-    </fieldtype>
-  </types>
+        <fieldtype name="nametext" class="solr.TextField">
+            <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+        </fieldtype>
+    </types>
 
-  <fields>
-    <field name="id" type="int" indexed="true" stored="true" multiValued="false" required="true"/>
-    <field name="name" type="nametext" indexed="true" stored="true"/>
-    <field name="title" type="nametext" indexed="true" stored="true"/>
-    <field name="text" type="nametext" indexed="true" stored="true"/>
-  </fields>
+    <fields>
+        <field name="id" type="int" indexed="true" stored="true" multiValued="false" required="true"/>
+        <field name="name" type="nametext" indexed="true" stored="true"/>
+        <field name="title" type="nametext" indexed="true" stored="true"/>
+        <field name="text" type="nametext" indexed="true" stored="true"/>
+    </fields>
 
-  <defaultSearchField>text</defaultSearchField>
-  <solrQueryParser defaultOperator="AND"/>
-  <uniqueKey>id</uniqueKey>
+    <defaultSearchField>text</defaultSearchField>
+    <solrQueryParser defaultOperator="AND"/>
+    <uniqueKey>id</uniqueKey>
 
 </schema>
 

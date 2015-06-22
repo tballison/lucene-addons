@@ -24,16 +24,16 @@ Simple Dummy transform to demonstrate XSLTResponseWriter
 
 
  -->
-<xsl:stylesheet version='1.0'
-    xmlns:xsl='http://www.w3.org/1999/XSL/Transform'
->
+<xsl:stylesheet xmlns:xsl='http://www.w3.org/1999/XSL/Transform'
+                version='1.0'
+        >
 
-  <xsl:output media-type="text/plain"/>
-  
-  <xsl:variable name="dumb" select="concat('DUM','MY')"/>
-  
-  <xsl:template match='/'>
-    <xsl:value-of select="$dumb"/>
-  </xsl:template>
+    <xsl:output media-type="text/plain"/>
+
+    <xsl:variable name="dumb" select="concat('DUM','MY')"/>
+
+    <xsl:template match='/'>
+        <xsl:value-of select="$dumb"/>
+    </xsl:template>
 
 </xsl:stylesheet>

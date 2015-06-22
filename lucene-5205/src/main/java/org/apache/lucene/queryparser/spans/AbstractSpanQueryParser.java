@@ -17,14 +17,13 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
-
-import java.util.ArrayList;
-import java.util.List;
 
 abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
 

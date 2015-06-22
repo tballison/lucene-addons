@@ -40,8 +40,8 @@ public class ConcordanceTest extends SolrTestCaseJ4 {
   @Test
   public void basicTest() throws Exception {
     setupDocs(CONCORDANCE_FIELD);
-    System.out.println(h.query(req("qt", requestUri, "q", CONCORDANCE_FIELD+":jumped")));
-    SolrQueryRequest req = req("qt", requestUri, "q", CONCORDANCE_FIELD+":jumped");
+    System.out.println(h.query(req("qt", requestUri, "q", CONCORDANCE_FIELD + ":jumped")));
+    SolrQueryRequest req = req("qt", requestUri, "q", CONCORDANCE_FIELD + ":jumped");
     String response = JQ(req);
     System.out.println(response);
   }

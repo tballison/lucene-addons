@@ -18,24 +18,24 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
 
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <!--  The DirectoryFactory to use for indexes.
-        solr.StandardDirectoryFactory, the default, is filesystem based.
-        solr.RAMDirectoryFactory is memory based and not persistent. -->
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
+    <!--  The DirectoryFactory to use for indexes.
+          solr.StandardDirectoryFactory, the default, is filesystem based.
+          solr.RAMDirectoryFactory is memory based and not persistent. -->
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <dataDir>${solr.data.dir:}</dataDir>
+    <dataDir>${solr.data.dir:}</dataDir>
 
-  <updateHandler class="solr.DirectUpdateHandler2">
-  </updateHandler>
-  
-  <requestHandler name="standard" class="solr.StandardRequestHandler"/>
+    <updateHandler class="solr.DirectUpdateHandler2">
+    </updateHandler>
 
-  <requestDispatcher handleSelect="true" >
-    <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048" />
-    <httpCaching never304="true" />
-  </requestDispatcher>
+    <requestHandler name="standard" class="solr.StandardRequestHandler"/>
+
+    <requestDispatcher handleSelect="true">
+        <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048"/>
+        <httpCaching never304="true"/>
+    </requestDispatcher>
 
 </config>

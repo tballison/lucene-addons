@@ -16,6 +16,9 @@
  */
 package org.apache.lucene.search.concordance;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.analysis.MockTokenizer;
@@ -34,10 +37,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestUtil;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.util.List;
 
 public class ConcordanceTestBase extends LuceneTestCase {
 

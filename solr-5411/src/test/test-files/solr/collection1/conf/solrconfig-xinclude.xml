@@ -18,18 +18,18 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
 
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
-  <xi:include href="foobar-missing.xml" xmlns:xi="http://www.w3.org/2001/XInclude">
-    <xi:fallback>
-      <xi:include href="solrconfig-reqHandler.incl" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    </xi:fallback>
-  </xi:include>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="foobar-missing.xml">
+        <xi:fallback>
+            <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig-reqHandler.incl"/>
+        </xi:fallback>
+    </xi:include>
 
-  <updateRequestProcessorChain name="special-include" xmlns:xi="http://www.w3.org/2001/XInclude">
-    <xi:include href="solrconfig-snippet-processor.xml" />
-  </updateRequestProcessorChain>
+    <updateRequestProcessorChain xmlns:xi="http://www.w3.org/2001/XInclude" name="special-include">
+        <xi:include href="solrconfig-snippet-processor.xml"/>
+    </updateRequestProcessorChain>
 
 </config>

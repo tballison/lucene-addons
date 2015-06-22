@@ -17,12 +17,11 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
 import org.apache.lucene.document.Document;
-
-import java.util.ArrayList;
-import java.util.List;
 
 
 /**

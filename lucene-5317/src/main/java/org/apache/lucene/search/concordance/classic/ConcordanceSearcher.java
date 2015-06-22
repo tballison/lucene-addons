@@ -17,6 +17,11 @@ package org.apache.lucene.search.concordance.classic;
  * limitations under the License.
  */
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
@@ -38,12 +43,6 @@ import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetsReader;
 import org.apache.lucene.search.concordance.util.ConcordanceSearcherUtil;
 import org.apache.lucene.search.spans.SimpleSpanQueryConverter;
 import org.apache.lucene.search.spans.SpanQuery;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 
 /**

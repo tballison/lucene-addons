@@ -17,14 +17,13 @@ package org.apache.lucene.search.concordance.classic.impl;
  * limitations under the License.
  */
 
-import org.apache.lucene.document.Document;
-import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
 
 /**
  * Simple class that returns a map of key value pairs

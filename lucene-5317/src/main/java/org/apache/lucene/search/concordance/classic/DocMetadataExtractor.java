@@ -17,10 +17,9 @@ package org.apache.lucene.search.concordance.classic;
  * limitations under the License.
  */
 
-import org.apache.lucene.document.Document;
-
 import java.util.Map;
 import java.util.Set;
+import org.apache.lucene.document.Document;
 
 /**
  * Simple interface for a component that extracts metadata from

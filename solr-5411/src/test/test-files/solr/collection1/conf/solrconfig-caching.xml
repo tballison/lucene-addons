@@ -15,25 +15,25 @@
   limitations under the License.
   -->
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
-  <query>
-    <cache name="lfuCacheDecayFalse"
-           class="solr.search.LFUCache"
-           size="10"
-           initialSize="9"
-           timeDecay="false" />
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <query>
+        <cache name="lfuCacheDecayFalse"
+               class="solr.search.LFUCache"
+               size="10"
+               initialSize="9"
+               timeDecay="false"/>
 
-    <cache name="lfuCacheDecayTrue"
-           class="solr.search.LFUCache"
-           size="10"
-           initialSize="9"
-           timeDecay="true" />
+        <cache name="lfuCacheDecayTrue"
+               class="solr.search.LFUCache"
+               size="10"
+               initialSize="9"
+               timeDecay="true"/>
 
-    <cache name="lfuCacheDecayDefault"
-           class="solr.search.LFUCache"
-           size="10"
-           initialSize="9" />
-  </query>
+        <cache name="lfuCacheDecayDefault"
+               class="solr.search.LFUCache"
+               size="10"
+               initialSize="9"/>
+    </query>
 </config>

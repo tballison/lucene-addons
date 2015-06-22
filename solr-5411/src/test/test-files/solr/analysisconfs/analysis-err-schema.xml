@@ -21,24 +21,25 @@
   -->
 
 <schema name="test" version="1.5">
-  <types>
-    <fieldtype name="long" class="solr.TrieLongField" stored="true" indexed="true" />
-    <fieldtype name="sint" class="solr.SortableIntField" />
-    <fieldtype name="text" class="solr.TextField">
-      <analyzer>
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="org.apache.solr.analysis.ThrowingMockTokenFilterFactory" exceptionClassName="java.lang.RuntimeException"/>
-      </analyzer>
-    </fieldtype>
- </types>
+    <types>
+        <fieldtype name="long" class="solr.TrieLongField" stored="true" indexed="true"/>
+        <fieldtype name="sint" class="solr.SortableIntField"/>
+        <fieldtype name="text" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="org.apache.solr.analysis.ThrowingMockTokenFilterFactory"
+                        exceptionClassName="java.lang.RuntimeException"/>
+            </analyzer>
+        </fieldtype>
+    </types>
 
 
- <fields>
-   <field name="id" type="sint" indexed="true" stored="true" multiValued="false"/>
-   <field name="text" type="text" indexed="true" stored="true"/>
-   <field name="_version_" type="long" />
- </fields>
+    <fields>
+        <field name="id" type="sint" indexed="true" stored="true" multiValued="false"/>
+        <field name="text" type="text" indexed="true" stored="true"/>
+        <field name="_version_" type="long"/>
+    </fields>
 
- <defaultSearchField>text</defaultSearchField>
- <uniqueKey>id</uniqueKey>
+    <defaultSearchField>text</defaultSearchField>
+    <uniqueKey>id</uniqueKey>
 </schema>

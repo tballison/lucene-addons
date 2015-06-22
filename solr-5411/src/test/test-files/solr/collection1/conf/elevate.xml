@@ -18,37 +18,37 @@
 
 <elevate>
 
- <query text="XXXX">
-  <doc id="1" />
- </query>
- 
- <query text="YYYY">
-  <doc id="1" />
-  <doc id="2" />
- </query>
- 
- <query text="ZZZZ">
-  <doc id="1" />
-  <doc id="2" />
-  <doc id="3" />
- </query>
+    <query text="XXXX">
+        <doc id="1"/>
+    </query>
 
- <query text="AAAA">
-  <doc id="7" />
- </query>
+    <query text="YYYY">
+        <doc id="1"/>
+        <doc id="2"/>
+    </query>
 
- <query text="XXXX XXXX">
-  <doc id="5" />
-  <doc id="6" exclude="true" />
- </query>
- 
- <query text="QQQQ">
-  <doc id="10" exclude="true" />
- </query>
- 
+    <query text="ZZZZ">
+        <doc id="1"/>
+        <doc id="2"/>
+        <doc id="3"/>
+    </query>
 
- <query text="solr">
-  <doc id="7" />
- </query>
+    <query text="AAAA">
+        <doc id="7"/>
+    </query>
+
+    <query text="XXXX XXXX">
+        <doc id="5"/>
+        <doc id="6" exclude="true"/>
+    </query>
+
+    <query text="QQQQ">
+        <doc id="10" exclude="true"/>
+    </query>
+
+
+    <query text="solr">
+        <doc id="7"/>
+    </query>
 
 </elevate>

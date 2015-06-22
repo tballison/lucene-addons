@@ -17,10 +17,9 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
-import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
-
 import java.io.Serializable;
 import java.util.Comparator;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 
 /**
  * Sorts length desc, start offset asc

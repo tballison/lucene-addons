@@ -18,37 +18,37 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <requestHandler name="standard"
-     class="solr.StandardRequestHandler"></requestHandler>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
+    <requestHandler name="standard"
+                    class="solr.StandardRequestHandler"></requestHandler>
 
-  <!-- Used to specify an alternate directory to hold all index data.
-       It defaults to "index" if not present, and should probably
-       not be changed if replication is in use. -->
-  <dataDir>${solr.data.dir:}</dataDir>
+    <!-- Used to specify an alternate directory to hold all index data.
+         It defaults to "index" if not present, and should probably
+         not be changed if replication is in use. -->
+    <dataDir>${solr.data.dir:}</dataDir>
 
-  <!--  The DirectoryFactory to use for indexes.
-        solr.StandardDirectoryFactory, the default, is filesystem based.
-        solr.RAMDirectoryFactory is memory based and not persistent. -->
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <!--  The DirectoryFactory to use for indexes.
+          solr.StandardDirectoryFactory, the default, is filesystem based.
+          solr.RAMDirectoryFactory is memory based and not persistent. -->
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <searchComponent name="responselog" class="org.apache.solr.handler.component.ResponseLogComponent" />
+    <searchComponent name="responselog" class="org.apache.solr.handler.component.ResponseLogComponent"/>
 
-  <!-- Log retrievedDocs -->
-  <requestHandler name="withlog" class="org.apache.solr.handler.component.SearchHandler">
-	<lst name="defaults">
-		<str name="defType">dismax</str>
-	</lst>
-    <arr name="last-components">
-      <str>responselog</str>
-    </arr>
-  </requestHandler>
-  
-  <requestHandler name="nolog" class="org.apache.solr.handler.component.SearchHandler">
-    <lst name="defaults">
-      <str name="defType">dismax</str>
-    </lst>
-  </requestHandler>
+    <!-- Log retrievedDocs -->
+    <requestHandler name="withlog" class="org.apache.solr.handler.component.SearchHandler">
+        <lst name="defaults">
+            <str name="defType">dismax</str>
+        </lst>
+        <arr name="last-components">
+            <str>responselog</str>
+        </arr>
+    </requestHandler>
+
+    <requestHandler name="nolog" class="org.apache.solr.handler.component.SearchHandler">
+        <lst name="defaults">
+            <str name="defType">dismax</str>
+        </lst>
+    </requestHandler>
 
 </config>

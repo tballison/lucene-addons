@@ -17,6 +17,14 @@ package org.apache.lucene.queryparser.tmpspans.util;
  * limitations under the License.
  */
 
+import java.io.IOException;
+import java.io.Reader;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenizer;
@@ -35,15 +43,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.util.LuceneTestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.text.DateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Locale;
-import java.util.TimeZone;
 
 /**
  * Utilities and so on for testing queryparsers
@@ -251,6 +250,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
     OffsetAttribute offsetAtt;
     boolean inPhrase = false;
     int savedStart = 0, savedEnd = 0;
+
     public QPTestFilter(TokenStream in) {
       super(in);
       termAtt = addAttribute(CharTermAttribute.class);

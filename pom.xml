@@ -19,47 +19,49 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.apache.lucene</groupId>
-    <artifactId>lucene-addons-parent</artifactId>
-    <version>1.0</version>
-    <relativePath>lucene-addons-parent/pom.xml</relativePath>
-  </parent>
+    <parent>
+        <groupId>org.apache.lucene</groupId>
+        <artifactId>lucene-addons-parent</artifactId>
+        <version>1.0</version>
+        <relativePath>lucene-addons-parent/pom.xml</relativePath>
+    </parent>
 
-  <artifactId>lucene-addons</artifactId>
-  <packaging>pom</packaging>
-  <name>Lucene Addons</name>
-  <description>This package offers standalone
-  versions of LUCENE-5205 (and some others to come: LUCENE-5317 and LUCENE-5318)
-  for Lucene 4.x versions
-  </description>
-
-
-  <modules>
-    <module>lucene-addons-parent</module>
-    <module>lucene-5205</module>
-    <module>solr-5410</module>
-    <module>lucene-5317</module>
-    <module>solr-5411</module>
-  </modules>
+    <artifactId>lucene-addons</artifactId>
+    <packaging>pom</packaging>
+    <name>Lucene Addons</name>
+    <description>This package offers standalone
+        versions of LUCENE-5205 (and some others to come: LUCENE-5317 and LUCENE-5318)
+        for Lucene 4.x versions
+    </description>
 
 
-      <build>
-          <plugins>
-              <plugin>
-                  <artifactId>maven-deploy-plugin</artifactId>
-                  <configuration>
-                      <skip>true</skip> <!-- No need to deploy the reactor -->
-                  </configuration>
-              </plugin>
-          </plugins>
-      </build>
+    <modules>
+        <module>lucene-addons-parent</module>
+        <module>lucene-5205</module>
+        <module>solr-5410</module>
+        <module>lucene-5317</module>
+        <module>solr-5411</module>
+    </modules>
 
 
-  <profiles>
-  </profiles>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                    <!-- No need to deploy the reactor -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+
+    <profiles>
+    </profiles>
 
 </project>

@@ -17,12 +17,11 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.List;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
 import org.apache.lucene.util.LuceneTestCase;
 import org.junit.Test;
-
-import java.util.List;
 
 /**
  * Low level tests of the lexer.

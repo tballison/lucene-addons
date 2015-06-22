@@ -16,6 +16,9 @@
  */
 package org.apache.solr.search.concordance;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.solr.cloud.RequestThreads;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
@@ -24,12 +27,13 @@ import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.handler.component.SearchComponent;
 import org.apache.solr.util.plugin.SolrCoreAware;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 public class KeywordCooccurComponent extends SearchComponent implements SolrCoreAware {
   public static final String COMPONENT_NAME = "kwCoSearch";
+  Boolean isLocal = true;
+  /**
+   * Stack of worker threads, much like "ShardRequest's" except these do not have to be search requests.
+   */
+  RequestThreads<CooccurConfig> requestPump = null;
 
   @Override
   public void inform(SolrCore core) {
@@ -46,15 +50,6 @@ public class KeywordCooccurComponent extends SearchComponent implements SolrCore
     // TODO Auto-generated method stub
     return null;
   }
-
-
-  Boolean isLocal = true;
-
-  /**
-   * Stack of worker threads, much like "ShardRequest's" except these do not have to be search requests.
-   */
-  RequestThreads<CooccurConfig> requestPump = null;
-
 
   @Override
   public void prepare(ResponseBuilder rb) throws IOException {
@@ -112,10 +107,10 @@ public class KeywordCooccurComponent extends SearchComponent implements SolrCore
   @Override
   public void finishStage(ResponseBuilder rb) {
     SolrParams params = rb.req.getParams();
-    System.out.println("FINISH STAGE: "+params.toNamedList().size());
+    System.out.println("FINISH STAGE: " + params.toNamedList().size());
     if (rb.stage != ResponseBuilder.STAGE_GET_FIELDS)
       return;
-    System.out.println("FINISH STAGE2: "+params.toNamedList().size());
+    System.out.println("FINISH STAGE2: " + params.toNamedList().size());
 
     /**
      * it'd be awesome if this code worked, but it doesn't because

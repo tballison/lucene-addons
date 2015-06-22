@@ -3,7 +3,10 @@ lucene-addons
 
 Standalone versions of LUCENE_5205 and other patches.
 
-These are intended to track with the latest stable version of Lucene/Solr.
+Main Branches:
+solr-collab tracks with Lucene/Solr 4.x
+solr-collab-5x tracks with Lucene/Solr 5.x
+master tracks with Lucene/Solr 6.0.0-SNAPSHOT
 
 To see the fully integrated trunk versions of these, see
 my fork on github and go to the LUCENE-5205 branch.
@@ -11,7 +14,7 @@ my fork on github and go to the LUCENE-5205 branch.
 The overall goal is to transition these components into the living
 Lucene/Solr codebase.  However, until a committer has the interest and time
 to do that, this package should make it easier for users to get the code
-for the latest stable version of Lucene/Solr.
+for the latest stable versions of Lucene/Solr.
 
 ACKNOWLEDGEMENTS
 

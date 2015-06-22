@@ -18,9 +18,8 @@ package org.apache.lucene.search.concordance.classic;
  */
 
 
-import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
-
 import java.util.Map;
+import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
 
 public interface SortKeyBuilder {
 

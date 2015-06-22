@@ -16,11 +16,16 @@
  */
 package org.apache.solr.search.concordance;
 
+import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.concordance.classic.*;
+import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
+import org.apache.lucene.search.concordance.classic.ConcordanceSearcher;
+import org.apache.lucene.search.concordance.classic.ConcordanceSortOrder;
+import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
+import org.apache.lucene.search.concordance.classic.WindowBuilder;
 import org.apache.lucene.search.concordance.classic.impl.ConcordanceWindowCollector;
 import org.apache.lucene.search.concordance.classic.impl.DefaultSortKeyBuilder;
 import org.apache.lucene.search.concordance.classic.impl.FieldBasedDocIdBuilder;
@@ -38,8 +43,6 @@ import org.apache.solr.response.SolrQueryResponse;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.search.QParser;
-
-import java.util.List;
 
 
 /**
@@ -76,48 +79,13 @@ import java.util.List;
 public class KWICRequestHandler extends SolrConcordanceBase {
   public static final String DefaultName = "/concordance";
   public static final String NODE = "contextWindows";
-
-  @Override
-  public void init(@SuppressWarnings("rawtypes") NamedList args) {
-    super.init(args);
-  }
-
-  ;
-
-  @Override
-  public String getDescription() {
-    return "Returns concordance results for your query";
-  }
-
-  @Override
-  public String getSource() {
-    return "$Source$";
-  }
-
-
-  @Override
-  protected String getHandlerName(SolrQueryRequest req) {
-    return getHandlerName(req, DefaultName, this.getClass());
-  }
+  /**
+   * Max number of request threads to spawn.  Since this service wasn't intended to return
+   * ALL possible results, it seems reasonable to cap this at something
+   */
+  public final static int MAX_THREADS = 25;
 
   ;
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
-    boolean isDistrib = isDistributed(req);
-
-    if (isDistrib) {
-      doZooQuery(req, rsp);
-    } else {
-      doQuery(req, rsp);
-    }
-  }
-
-  private void doQuery(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
-    NamedList results = doLocalSearch(req);
-    rsp.add(NODE, results);
-  }
 
   public static NamedList doLocalSearch(SolrQueryRequest req) throws Exception {
     return doLocalSearch(null, req);
@@ -175,28 +143,12 @@ public class KWICRequestHandler extends SolrConcordanceBase {
     return results;
   }
 
-  @SuppressWarnings("unchecked")
-  private void doZooQuery(SolrQueryRequest req, SolrQueryResponse rsp) throws SolrServerException, Exception {
-
-    List<String> shards = getShards(req, false);
-
-    RequestThreads<ConcordanceConfig> threads = initRequestPump(shards, req);
-
-    Results results = new Results(threads.getMetadata());
-
-    NamedList nl = doLocalSearch(req);
-    results.add(nl, "local");
-
-    results = spinWait(threads, results);
-
-    rsp.add(NODE, results.toNamedList());
-
-  }
-
   public static Results spinWait(RequestThreads<ConcordanceConfig> threads) {
     Results results = new Results(threads.getMetadata());
     return spinWait(threads, results);
   }
+
+  ;
 
   public static Results spinWait(RequestThreads<ConcordanceConfig> threads, Results results) {
     if (threads == null || threads.empty())
@@ -237,15 +189,6 @@ public class KWICRequestHandler extends SolrConcordanceBase {
 
     return results;
   }
-
-  ;
-
-
-  /**
-   * Max number of request threads to spawn.  Since this service wasn't intended to return
-   * ALL possible results, it seems reasonable to cap this at something
-   */
-  public final static int MAX_THREADS = 25;
 
   static public RequestThreads<ConcordanceConfig> initRequestPump(List<String> shards,
                                                                   SolrQueryRequest req) {
@@ -312,10 +255,128 @@ public class KWICRequestHandler extends SolrConcordanceBase {
     return params;
   }
 
+  private static ConcordanceConfig buildConcordanceConfig(String field, String idField, SolrParams params) {
+    ConcordanceConfig config = new ConcordanceConfig(field);
+
+    String param = params.get("targetOverlaps");
+    if (param != null && param.length() > 0) {
+      try {
+        config.setAllowTargetOverlaps(Boolean.parseBoolean(param));
+      } catch (Exception e) {
+      }
+    }
+    param = params.get("contentDisplaySize");
+    if (param != null && param.length() > 0) {
+      try {
+        config.setMaxContextDisplaySizeChars(Integer.parseInt(param));
+      } catch (Exception e) {
+      }
+    }
+    param = params.get("targetDisplaySize");
+    if (param != null && param.length() > 0) {
+      try {
+        config.setMaxTargetDisplaySizeChars(Integer.parseInt(param));
+      } catch (Exception e) {
+      }
+    }
+    param = params.get("maxWindows");
+    if (param != null && param.length() > 0) {
+      try {
+        config.setMaxWindows(Integer.parseInt(param));
+      } catch (Exception e) {
+      }
+    }
+
+    param = params.get("tokensAfter");
+    if (param != null && param.length() > 0) {
+      try {
+        config.setTokensAfter(Integer.parseInt(param));
+      } catch (Exception e) {
+      }
+    }
+    param = params.get("tokensBefore");
+    if (param != null && param.length() > 0) {
+      try {
+        config.setTokensBefore(Integer.parseInt(param));
+      } catch (Exception e) {
+      }
+    }
+
+    param = params.get("sortOrder");
+    if (param != null && param.length() > 0) {
+      try {
+        config.setSortOrder(ConcordanceSortOrder.valueOf(param));
+      } catch (Exception e) {
+      }
+    }
+    return config;
+  }
+
+  @Override
+  public void init(@SuppressWarnings("rawtypes") NamedList args) {
+    super.init(args);
+  }
+
+  @Override
+  public String getDescription() {
+    return "Returns concordance results for your query";
+  }
+
+  ;
+
+  @Override
+  public String getSource() {
+    return "$Source$";
+  }
+
+  @Override
+  protected String getHandlerName(SolrQueryRequest req) {
+    return getHandlerName(req, DefaultName, this.getClass());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
+    boolean isDistrib = isDistributed(req);
+
+    if (isDistrib) {
+      doZooQuery(req, rsp);
+    } else {
+      doQuery(req, rsp);
+    }
+  }
+
+  private void doQuery(SolrQueryRequest req, SolrQueryResponse rsp) throws Exception {
+    NamedList results = doLocalSearch(req);
+    rsp.add(NODE, results);
+  }
+
+  @SuppressWarnings("unchecked")
+  private void doZooQuery(SolrQueryRequest req, SolrQueryResponse rsp) throws SolrServerException, Exception {
+
+    List<String> shards = getShards(req, false);
+
+    RequestThreads<ConcordanceConfig> threads = initRequestPump(shards, req);
+
+    Results results = new Results(threads.getMetadata());
+
+    NamedList nl = doLocalSearch(req);
+    results.add(nl, "local");
+
+    results = spinWait(threads, results);
+
+    rsp.add(NODE, results.toNamedList());
+
+  }
 
   static class Results {
     int maxWindows = -1;
-
+    boolean hitMax = false;
+    long numDocs = 0;
+    int totalDocs = 0;
+    int totalWindows = 0;
+    int numWindows = 0;
+    NamedList windows = new SimpleOrderedMap<Object>();
     Results(int maxWindows) {
       this.maxWindows = maxWindows;
     }
@@ -323,15 +384,6 @@ public class KWICRequestHandler extends SolrConcordanceBase {
     Results(ConcordanceConfig config) {
       this.maxWindows = config.getMaxWindows();
     }
-
-    boolean hitMax = false;
-    long numDocs = 0;
-    int totalDocs = 0;
-    int totalWindows = 0;
-    int numWindows = 0;
-
-    NamedList windows = new SimpleOrderedMap<Object>();
-
 
     void add(NamedList nl, String extra) {
       NamedList nlRS = (NamedList) nl.get(NODE);
@@ -390,64 +442,6 @@ public class KWICRequestHandler extends SolrConcordanceBase {
       nl.add("windows", windows);
       return nl;
     }
-  }
-
-
-  private static ConcordanceConfig buildConcordanceConfig(String field, String idField, SolrParams params) {
-    ConcordanceConfig config = new ConcordanceConfig(field);
-
-    String param = params.get("targetOverlaps");
-    if (param != null && param.length() > 0) {
-      try {
-        config.setAllowTargetOverlaps(Boolean.parseBoolean(param));
-      } catch (Exception e) {
-      }
-    }
-    param = params.get("contentDisplaySize");
-    if (param != null && param.length() > 0) {
-      try {
-        config.setMaxContextDisplaySizeChars(Integer.parseInt(param));
-      } catch (Exception e) {
-      }
-    }
-    param = params.get("targetDisplaySize");
-    if (param != null && param.length() > 0) {
-      try {
-        config.setMaxTargetDisplaySizeChars(Integer.parseInt(param));
-      } catch (Exception e) {
-      }
-    }
-    param = params.get("maxWindows");
-    if (param != null && param.length() > 0) {
-      try {
-        config.setMaxWindows(Integer.parseInt(param));
-      } catch (Exception e) {
-      }
-    }
-
-    param = params.get("tokensAfter");
-    if (param != null && param.length() > 0) {
-      try {
-        config.setTokensAfter(Integer.parseInt(param));
-      } catch (Exception e) {
-      }
-    }
-    param = params.get("tokensBefore");
-    if (param != null && param.length() > 0) {
-      try {
-        config.setTokensBefore(Integer.parseInt(param));
-      } catch (Exception e) {
-      }
-    }
-
-    param = params.get("sortOrder");
-    if (param != null && param.length() > 0) {
-      try {
-        config.setSortOrder(ConcordanceSortOrder.valueOf(param));
-      } catch (Exception e) {
-      }
-    }
-    return config;
   }
 
 }

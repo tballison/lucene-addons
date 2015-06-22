@@ -25,25 +25,27 @@ Transforms a test XML into standard Solr <add><doc/></add> format.
 
  -->
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
-  <xsl:template match="/">
-    <add>
-      <xsl:apply-templates select="/random/document"/>
-    </add>
-  </xsl:template>
+    <xsl:template match="/">
+        <add>
+            <xsl:apply-templates select="/random/document"/>
+        </add>
+    </xsl:template>
 
-  <xsl:template match="document">
-    <doc boost="5.5">
-      <xsl:apply-templates select="*"/>
-    </doc>
-  </xsl:template>
+    <xsl:template match="document">
+        <doc boost="5.5">
+            <xsl:apply-templates select="*"/>
+        </doc>
+    </xsl:template>
 
-  <xsl:template match="node">
-    <field name="{@name}">
-      <xsl:if test="@enhance!=''">
-        <xsl:attribute name="boost"><xsl:value-of select="@enhance"/></xsl:attribute>
-      </xsl:if>
-      <xsl:value-of select="@value"/>
-    </field>
-  </xsl:template>
+    <xsl:template match="node">
+        <field name="{@name}">
+            <xsl:if test="@enhance!=''">
+                <xsl:attribute name="boost">
+                    <xsl:value-of select="@enhance"/>
+                </xsl:attribute>
+            </xsl:if>
+            <xsl:value-of select="@value"/>
+        </field>
+    </xsl:template>
 
 </xsl:stylesheet>

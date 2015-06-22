@@ -17,9 +17,6 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
-import org.apache.lucene.corpus.stats.TermDFTF;
-import org.apache.lucene.util.mutable.MutableValueInt;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +25,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.lucene.corpus.stats.TermDFTF;
+import org.apache.lucene.util.mutable.MutableValueInt;
 
 
 /**

@@ -19,43 +19,43 @@
 <!-- Test schema file for CollationKeyFilter (deprecated: use CollationField instead) -->
 
 <schema name="test" version="1.0">
-  <types>
-    <fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+    <types>
+        <fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
 
-    <!-- basic text field -->
-    <fieldtype name="text" class="solr.TextField">
-      <analyzer>
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-      </analyzer>
-    </fieldtype>
-    
-    <fieldtype name="sort_ar_t" class="solr.TextField">
-      <analyzer>
-        <tokenizer class="solr.KeywordTokenizerFactory"/>
-        <filter class="solr.CollationKeyFilterFactory" language="ar"/>
-      </analyzer>
-    </fieldtype>
-    
-    <fieldtype name="sort_de_t" class="solr.TextField">
-      <analyzer>
-        <tokenizer class="solr.KeywordTokenizerFactory"/>
-        <filter class="solr.CollationKeyFilterFactory" language="de" strength="primary"/>
-      </analyzer>
-    </fieldtype>
-  </types>
+        <!-- basic text field -->
+        <fieldtype name="text" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+            </analyzer>
+        </fieldtype>
 
-  <fields>
-    <field name="id" type="int" indexed="true" stored="true" multiValued="false" required="false"/>
-    <field name="text" type="text" indexed="true" stored="false"/>
-    <field name="sort_ar"       type="sort_ar_t"       indexed="true" stored="false" multiValued="false"/>
-    <field name="sort_de"       type="sort_de_t"       indexed="true" stored="false" multiValued="false"/>
-  </fields>
+        <fieldtype name="sort_ar_t" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.KeywordTokenizerFactory"/>
+                <filter class="solr.CollationKeyFilterFactory" language="ar"/>
+            </analyzer>
+        </fieldtype>
 
-  <defaultSearchField>text</defaultSearchField>
-  <uniqueKey>id</uniqueKey>
+        <fieldtype name="sort_de_t" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.KeywordTokenizerFactory"/>
+                <filter class="solr.CollationKeyFilterFactory" language="de" strength="primary"/>
+            </analyzer>
+        </fieldtype>
+    </types>
 
-  <!-- copy our text to some sort fields with different orders -->
-  <copyField source="text" dest="sort_ar"/>
-  <copyField source="text" dest="sort_de"/>
+    <fields>
+        <field name="id" type="int" indexed="true" stored="true" multiValued="false" required="false"/>
+        <field name="text" type="text" indexed="true" stored="false"/>
+        <field name="sort_ar" type="sort_ar_t" indexed="true" stored="false" multiValued="false"/>
+        <field name="sort_de" type="sort_de_t" indexed="true" stored="false" multiValued="false"/>
+    </fields>
+
+    <defaultSearchField>text</defaultSearchField>
+    <uniqueKey>id</uniqueKey>
+
+    <!-- copy our text to some sort fields with different orders -->
+    <copyField source="text" dest="sort_ar"/>
+    <copyField source="text" dest="sort_de"/>
 </schema>

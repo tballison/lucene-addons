@@ -21,16 +21,16 @@
    Test Config for QParser init
   -->
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
-  <!-- query parser without final NAME field lead to NPE during query parser initialization-->
-  <queryParser name="fail" class="solr.search.LuceneQParserPlugin"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
+    <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <!-- query parser without final NAME field lead to NPE during query parser initialization-->
+    <queryParser name="fail" class="solr.search.LuceneQParserPlugin"/>
 
-  <!-- Un-ordered complex phrase query parser Same behaviour as Lucene's Sloppy PhraseQuery where slop is greater than 0 -->
-  <queryParser name="unorderedcomplexphrase" class="solr.search.ComplexPhraseQParserPlugin">
-    <bool name="inOrder">false</bool>
-  </queryParser>
+    <!-- Un-ordered complex phrase query parser Same behaviour as Lucene's Sloppy PhraseQuery where slop is greater than 0 -->
+    <queryParser name="unorderedcomplexphrase" class="solr.search.ComplexPhraseQParserPlugin">
+        <bool name="inOrder">false</bool>
+    </queryParser>
 
 </config>

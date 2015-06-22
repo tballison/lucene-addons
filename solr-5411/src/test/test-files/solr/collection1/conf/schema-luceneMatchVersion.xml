@@ -16,43 +16,43 @@
  limitations under the License.
 -->
 <schema name="luceneMatchVersionTest" version="1.1">
- <types>
-  <fieldtype name="long" class="solr.TrieLongField"/>
-  <fieldtype name="string" class="solr.StrField"/>
-  <fieldtype name="text40" class="solr.TextField">
-    <analyzer>
-      <tokenizer class="solr.StandardTokenizerFactory" luceneMatchVersion="LUCENE_40"/>
-      <filter class="solr.StandardFilterFactory"/>
-      <filter class="solr.LowerCaseFilterFactory"/>
-      <filter class="solr.StopFilterFactory" luceneMatchVersion="4.3.0"/>
-      <filter class="solr.PorterStemFilterFactory"/>
-    </analyzer>
-  </fieldtype>
-  <fieldtype name="textDefault" class="solr.TextField">
-    <analyzer>
-      <tokenizer class="solr.StandardTokenizerFactory"/>
-      <filter class="solr.StandardFilterFactory"/>
-      <filter class="solr.LowerCaseFilterFactory"/>
-      <filter class="solr.StopFilterFactory"/>
-      <filter class="solr.PorterStemFilterFactory"/>
-    </analyzer>
-  </fieldtype>
-  <fieldtype name="textTurkishAnalyzer40" class="solr.TextField">
-    <analyzer class="org.apache.lucene.analysis.tr.TurkishAnalyzer" luceneMatchVersion="LUCENE_4_0"/>
-  </fieldtype>
-  <fieldtype name="textTurkishAnalyzerDefault" class="solr.TextField">
-    <analyzer class="org.apache.lucene.analysis.tr.TurkishAnalyzer"/>
-  </fieldtype>
- </types>
- <fields>
-   <field name="id" type="string" indexed="true" stored="true"/>
-   <field name="signatureField" type="string" indexed="true" stored="false"/>
-   <field name="text40" type="text40" indexed="true" stored="false" />
-   <field name="textDefault" type="textDefault" indexed="true" stored="false" />
-   <field name="textTurkishAnalyzer40" type="textTurkishAnalyzer40" indexed="true" stored="false" />
-   <field name="textTurkishAnalyzerDefault" type="textTurkishAnalyzerDefault" indexed="true" stored="false" />
-   <field name="_version_" type="long" indexed="true" stored="true" multiValued="false" />
-   <dynamicField name="*_sS" type="string"  indexed="false" stored="true"/>
- </fields>
- <uniqueKey>id</uniqueKey>
+    <types>
+        <fieldtype name="long" class="solr.TrieLongField"/>
+        <fieldtype name="string" class="solr.StrField"/>
+        <fieldtype name="text40" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory" luceneMatchVersion="LUCENE_40"/>
+                <filter class="solr.StandardFilterFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory" luceneMatchVersion="4.3.0"/>
+                <filter class="solr.PorterStemFilterFactory"/>
+            </analyzer>
+        </fieldtype>
+        <fieldtype name="textDefault" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.StandardFilterFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.StopFilterFactory"/>
+                <filter class="solr.PorterStemFilterFactory"/>
+            </analyzer>
+        </fieldtype>
+        <fieldtype name="textTurkishAnalyzer40" class="solr.TextField">
+            <analyzer class="org.apache.lucene.analysis.tr.TurkishAnalyzer" luceneMatchVersion="LUCENE_4_0"/>
+        </fieldtype>
+        <fieldtype name="textTurkishAnalyzerDefault" class="solr.TextField">
+            <analyzer class="org.apache.lucene.analysis.tr.TurkishAnalyzer"/>
+        </fieldtype>
+    </types>
+    <fields>
+        <field name="id" type="string" indexed="true" stored="true"/>
+        <field name="signatureField" type="string" indexed="true" stored="false"/>
+        <field name="text40" type="text40" indexed="true" stored="false"/>
+        <field name="textDefault" type="textDefault" indexed="true" stored="false"/>
+        <field name="textTurkishAnalyzer40" type="textTurkishAnalyzer40" indexed="true" stored="false"/>
+        <field name="textTurkishAnalyzerDefault" type="textTurkishAnalyzerDefault" indexed="true" stored="false"/>
+        <field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/>
+        <dynamicField name="*_sS" type="string" indexed="false" stored="true"/>
+    </fields>
+    <uniqueKey>id</uniqueKey>
 </schema>

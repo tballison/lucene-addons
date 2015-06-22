@@ -16,6 +16,12 @@
  */
 package org.apache.solr.search.concordance;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
@@ -33,13 +39,6 @@ import org.apache.solr.request.SolrRequestHandler;
 import org.apache.solr.search.DocSet;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.SyntaxError;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 public abstract class SolrConcordanceBase extends RequestHandlerBase {
 
@@ -69,7 +68,7 @@ public abstract class SolrConcordanceBase extends RequestHandlerBase {
       NamedList doc = convertToDoc(solrIndexField, window, true);
 
 /*			DocMetadata metadata = window.getMetadata();
-			if(metadata != null && metadata.size() > 0)
+      if(metadata != null && metadata.size() > 0)
 			{
 				Integer id = metaMaps.get(metadata);
 				if(id == null)
@@ -260,8 +259,6 @@ public abstract class SolrConcordanceBase extends RequestHandlerBase {
     return getHandlerName(req.getCore(), defaultName, clz);
   }
 
-  protected abstract String getHandlerName(SolrQueryRequest req);
-
   public static List<Query> parseFilters(SolrQueryRequest req) throws SyntaxError {
     return parseFilters(null, req);
   }
@@ -277,7 +274,6 @@ public abstract class SolrConcordanceBase extends RequestHandlerBase {
     NamedList counts = f.getFacetFieldCounts();
     return counts;
   }
-
 
   public static List<Query> parseFilters(Query q, SolrQueryRequest req) throws SyntaxError {
     List<Query> filters = null;
@@ -297,7 +293,6 @@ public abstract class SolrConcordanceBase extends RequestHandlerBase {
 
     return filters;
   }
-
 
   public static DocSet getDocSet(Query q, SolrQueryRequest req) throws Exception {
     List<Query> filters = parseFilters(q, req);
@@ -319,5 +314,7 @@ public abstract class SolrConcordanceBase extends RequestHandlerBase {
     }
     return null;
   }
+
+  protected abstract String getHandlerName(SolrQueryRequest req);
 
 }

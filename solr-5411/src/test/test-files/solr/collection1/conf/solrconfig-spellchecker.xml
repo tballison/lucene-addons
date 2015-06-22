@@ -17,126 +17,126 @@
 -->
 
 <config>
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <!--  The DirectoryFactory to use for indexes.
-        solr.StandardDirectoryFactory, the default, is filesystem based.
-        solr.RAMDirectoryFactory is memory based and not persistent. -->
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
+    <!--  The DirectoryFactory to use for indexes.
+          solr.StandardDirectoryFactory, the default, is filesystem based.
+          solr.RAMDirectoryFactory is memory based and not persistent. -->
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
 
-  <updateHandler class="solr.DirectUpdateHandler2">
-  </updateHandler>
+    <updateHandler class="solr.DirectUpdateHandler2">
+    </updateHandler>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler" />
+    <requestHandler name="standard" class="solr.StandardRequestHandler"/>
 
-  <!-- Suggest component -->
-  <searchComponent class="solr.SpellCheckComponent" name="suggest_jaspell">
-    <lst name="spellchecker">
-      <str name="name">suggest</str>
-      <str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
-      <str name="lookupImpl">org.apache.solr.spelling.suggest.jaspell.JaspellLookup</str>
-      <str name="field">suggest</str>
-      <str name="storeDir">suggest</str>
-      <str name="buildOnCommit">true</str>
+    <!-- Suggest component -->
+    <searchComponent class="solr.SpellCheckComponent" name="suggest_jaspell">
+        <lst name="spellchecker">
+            <str name="name">suggest</str>
+            <str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
+            <str name="lookupImpl">org.apache.solr.spelling.suggest.jaspell.JaspellLookup</str>
+            <str name="field">suggest</str>
+            <str name="storeDir">suggest</str>
+            <str name="buildOnCommit">true</str>
 
-      <!-- Suggester properties -->
-      <float name="threshold">0.0</float>
-    </lst>
-  </searchComponent>
+            <!-- Suggester properties -->
+            <float name="threshold">0.0</float>
+        </lst>
+    </searchComponent>
 
-  <!-- TSTLookup suggest component -->
-  <searchComponent class="solr.SpellCheckComponent" name="suggest_tst">
-    <lst name="spellchecker">
-      <str name="name">suggest_tst</str>
-      <str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
-      <str name="lookupImpl">org.apache.solr.spelling.suggest.tst.TSTLookup</str>
-      <str name="field">suggest</str>
-      <str name="storeDir">suggest_tst</str>
-      <str name="buildOnCommit">true</str>
+    <!-- TSTLookup suggest component -->
+    <searchComponent class="solr.SpellCheckComponent" name="suggest_tst">
+        <lst name="spellchecker">
+            <str name="name">suggest_tst</str>
+            <str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
+            <str name="lookupImpl">org.apache.solr.spelling.suggest.tst.TSTLookup</str>
+            <str name="field">suggest</str>
+            <str name="storeDir">suggest_tst</str>
+            <str name="buildOnCommit">true</str>
 
-      <!-- Suggester properties -->
-      <float name="threshold">0.0</float>
-    </lst>
-  </searchComponent>
+            <!-- Suggester properties -->
+            <float name="threshold">0.0</float>
+        </lst>
+    </searchComponent>
 
-  <!-- FSTLookup suggest component -->
-  <searchComponent class="solr.SpellCheckComponent" name="suggest_fst">
-    <lst name="spellchecker">
-      <str name="name">suggest_fst</str>
-      <str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
-      <str name="lookupImpl">org.apache.solr.spelling.suggest.fst.FSTLookup</str>
-      <str name="field">suggest</str>
-      <str name="storeDir">suggest_fst</str>
-      <str name="buildOnCommit">true</str>
+    <!-- FSTLookup suggest component -->
+    <searchComponent class="solr.SpellCheckComponent" name="suggest_fst">
+        <lst name="spellchecker">
+            <str name="name">suggest_fst</str>
+            <str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
+            <str name="lookupImpl">org.apache.solr.spelling.suggest.fst.FSTLookup</str>
+            <str name="field">suggest</str>
+            <str name="storeDir">suggest_fst</str>
+            <str name="buildOnCommit">true</str>
 
-      <!-- Suggester properties -->
-      <int name="weightBuckets">5</int>
-      <bool name="exactMatchFirst">true</bool>
-    </lst>
-  </searchComponent>
-  
-  <!-- WFSTLookup suggest component -->
-  <searchComponent class="solr.SpellCheckComponent" name="suggest_wfst">
-    <lst name="spellchecker">
-      <str name="name">suggest_wfst</str>
-      <str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
-      <str name="lookupImpl">org.apache.solr.spelling.suggest.fst.WFSTLookupFactory</str>
-      <str name="field">suggest</str>
-      <str name="storeDir">suggest_wfst</str>
-      <str name="buildOnCommit">true</str>
+            <!-- Suggester properties -->
+            <int name="weightBuckets">5</int>
+            <bool name="exactMatchFirst">true</bool>
+        </lst>
+    </searchComponent>
 
-      <!-- Suggester properties -->
-      <bool name="exactMatchFirst">true</bool>
-    </lst>
-  </searchComponent>
+    <!-- WFSTLookup suggest component -->
+    <searchComponent class="solr.SpellCheckComponent" name="suggest_wfst">
+        <lst name="spellchecker">
+            <str name="name">suggest_wfst</str>
+            <str name="classname">org.apache.solr.spelling.suggest.Suggester</str>
+            <str name="lookupImpl">org.apache.solr.spelling.suggest.fst.WFSTLookupFactory</str>
+            <str name="field">suggest</str>
+            <str name="storeDir">suggest_wfst</str>
+            <str name="buildOnCommit">true</str>
 
-  <!--  The default (jaspell) -->
-  <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/suggest">
-    <lst name="defaults">
-      <str name="spellcheck">true</str>
-      <str name="spellcheck.dictionary">suggest</str>
-      <str name="spellcheck.collate">true</str>
-    </lst>
-    <arr name="components">
-      <str>suggest_jaspell</str>
-    </arr>
-  </requestHandler>
+            <!-- Suggester properties -->
+            <bool name="exactMatchFirst">true</bool>
+        </lst>
+    </searchComponent>
 
-  <!--  tst (ternary tree based) -->
-  <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/suggest_tst">
-    <lst name="defaults">
-      <str name="spellcheck">true</str>
-      <str name="spellcheck.dictionary">suggest_tst</str>
-      <str name="spellcheck.collate">true</str>
-    </lst>
-    <arr name="components">
-      <str>suggest_tst</str>
-    </arr>
-  </requestHandler>
-  
-  <!--  fst (finite state automaton based) -->
-  <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/suggest_fst">
-    <lst name="defaults">
-      <str name="spellcheck">true</str>
-      <str name="spellcheck.dictionary">suggest_fst</str>
-      <str name="spellcheck.collate">false</str>
-    </lst>
-    <arr name="components">
-      <str>suggest_fst</str>
-    </arr>
-  </requestHandler>
-  
-  <!--  wfst (finite state automaton based) -->
-  <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/suggest_wfst">
-    <lst name="defaults">
-      <str name="spellcheck">true</str>
-      <str name="spellcheck.dictionary">suggest_wfst</str>
-      <str name="spellcheck.collate">false</str>
-    </lst>
-    <arr name="components">
-      <str>suggest_wfst</str>
-    </arr>
-  </requestHandler>
-  
+    <!--  The default (jaspell) -->
+    <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/suggest">
+        <lst name="defaults">
+            <str name="spellcheck">true</str>
+            <str name="spellcheck.dictionary">suggest</str>
+            <str name="spellcheck.collate">true</str>
+        </lst>
+        <arr name="components">
+            <str>suggest_jaspell</str>
+        </arr>
+    </requestHandler>
+
+    <!--  tst (ternary tree based) -->
+    <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/suggest_tst">
+        <lst name="defaults">
+            <str name="spellcheck">true</str>
+            <str name="spellcheck.dictionary">suggest_tst</str>
+            <str name="spellcheck.collate">true</str>
+        </lst>
+        <arr name="components">
+            <str>suggest_tst</str>
+        </arr>
+    </requestHandler>
+
+    <!--  fst (finite state automaton based) -->
+    <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/suggest_fst">
+        <lst name="defaults">
+            <str name="spellcheck">true</str>
+            <str name="spellcheck.dictionary">suggest_fst</str>
+            <str name="spellcheck.collate">false</str>
+        </lst>
+        <arr name="components">
+            <str>suggest_fst</str>
+        </arr>
+    </requestHandler>
+
+    <!--  wfst (finite state automaton based) -->
+    <requestHandler class="org.apache.solr.handler.component.SearchHandler" name="/suggest_wfst">
+        <lst name="defaults">
+            <str name="spellcheck">true</str>
+            <str name="spellcheck.dictionary">suggest_wfst</str>
+            <str name="spellcheck.collate">false</str>
+        </lst>
+        <arr name="components">
+            <str>suggest_wfst</str>
+        </arr>
+    </requestHandler>
+
 </config>

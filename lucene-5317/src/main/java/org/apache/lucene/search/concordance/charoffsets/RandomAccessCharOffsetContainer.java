@@ -17,10 +17,9 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
-import org.apache.lucene.util.OpenBitSet;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.lucene.util.OpenBitSet;
 
 /**
  * Class to record results for looking up normalized terms (String) and

@@ -47,83 +47,83 @@ public class CooccurConfig {
     this.maxWindows = maxWindows;
   }
 
-  public void setAllowTargetOverlaps(boolean allowTargetOverlaps) {
-    this.allowTargetOverlaps = allowTargetOverlaps;
-  }
-
   public boolean isAllowTargetOverlaps() {
     return allowTargetOverlaps;
   }
 
-  public void setMaxContextDisplaySizeChars(int maxContextDisplaySizeChars) {
-    this.maxContextDisplaySizeChars = maxContextDisplaySizeChars;
+  public void setAllowTargetOverlaps(boolean allowTargetOverlaps) {
+    this.allowTargetOverlaps = allowTargetOverlaps;
   }
 
   public int getMaxContextDisplaySizeChars() {
     return maxContextDisplaySizeChars;
   }
 
-  public void setMaxTargetDisplaySizeChars(int maxTargetDisplaySizeChars) {
-    this.maxTargetDisplaySizeChars = maxTargetDisplaySizeChars;
+  public void setMaxContextDisplaySizeChars(int maxContextDisplaySizeChars) {
+    this.maxContextDisplaySizeChars = maxContextDisplaySizeChars;
   }
 
   public int getMaxTargetDisplaySizeChars() {
     return maxTargetDisplaySizeChars;
   }
 
-  public void setTokensAfter(int tokensAfter) {
-    this.tokensAfter = tokensAfter;
+  public void setMaxTargetDisplaySizeChars(int maxTargetDisplaySizeChars) {
+    this.maxTargetDisplaySizeChars = maxTargetDisplaySizeChars;
   }
 
   public int getTokensAfter() {
     return tokensAfter;
   }
 
-  public void setTokensBefore(int tokensBefore) {
-    this.tokensBefore = tokensBefore;
+  public void setTokensAfter(int tokensAfter) {
+    this.tokensAfter = tokensAfter;
   }
 
   public int getTokensBefore() {
     return tokensBefore;
   }
 
-  public void setSortOrder(ConcordanceSortOrder sortOrder) {
-    this.sortOrder = sortOrder;
+  public void setTokensBefore(int tokensBefore) {
+    this.tokensBefore = tokensBefore;
   }
 
   public ConcordanceSortOrder getSortOrder() {
     return sortOrder;
   }
 
-  public void setMinNGram(int minNGram) {
-    this.minNGram = minNGram;
+  public void setSortOrder(ConcordanceSortOrder sortOrder) {
+    this.sortOrder = sortOrder;
   }
 
   public int getMinNGram() {
     return minNGram;
   }
 
-  public void setMaxNGram(int maxNGram) {
-    this.maxNGram = maxNGram;
+  public void setMinNGram(int minNGram) {
+    this.minNGram = minNGram;
   }
 
   public int getMaxNGram() {
     return maxNGram;
   }
 
-  public void setMinTermFreq(int minTermFreq) {
-    this.minTermFreq = minTermFreq;
+  public void setMaxNGram(int maxNGram) {
+    this.maxNGram = maxNGram;
   }
 
   public int getMinTermFreq() {
     return minTermFreq;
   }
 
-  public void setNumResults(int numResults) {
-    this.numResults = numResults;
+  public void setMinTermFreq(int minTermFreq) {
+    this.minTermFreq = minTermFreq;
   }
 
   public int getNumResults() {
     return numResults;
+  }
+
+  public void setNumResults(int numResults) {
+    this.numResults = numResults;
   }
 }

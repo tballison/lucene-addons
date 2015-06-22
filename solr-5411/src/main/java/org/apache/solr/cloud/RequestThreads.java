@@ -40,23 +40,12 @@ public class RequestThreads<P> extends ArrayList<RequestWorker> implements Execu
    * with different types of parameters
    */
   protected P metadata;
-
-  public P getMetadata() {
-    return metadata;
-  }
-
-  public RequestThreads<P> setMetadata(P value) {
-    metadata = value;
-    return this;
-  }
-
   protected int currentIdx = 0;
   protected int i = 0;  // :D
 
   public RequestThreads(ExecutorService service) {
     this.exe = service;
   }
-
   public RequestThreads(ExecutorService service, P meta) {
     this.exe = service;
     this.metadata = meta;
@@ -65,6 +54,15 @@ public class RequestThreads<P> extends ArrayList<RequestWorker> implements Execu
   public static <T> RequestThreads<T> newFixedThreadPool(int size) {
     ExecutorService exe = Executors.newFixedThreadPool(size);
     return new RequestThreads<T>(exe);
+  }
+
+  public P getMetadata() {
+    return metadata;
+  }
+
+  public RequestThreads<P> setMetadata(P value) {
+    metadata = value;
+    return this;
   }
 
   @Override

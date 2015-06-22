@@ -19,43 +19,43 @@
 <!-- Test schema file for phrase suggestions -->
 
 <schema name="test" version="1.0">
-  <types>
-    <fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+    <types>
+        <fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
 
-    <!-- basic text field -->
-    <fieldtype name="text" class="solr.TextField">
-      <analyzer>
-        <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.LowerCaseFilterFactory"/>
-      </analyzer>
-    </fieldtype>
-    
-    <fieldtype name="phrase_suggest" class="solr.TextField">
-	  <analyzer>
-	    <tokenizer class="solr.KeywordTokenizerFactory"/>
-	    <filter class="solr.PatternReplaceFilterFactory"
-	            pattern="([^\p{L}\p{M}\p{N}\p{Cs}]*[\p{L}\p{M}\p{N}\p{Cs}\_]+:)|([^\p{L}\p{M}\p{N}\p{Cs}])+"
-	            replacement=" " replace="all"/>
-	    <filter class="solr.LowerCaseFilterFactory"/>
-	    <filter class="solr.TrimFilterFactory"/>
-	  </analyzer>
-	</fieldtype>
-	
-	<fieldtype name="ja_suggest" class="solr.TextField">
-	  <analyzer>
-	    <tokenizer class="solr.JapaneseTokenizerFactory" mode="normal"/>
-	    <filter class="solr.CJKWidthFilterFactory"/>
-	    <filter class="solr.JapaneseReadingFormFilterFactory" useRomaji="true"/>
-	  </analyzer>
-	</fieldtype>
-  </types>
+        <!-- basic text field -->
+        <fieldtype name="text" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.StandardTokenizerFactory"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+            </analyzer>
+        </fieldtype>
 
-  <fields>
-    <field name="id" type="int" indexed="true" stored="true" multiValued="false" required="false"/>
-    <field name="text" type="text" indexed="true" stored="false"/>
-    <field name="stext" type="text" indexed="true" stored="true"/>
-  </fields>
+        <fieldtype name="phrase_suggest" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.KeywordTokenizerFactory"/>
+                <filter class="solr.PatternReplaceFilterFactory"
+                        pattern="([^\p{L}\p{M}\p{N}\p{Cs}]*[\p{L}\p{M}\p{N}\p{Cs}\_]+:)|([^\p{L}\p{M}\p{N}\p{Cs}])+"
+                        replacement=" " replace="all"/>
+                <filter class="solr.LowerCaseFilterFactory"/>
+                <filter class="solr.TrimFilterFactory"/>
+            </analyzer>
+        </fieldtype>
 
-  <defaultSearchField>text</defaultSearchField>
-  <uniqueKey>id</uniqueKey>
+        <fieldtype name="ja_suggest" class="solr.TextField">
+            <analyzer>
+                <tokenizer class="solr.JapaneseTokenizerFactory" mode="normal"/>
+                <filter class="solr.CJKWidthFilterFactory"/>
+                <filter class="solr.JapaneseReadingFormFilterFactory" useRomaji="true"/>
+            </analyzer>
+        </fieldtype>
+    </types>
+
+    <fields>
+        <field name="id" type="int" indexed="true" stored="true" multiValued="false" required="false"/>
+        <field name="text" type="text" indexed="true" stored="false"/>
+        <field name="stext" type="text" indexed="true" stored="true"/>
+    </fields>
+
+    <defaultSearchField>text</defaultSearchField>
+    <uniqueKey>id</uniqueKey>
 </schema>

@@ -17,18 +17,18 @@
 -->
 <schema name="tiny" version="1.1">
 
-  <types>
-    <fieldtype name="preanalyzed" class="solr.PreAnalyzedField" parserImpl="json"/>
-    <fieldType name="string" class="solr.StrField"/>
-    <fieldType name="long" class="solr.TrieLongField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
-  </types>
+    <types>
+        <fieldtype name="preanalyzed" class="solr.PreAnalyzedField" parserImpl="json"/>
+        <fieldType name="string" class="solr.StrField"/>
+        <fieldType name="long" class="solr.TrieLongField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
+    </types>
 
-  <fields>
-    <field name="id" type="string" indexed="true" stored="true" required="true"/>
-    <field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/>
-    <field name="pre" type="preanalyzed" indexed="true" stored="true" multiValued="false"/>
-  </fields>
+    <fields>
+        <field name="id" type="string" indexed="true" stored="true" required="true"/>
+        <field name="_version_" type="long" indexed="true" stored="true" multiValued="false"/>
+        <field name="pre" type="preanalyzed" indexed="true" stored="true" multiValued="false"/>
+    </fields>
 
-  <uniqueKey>id</uniqueKey>
+    <uniqueKey>id</uniqueKey>
 
 </schema>

@@ -17,9 +17,8 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
-import org.apache.lucene.document.Document;
-
 import java.io.IOException;
+import org.apache.lucene.document.Document;
 
 
 /**

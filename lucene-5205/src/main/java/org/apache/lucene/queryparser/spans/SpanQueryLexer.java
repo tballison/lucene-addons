@@ -17,15 +17,14 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
-import org.apache.lucene.util.mutable.MutableValueInt;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.spans.SQPClause.TYPE;
+import org.apache.lucene.util.mutable.MutableValueInt;
 
 /**
  * Tokenizer that returns a list of tokens of types:

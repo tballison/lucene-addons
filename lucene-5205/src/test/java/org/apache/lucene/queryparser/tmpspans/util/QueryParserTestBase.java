@@ -17,6 +17,11 @@ package org.apache.lucene.queryparser.tmpspans.util;
  * limitations under the License.
  */
 
+import java.io.Reader;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
@@ -46,12 +51,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.automaton.Automata;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.RegExp;
-
-import java.io.Reader;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Locale;
-import java.util.TimeZone;
 
 /**
  * Base Test class for QueryParser subclasses, that implement the historical lucene queryparser behavior.

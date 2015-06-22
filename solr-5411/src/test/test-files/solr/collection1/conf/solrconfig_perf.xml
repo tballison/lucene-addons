@@ -17,60 +17,60 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <!-- Used to specify an alternate directory to hold all index data
-       other than the default ./data under the Solr home.
-       If replication is in use, this should match the replication configuration. -->
-  <dataDir>${solr.data.dir:}</dataDir>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <!-- Used to specify an alternate directory to hold all index data
+         other than the default ./data under the Solr home.
+         If replication is in use, this should match the replication configuration. -->
+    <dataDir>${solr.data.dir:}</dataDir>
 
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
 
-  <!--  The DirectoryFactory to use for indexes.
-        solr.StandardDirectoryFactory, the default, is filesystem based.
-        solr.RAMDirectoryFactory is memory based and not persistent. -->
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <!--  The DirectoryFactory to use for indexes.
+          solr.StandardDirectoryFactory, the default, is filesystem based.
+          solr.RAMDirectoryFactory is memory based and not persistent. -->
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <updateHandler class="solr.DirectUpdateHandler2"/>
+    <updateHandler class="solr.DirectUpdateHandler2"/>
 
-  
-  <query>
-    <filterCache
-      class="solr.FastLRUCache"
-      size="512"
-      initialSize="512"
-      autowarmCount="0"/>
 
-    <queryResultCache
-      class="solr.LRUCache"
-      size="512"
-      initialSize="512"
-      autowarmCount="0"/>
+    <query>
+        <filterCache
+                class="solr.FastLRUCache"
+                size="512"
+                initialSize="512"
+                autowarmCount="0"/>
 
-    <documentCache
-      class="solr.LRUCache"
-      size="512"
-      initialSize="512"
-      autowarmCount="0"/>
+        <queryResultCache
+                class="solr.LRUCache"
+                size="512"
+                initialSize="512"
+                autowarmCount="0"/>
 
-    <enableLazyFieldLoading>true</enableLazyFieldLoading>
-    <queryResultWindowSize>20</queryResultWindowSize>
-    <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
-    <useColdSearcher>false</useColdSearcher>
-    <maxWarmingSearchers>2</maxWarmingSearchers>
+        <documentCache
+                class="solr.LRUCache"
+                size="512"
+                initialSize="512"
+                autowarmCount="0"/>
 
-  </query>
+        <enableLazyFieldLoading>true</enableLazyFieldLoading>
+        <queryResultWindowSize>20</queryResultWindowSize>
+        <queryResultMaxDocsCached>200</queryResultMaxDocsCached>
+        <useColdSearcher>false</useColdSearcher>
+        <maxWarmingSearchers>2</maxWarmingSearchers>
 
-  <requestDispatcher handleSelect="true" >
-    <!--Make sure your system has some authentication before enabling remote streaming!  -->
-    <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048000" />
-    <httpCaching lastModifiedFrom="openTime"
-                 etagSeed="Solr">
-    </httpCaching>
-  </requestDispatcher>
+    </query>
 
-  <requestHandler name="standard" class="solr.SearchHandler" default="true">
-  </requestHandler>
+    <requestDispatcher handleSelect="true">
+        <!--Make sure your system has some authentication before enabling remote streaming!  -->
+        <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048000"/>
+        <httpCaching lastModifiedFrom="openTime"
+                     etagSeed="Solr">
+        </httpCaching>
+    </requestDispatcher>
 
-  <requestHandler name="/update" class="solr.UpdateRequestHandler"  />
+    <requestHandler name="standard" class="solr.SearchHandler" default="true">
+    </requestHandler>
+
+    <requestHandler name="/update" class="solr.UpdateRequestHandler"/>
 
 </config>

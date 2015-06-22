@@ -17,6 +17,10 @@
 
 package org.apache.lucene.search.concordance.windowvisitor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.corpus.stats.IDFCalc;
@@ -33,11 +37,6 @@ import org.apache.lucene.store.Directory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
 

@@ -18,20 +18,20 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <indexConfig>
-    <!-- set some values to -1 to force the use of internal lucene defaults -->
-    <maxBufferedDocs>-1</maxBufferedDocs>
-    <ramBufferSizeMB>-1</ramBufferSizeMB>
-    <maxIndexingThreads>-1</maxIndexingThreads>
+    <indexConfig>
+        <!-- set some values to -1 to force the use of internal lucene defaults -->
+        <maxBufferedDocs>-1</maxBufferedDocs>
+        <ramBufferSizeMB>-1</ramBufferSizeMB>
+        <maxIndexingThreads>-1</maxIndexingThreads>
 
-    <mergeFactor>11</mergeFactor>
-    <maxMergeDocs>456</maxMergeDocs>
-    <mergePolicy class="${solr.test.log.merge.policy}" />
-  </indexConfig>
+        <mergeFactor>11</mergeFactor>
+        <maxMergeDocs>456</maxMergeDocs>
+        <mergePolicy class="${solr.test.log.merge.policy}"/>
+    </indexConfig>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
+    <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
 
 </config>

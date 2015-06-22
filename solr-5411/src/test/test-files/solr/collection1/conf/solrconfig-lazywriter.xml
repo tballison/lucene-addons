@@ -20,9 +20,9 @@
 <!-- a basic solrconfig that tests can use when they want simple minimal solrconfig/schema
      DO NOT ADD THINGS TO THIS CONFIG! -->
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-  <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
-  <queryResponseWriter name="velocity" class="solr.VelocityResponseWriter" startup="lazy"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
+    <requestHandler name="standard" class="solr.StandardRequestHandler"></requestHandler>
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <queryResponseWriter name="velocity" class="solr.VelocityResponseWriter" startup="lazy"/>
 </config>

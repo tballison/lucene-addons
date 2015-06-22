@@ -19,41 +19,41 @@
 
 <config>
 
-  <dataDir>${solr.data.dir:}</dataDir>
+    <dataDir>${solr.data.dir:}</dataDir>
 
-  <directoryFactory name="DirectoryFactory"
-                    class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}"/>
+    <directoryFactory name="DirectoryFactory"
+                      class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}"/>
 
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
 
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
 
-  <updateHandler class="solr.DirectUpdateHandler2">
-    <updateLog>
-      <str name="dir">${solr.ulog.dir:}</str>
-    </updateLog>
-  </updateHandler>
-  
-  <!-- deep paging better play nice with caching -->
-  <query>
-    <!-- no wautowarming, it screws up our ability to sanity check cache stats in tests -->
-    <filterCache class="solr.FastLRUCache" size="50" initialSize="50" autowarmCount="0"/>
-    <queryResultCache class="solr.LRUCache" size="50" initialSize="50" autowarmCount="0"/>
-    <queryResultWindowSize>50</queryResultWindowSize>
-    <queryResultMaxDocsCached>500</queryResultMaxDocsCached>
-    <!-- randomized so we excersize cursors using various paths in SolrIndexSearcher -->
-    <useFilterForSortedQuery>${solr.test.useFilterForSortedQuery}</useFilterForSortedQuery>
-  </query>
+    <updateHandler class="solr.DirectUpdateHandler2">
+        <updateLog>
+            <str name="dir">${solr.ulog.dir:}</str>
+        </updateLog>
+    </updateHandler>
+
+    <!-- deep paging better play nice with caching -->
+    <query>
+        <!-- no wautowarming, it screws up our ability to sanity check cache stats in tests -->
+        <filterCache class="solr.FastLRUCache" size="50" initialSize="50" autowarmCount="0"/>
+        <queryResultCache class="solr.LRUCache" size="50" initialSize="50" autowarmCount="0"/>
+        <queryResultWindowSize>50</queryResultWindowSize>
+        <queryResultMaxDocsCached>500</queryResultMaxDocsCached>
+        <!-- randomized so we excersize cursors using various paths in SolrIndexSearcher -->
+        <useFilterForSortedQuery>${solr.test.useFilterForSortedQuery}</useFilterForSortedQuery>
+    </query>
 
 
-  <requestHandler name="/get" class="solr.RealTimeGetHandler">
-    <lst name="defaults">
-      <str name="omitHeader">true</str>
-    </lst>
-  </requestHandler>
-  <requestHandler name="/replication" class="solr.ReplicationHandler" startup="lazy" /> 
-  <requestHandler name="/select" class="solr.SearchHandler" default="true" />
-  <requestHandler name="/update" class="solr.UpdateRequestHandler"  />
-  <requestHandler name="/admin/" class="solr.admin.AdminHandlers"  />
+    <requestHandler name="/get" class="solr.RealTimeGetHandler">
+        <lst name="defaults">
+            <str name="omitHeader">true</str>
+        </lst>
+    </requestHandler>
+    <requestHandler name="/replication" class="solr.ReplicationHandler" startup="lazy"/>
+    <requestHandler name="/select" class="solr.SearchHandler" default="true"/>
+    <requestHandler name="/update" class="solr.UpdateRequestHandler"/>
+    <requestHandler name="/admin/" class="solr.admin.AdminHandlers"/>
 </config>
 

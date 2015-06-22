@@ -19,57 +19,57 @@
 
 <config>
 
-  <jmx />
+    <jmx/>
 
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
 
-  <!-- Used to specify an alternate directory to hold all index data.
-       It defaults to "index" if not present, and should probably
-       not be changed if replication is in use. -->
-  <dataDir>${solr.data.dir:}</dataDir>
+    <!-- Used to specify an alternate directory to hold all index data.
+         It defaults to "index" if not present, and should probably
+         not be changed if replication is in use. -->
+    <dataDir>${solr.data.dir:}</dataDir>
 
-  <!--  The DirectoryFactory to use for indexes.
-        solr.StandardDirectoryFactory, the default, is filesystem based.
-        solr.RAMDirectoryFactory is memory based and not persistent. -->
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <!--  The DirectoryFactory to use for indexes.
+          solr.StandardDirectoryFactory, the default, is filesystem based.
+          solr.RAMDirectoryFactory is memory based and not persistent. -->
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
 
-  <updateHandler class="solr.DirectUpdateHandler2"></updateHandler>
-  
-  <queryResponseWriter name="xml" default="true"
-                       class="solr.XMLResponseWriter" />
+    <updateHandler class="solr.DirectUpdateHandler2"></updateHandler>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler">
-  	<bool name="httpCaching">true</bool>
-  	<arr name="first-components">
-      <str>component1</str>
-    </arr>
-    <arr name="last-components">
-      <str>component2</str>
-    </arr>
-  </requestHandler>
+    <queryResponseWriter name="xml" default="true"
+                         class="solr.XMLResponseWriter"/>
 
-  <requestHandler name="/update" class="solr.UpdateRequestHandler"  />
+    <requestHandler name="standard" class="solr.StandardRequestHandler">
+        <bool name="httpCaching">true</bool>
+        <arr name="first-components">
+            <str>component1</str>
+        </arr>
+        <arr name="last-components">
+            <str>component2</str>
+        </arr>
+    </requestHandler>
 
-  <!-- enable streaming for testing... -->
-  <requestDispatcher handleSelect="true" >
-    <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048" />
-    <httpCaching lastModifiedFrom="openTime" etagSeed="Solr" never304="false">
-      <cacheControl>max-age=30, public</cacheControl>
-    </httpCaching>
-  </requestDispatcher>
+    <requestHandler name="/update" class="solr.UpdateRequestHandler"/>
 
-  <admin>
-    <defaultQuery>solr</defaultQuery>
-    <gettableFiles>solrconfig.xml schema.xml admin-extra.html</gettableFiles>
-  </admin>
-  
- <searchComponent name="component1" class="org.apache.solr.search.MockSearchComponent">
-     <str name="testParam">foo</str>
- </searchComponent>
- <searchComponent name="component2" class="org.apache.solr.search.MockSearchComponent">
-     <str name="testParam">bar</str>
- </searchComponent>
+    <!-- enable streaming for testing... -->
+    <requestDispatcher handleSelect="true">
+        <requestParsers enableRemoteStreaming="true" multipartUploadLimitInKB="2048"/>
+        <httpCaching lastModifiedFrom="openTime" etagSeed="Solr" never304="false">
+            <cacheControl>max-age=30, public</cacheControl>
+        </httpCaching>
+    </requestDispatcher>
+
+    <admin>
+        <defaultQuery>solr</defaultQuery>
+        <gettableFiles>solrconfig.xml schema.xml admin-extra.html</gettableFiles>
+    </admin>
+
+    <searchComponent name="component1" class="org.apache.solr.search.MockSearchComponent">
+        <str name="testParam">foo</str>
+    </searchComponent>
+    <searchComponent name="component2" class="org.apache.solr.search.MockSearchComponent">
+        <str name="testParam">bar</str>
+    </searchComponent>
 
 </config>

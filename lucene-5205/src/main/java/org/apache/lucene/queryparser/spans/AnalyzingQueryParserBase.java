@@ -17,6 +17,9 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
@@ -24,10 +27,6 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
-
-import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Enables setting different analyzers for whole term vs.
@@ -42,16 +41,8 @@ import java.util.regex.Pattern;
  */
 public abstract class AnalyzingQueryParserBase extends QueryParserBase {
 
-  public enum NORM_MULTI_TERMS {
-    ANALYZE,
-    LOWERCASE,
-    NONE
-  }
-
-  private NORM_MULTI_TERMS normMultiTerms = NORM_MULTI_TERMS.LOWERCASE;
-
   private static final Pattern WILDCARD_PATTERN = Pattern.compile("(?s)(\\\\.)|([?*]+)");
-
+  private NORM_MULTI_TERMS normMultiTerms = NORM_MULTI_TERMS.LOWERCASE;
   private Analyzer multiTermAnalyzer;
 
   /**
@@ -74,9 +65,6 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
     setNormMultiTerms(NORM_MULTI_TERMS.ANALYZE);
   }
 
-  //TODO: make this protected in QueryParserBase and then override it
-  //modify to throw only parse exception
-
   /**
    * Notionally overrides functionality from analyzeMultitermTerm.  Differences
    * are that this consumes the full tokenstream, and it throws ParseException
@@ -88,9 +76,9 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
    * @return bytesRef to term part
    */
   protected BytesRef analyzeMultitermTermParseEx(String field, String part) throws ParseException {
-    //TODO: Modify QueryParserBase, analyzeMultiTerm doesn't currently consume all tokens, and it 
+    //TODO: Modify QueryParserBase, analyzeMultiTerm doesn't currently consume all tokens, and it
     //throws RuntimeExceptions and IllegalArgumentExceptions instead of parse.
-    //Otherwise this is copied verbatim.  
+    //Otherwise this is copied verbatim.
     TokenStream source;
 
     Analyzer multiTermAnalyzer = getMultiTermAnalyzer(field);
@@ -136,6 +124,9 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
     return BytesRef.deepCopyOf(bytes);
   }
 
+  //TODO: make this protected in QueryParserBase and then override it
+  //modify to throw only parse exception
+
   /**
    * Analysis of wildcards is a bit tricky.  This splits a term by wildcard
    * and then analyzes the subcomponents.
@@ -170,6 +161,16 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
     return sb.toString();
   }
 
+  /**
+   * Returns true if normMultiTerms == NORM_MULTI_TERMS.LOWERCASE
+   *
+   * @deprecated use {@link #getNormMultiTerms()}
+   */
+  @Override
+  @Deprecated
+  public boolean getLowercaseExpandedTerms() {
+    return normMultiTerms == NORM_MULTI_TERMS.LOWERCASE;
+  }
 
   /**
    * If set to true, normMultiTerms is set to NORM_MULTI_TERMS.LOWERCASE.
@@ -186,17 +187,6 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
       normMultiTerms = NORM_MULTI_TERMS.NONE;
     }
     super.setLowercaseExpandedTerms(lc);
-  }
-
-  /**
-   * Returns true if normMultiTerms == NORM_MULTI_TERMS.LOWERCASE
-   *
-   * @deprecated use {@link #getNormMultiTerms()}
-   */
-  @Override
-  @Deprecated
-  public boolean getLowercaseExpandedTerms() {
-    return normMultiTerms == NORM_MULTI_TERMS.LOWERCASE;
   }
 
   /**
@@ -237,5 +227,11 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
     } else if (norm == NORM_MULTI_TERMS.NONE) {
       setLowercaseExpandedTerms(false);
     }
+  }
+
+  public enum NORM_MULTI_TERMS {
+    ANALYZE,
+    LOWERCASE,
+    NONE
   }
 }

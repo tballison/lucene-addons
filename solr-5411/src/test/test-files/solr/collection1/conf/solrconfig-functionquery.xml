@@ -18,26 +18,26 @@
 -->
 
 <config>
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
- 
-  <xi:include href="solrconfig.snippet.randomindexconfig.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
 
-  <!--  The DirectoryFactory to use for indexes.
-        solr.StandardDirectoryFactory, the default, is filesystem based.
-        solr.RAMDirectoryFactory is memory based and not persistent. -->
-  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="solrconfig.snippet.randomindexconfig.xml"/>
 
-  <requestHandler name="standard" class="solr.StandardRequestHandler"/>
+    <!--  The DirectoryFactory to use for indexes.
+          solr.StandardDirectoryFactory, the default, is filesystem based.
+          solr.RAMDirectoryFactory is memory based and not persistent. -->
+    <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
 
-  <updateHandler class="solr.DirectUpdateHandler2"/>
-  <requestHandler name="/update" class="solr.UpdateRequestHandler"  />
+    <requestHandler name="standard" class="solr.StandardRequestHandler"/>
 
-  <requestHandler name="/reloadCache"
-                  class="org.apache.solr.search.function.FileFloatSource$ReloadCacheRequestHandler" />
+    <updateHandler class="solr.DirectUpdateHandler2"/>
+    <requestHandler name="/update" class="solr.UpdateRequestHandler"/>
 
-  <!-- test ValueSourceParser plugins -->
-  <valueSourceParser name="nvl" class="org.apache.solr.search.function.NvlValueSourceParser">
-    <float name="nvlFloatValue">0.0</float>
-  </valueSourceParser>
+    <requestHandler name="/reloadCache"
+                    class="org.apache.solr.search.function.FileFloatSource$ReloadCacheRequestHandler"/>
+
+    <!-- test ValueSourceParser plugins -->
+    <valueSourceParser name="nvl" class="org.apache.solr.search.function.NvlValueSourceParser">
+        <float name="nvlFloatValue">0.0</float>
+    </valueSourceParser>
 
 </config>

@@ -17,11 +17,10 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
-import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
-import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
 
 /**
  * A wgram is similar to a token ngram except...

@@ -23,15 +23,15 @@
 -->
 
 <currencyConfig version="1.0">
-  <rates>
-    <!-- Fake rates for testing -->
-    <rate from="USD" to="JPY" rate="81.29"/>
-    <rate from="USD" to="EUR" rate="2.5"/>
-    <rate from="USD" to="GBP" rate="0.5"/>
-    <rate from="EUR" to="GBP" rate="0.5"/>
-    <rate from="MXN" to="USD" rate="0.5"/>
+    <rates>
+        <!-- Fake rates for testing -->
+        <rate from="USD" to="JPY" rate="81.29"/>
+        <rate from="USD" to="EUR" rate="2.5"/>
+        <rate from="USD" to="GBP" rate="0.5"/>
+        <rate from="EUR" to="GBP" rate="0.5"/>
+        <rate from="MXN" to="USD" rate="0.5"/>
 
-    <!-- Asymmetric rate -->
-    <rate from="EUR" to="USD" rate="0.5"/>
-  </rates>
+        <!-- Asymmetric rate -->
+        <rate from="EUR" to="USD" rate="0.5"/>
+    </rates>
 </currencyConfig>

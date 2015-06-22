@@ -16,6 +16,9 @@
  */
 package org.apache.solr.cloud;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CloudSolrServer;
@@ -24,28 +27,17 @@ import org.apache.solr.client.solrj.request.QueryRequest;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.concurrent.atomic.AtomicReference;
-
 public class RequestWorker extends QueryRequest implements Runnable {
   private static final long serialVersionUID = -670352553424658631L;
 
 
   private final String requestUrl;
   private final String handler;
-
+  protected Boolean mbIsRunning = false;
   @SuppressWarnings("rawtypes")
   private AtomicReference<NamedList> results;
   private SolrServer solrServer;
   private String name;
-
-
-  protected Boolean mbIsRunning = false;
-
-  public Boolean isRunning() {
-    return mbIsRunning;
-  }
 
   public RequestWorker(String url, String handlerPath, SolrParams params) {
     super(params);
@@ -67,17 +59,21 @@ public class RequestWorker extends QueryRequest implements Runnable {
     solrServer = new CloudSolrServer(zk.getZkServerAddress());
   }
 
-  public String getName() {
-    return name;
+  public Boolean isRunning() {
+    return mbIsRunning;
   }
 
-  public String getURL() {
-    return requestUrl;
+  public String getName() {
+    return name;
   }
 
   public RequestWorker setName(String name) {
     this.name = name;
     return this;
+  }
+
+  public String getURL() {
+    return requestUrl;
   }
 
   @Override

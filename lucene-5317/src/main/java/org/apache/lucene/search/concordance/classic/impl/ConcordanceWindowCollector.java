@@ -17,11 +17,10 @@ package org.apache.lucene.search.concordance.classic.impl;
  * limitations under the License.
  */
 
-import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
-import org.apache.lucene.search.concordance.classic.ConcordanceWindow;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
+import org.apache.lucene.search.concordance.classic.ConcordanceWindow;
 
 public class ConcordanceWindowCollector extends AbstractConcordanceWindowCollector {
 

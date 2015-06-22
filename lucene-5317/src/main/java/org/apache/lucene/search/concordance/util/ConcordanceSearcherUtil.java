@@ -17,10 +17,9 @@ package org.apache.lucene.search.concordance.util;
  * limitations under the License.
  */
 
+import java.util.List;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetRequests;
-
-import java.util.List;
 
 /**
  * In other applications with variations on the ConcordanceSearcher, it has been

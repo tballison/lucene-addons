@@ -17,11 +17,11 @@
  limitations under the License.
 -->
 <config>
-  <dataDir>${solr.data.dir:}</dataDir>
+    <dataDir>${solr.data.dir:}</dataDir>
 
-  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+    <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
 
-  <indexConfig>
-    <infoStream>true</infoStream>
-  </indexConfig>
+    <indexConfig>
+        <infoStream>true</infoStream>
+    </indexConfig>
 </config>
