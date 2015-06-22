@@ -26,7 +26,7 @@
     <parent>
         <groupId>org.apache.lucene</groupId>
         <artifactId>lucene-addons-parent</artifactId>
-        <version>1.0</version>
+        <version>6x-1.0</version>
         <relativePath>lucene-addons-parent/pom.xml</relativePath>
     </parent>
 

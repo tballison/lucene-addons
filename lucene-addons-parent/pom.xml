@@ -32,7 +32,7 @@
 
     <groupId>org.apache.lucene</groupId>
     <artifactId>lucene-addons-parent</artifactId>
-    <version>1.0</version>
+    <version>6x-1.0</version>
     <packaging>pom</packaging>
 
     <name>lucene addons parent</name>
