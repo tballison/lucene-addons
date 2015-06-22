@@ -845,8 +845,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       //if single child is itself a SpanNearQuery, inherit slop and inorder
       if (child instanceof SpanNearQuery) {
         SpanQuery[] childsClauses = ((SpanNearQuery)child).getClauses();
-        child = new SpanNearQuery(childsClauses, slop, inOrder);
+        return new SpanNearQuery(childsClauses, slop, inOrder);
       }
+      return child;
     }
 
     if (slop == UNSPECIFIED_SLOP) {

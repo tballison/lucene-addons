@@ -17,6 +17,8 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import static org.apache.lucene.util.automaton.Automata.makeString;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
@@ -28,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.analysis.MockTokenizer;
@@ -61,8 +62,6 @@ import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.Operations;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-
-import static org.apache.lucene.util.automaton.Automata.makeString;
 
 public class TestSpanOnlyQueryParser extends LuceneTestCase {
 
@@ -447,9 +446,16 @@ public class TestSpanOnlyQueryParser extends LuceneTestCase {
     testOffsetForSingleSpanMatch(noStopsParser,
         "[\u666E\u6797\u65AF\u5B66]~2", 6, 0, 6);
 
+    /*
+    Legacy behavior: (TODO: remember why we wanted this)
     //If someone enters in a space delimited phrase within a phrase,
     //treat it literally. There should be no matches.
     countSpansDocs(noStopsParser, "[[lazy dog] ]~4", 0, 0);
+   */
+    //If someone enters in a space delimited phrase within a phrase,
+    //treat it literally. There should be no matches.
+    countSpansDocs(noStopsParser, "[[lazy dog] ]~4", 1, 1);
+
 
     noStopsParser.setAutoGeneratePhraseQueries(false);
 
