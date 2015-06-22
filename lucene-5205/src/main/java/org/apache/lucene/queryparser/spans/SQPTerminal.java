@@ -18,8 +18,8 @@ package org.apache.lucene.queryparser.spans;
  */
 
 /**
- * stub interface to gather SQPTerm, SQPRegexTerm and SQPRangeTerm 
- *  under the same umbrella
+ * stub interface to gather SQPTerm, SQPRegexTerm and SQPRangeTerm
+ * under the same umbrella
  */
 abstract class SQPTerminal extends SQPBoostableToken {
   public abstract String getString();

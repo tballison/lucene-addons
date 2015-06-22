@@ -18,7 +18,7 @@ package org.apache.lucene.queryparser.spans;
  */
 
 class SQPNearClause extends SQPClause {
-  
+
   public static final Boolean UNSPECIFIED_IN_ORDER = null;
 
   private final TYPE type;
@@ -29,13 +29,13 @@ class SQPNearClause extends SQPClause {
   private final int charStartOffset;
   //the character offset at which the contents of this clause end
   private final int charEndOffset;
-  
+
   //a b "the quick" brown
   //charStartOffset=5
   //charEndOffset=13
-  public SQPNearClause(int tokenStartOffset, int tokenEndOffset, 
-      int charStartOffset, int charEndOffset, TYPE type, 
-      boolean hasParams, Boolean inOrder, int slop) {
+  public SQPNearClause(int tokenStartOffset, int tokenEndOffset,
+                       int charStartOffset, int charEndOffset, TYPE type,
+                       boolean hasParams, Boolean inOrder, int slop) {
     super(tokenStartOffset, tokenEndOffset);
     this.type = type;
     this.hasParams = hasParams;
@@ -52,11 +52,11 @@ class SQPNearClause extends SQPClause {
   public int getCharStartOffset() {
     return charStartOffset;
   }
-  
+
   public int getCharEndOffset() {
     return charEndOffset;
   }
-  
+
   public Boolean getInOrder() {
     return inOrder;
   }

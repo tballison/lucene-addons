@@ -4,7 +4,7 @@ package org.apache.lucene.corpus.contrast;
 import org.apache.lucene.util.LuceneTestCase;
 import org.junit.Test;
 
-public class QueryToCorpusContrasterTest extends LuceneTestCase{
+public class QueryToCorpusContrasterTest extends LuceneTestCase {
 
   @Test
   public void test() {

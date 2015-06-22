@@ -17,8 +17,6 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
-import java.io.IOException;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -26,10 +24,11 @@ import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
 
+import java.io.IOException;
+
 /**
  * TokenCharOffsetsReader that captures character offsets by reanalyzing a
  * field.
- * 
  */
 public class ReanalyzingTokenCharOffsetsReader implements
     TokenCharOffsetsReader {
@@ -39,6 +38,7 @@ public class ReanalyzingTokenCharOffsetsReader implements
 
   /**
    * Constructor
+   *
    * @param analyzer to use to get character offsets
    */
   public ReanalyzingTokenCharOffsetsReader(Analyzer analyzer) {
@@ -47,9 +47,9 @@ public class ReanalyzingTokenCharOffsetsReader implements
 
   @Override
   public void getTokenCharOffsetResults(final Document d,
-      final String fieldName, final TokenCharOffsetRequests requests,
-      final RandomAccessCharOffsetContainer results) throws IOException {
-    
+                                        final String fieldName, final TokenCharOffsetRequests requests,
+                                        final RandomAccessCharOffsetContainer results) throws IOException {
+
     int fieldIndex = 0;
     int currPosInc = -1;
     int posIncrementGap = baseAnalyzer.getPositionIncrementGap(fieldName);
@@ -59,19 +59,19 @@ public class ReanalyzingTokenCharOffsetsReader implements
 
       currPosInc = addFieldValue(fieldIndex, currPosInc, charBase, fieldValue, requests,
           results);
-      
+
       if (currPosInc == GOT_ALL_REQUESTS) {
         break;
       }
-      charBase += fieldValue.length()+charOffsetGap;
+      charBase += fieldValue.length() + charOffsetGap;
       currPosInc += posIncrementGap;
       fieldIndex++;
     }
-    
+
   }
 
   private int addFieldValue(int fieldIndex, int currInd, int charBase, String fieldValue,
-      TokenCharOffsetRequests requests, RandomAccessCharOffsetContainer results)
+                            TokenCharOffsetRequests requests, RandomAccessCharOffsetContainer results)
       throws IOException {
     //Analyzer limitAnalyzer = new LimitTokenCountAnalyzer(baseAnalyzer, 10, true);
     TokenStream stream = baseAnalyzer.tokenStream("", fieldValue);
@@ -94,14 +94,14 @@ public class ReanalyzingTokenCharOffsetsReader implements
 
       currInd += (incAtt != null) ? incAtt.getPositionIncrement() : defaultInc;
       if (requests.contains(currInd)) {
-        results.add(currInd, offsetAtt.startOffset()+charBase,
-            offsetAtt.endOffset()+charBase, termAtt.toString());
+        results.add(currInd, offsetAtt.startOffset() + charBase,
+            offsetAtt.endOffset() + charBase, termAtt.toString());
       }
       if (currInd > requests.getLast()) {
         // TODO: Is there a way to avoid this? Or, is this
         // an imaginary performance hit?
         while (stream.incrementToken()) {
-            //NO-OP
+          //NO-OP
         }
         stream.end();
         stream.close();

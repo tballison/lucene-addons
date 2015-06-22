@@ -21,12 +21,12 @@ package org.apache.lucene.queryparser.spans;
 class SQPBoostableToken implements SQPToken {
   private float boost = SpanQueryParserBase.UNSPECIFIED_BOOST;
 
-  public void setBoost(float boost) {
-    this.boost = boost;
-  }
-  
   public float getBoost() {
     return boost;
+  }
+
+  public void setBoost(float boost) {
+    this.boost = boost;
   }
 
   @Override

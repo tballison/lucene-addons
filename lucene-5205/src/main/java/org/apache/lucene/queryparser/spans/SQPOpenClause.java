@@ -20,7 +20,7 @@ package org.apache.lucene.queryparser.spans;
 class SQPOpenClause extends SQPClause {
   private final TYPE type;
   private final int startCharOffset;
-  
+
   public SQPOpenClause(int startTokenOffset, int startCharOffset, TYPE type) {
     super(startTokenOffset);
     this.type = type;
@@ -30,7 +30,7 @@ class SQPOpenClause extends SQPClause {
   public int getStartCharOffset() {
     return startCharOffset;
   }
-  
+
   public TYPE getType() {
     return type;
   }

@@ -11,11 +11,17 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>lucene-5317</artifactId>
+    <version>1.0</version>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-test-framework</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analyzers-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>

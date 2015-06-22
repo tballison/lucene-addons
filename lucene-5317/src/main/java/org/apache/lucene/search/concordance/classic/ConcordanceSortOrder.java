@@ -20,7 +20,6 @@ package org.apache.lucene.search.concordance.classic;
 
 /**
  * Options for sorting ConcordanceWindows
- *
  */
 public enum ConcordanceSortOrder {
   PRE, // sort on the first token before the target, then the second word, etc.

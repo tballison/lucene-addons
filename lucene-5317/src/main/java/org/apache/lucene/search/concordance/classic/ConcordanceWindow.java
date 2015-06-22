@@ -25,13 +25,12 @@ import java.util.Map;
  * before a target term (pre), the target term and then the words after the
  * target term (post). A window also has a sort key to allow for various methods
  * of sorting.
- * 
+ * <p/>
  * For various applications, it has also been useful to store a unique document key,
  * character offset (start and end) of the full
  * window as well as metadata from the document for the given window.
- * 
+ * <p/>
  * This class is experimental and may change in incompatible ways in the future.
- * 
  */
 public class ConcordanceWindow {
 
@@ -45,20 +44,19 @@ public class ConcordanceWindow {
   //used by hide duplicates to count more than one occurrence of a window
   private int count = 1;
   private Map<String, String> metadata;
-  
+
   /**
-   * 
    * @param uniqueDocID string representing what should be a unique document identifier
-   * @param charStart character offset start for the window
-   * @param charEnd character offset end for the window
-   * @param pre words before the target in reading order and unanalyzed
-   * @param target target string
-   * @param post string after the target in reading order and unanalyzed
-   * @param sortKey key to use for sorting this window
-   * @param metadata metadata to store with this window
+   * @param charStart   character offset start for the window
+   * @param charEnd     character offset end for the window
+   * @param pre         words before the target in reading order and unanalyzed
+   * @param target      target string
+   * @param post        string after the target in reading order and unanalyzed
+   * @param sortKey     key to use for sorting this window
+   * @param metadata    metadata to store with this window
    */
   public ConcordanceWindow(String uniqueDocID, int charStart, int charEnd, String pre,
-      String target, String post, ConcordanceSortKey sortKey, Map<String, String> metadata) {
+                           String target, String post, ConcordanceSortKey sortKey, Map<String, String> metadata) {
     this.pre = pre;
     this.target = target;
     this.post = post;
@@ -96,17 +94,17 @@ public class ConcordanceWindow {
   public String getTarget() {
     return target;
   }
-  
-  public int getCount(){
+
+  public int getCount() {
     return count;
   }
-  
-  public void incrementCount(){
-    count++;
-  }
-  
-  public void setCount(int count){
+
+  public void setCount(int count) {
     this.count = count;
+  }
+
+  public void incrementCount() {
+    count++;
   }
 
   public int getSize() {
@@ -172,9 +170,9 @@ public class ConcordanceWindow {
     }
     return true;
   }
-  
-  @Override 
-  public String toString(){
+
+  @Override
+  public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append(pre).append(">>>").append(target).append("<<<").append(post);
     return sb.toString();

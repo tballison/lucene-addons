@@ -18,15 +18,16 @@ package org.apache.lucene.search.concordance.classic;
  */
 
 
-import java.util.Map;
-
 import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
 
+import java.util.Map;
+
 public interface SortKeyBuilder {
-  
+
   /**
-   * Builds a sort key from the classic TokenCharOffsetResults object 
-   * @param docKey to be used if sorting by document key
+   * Builds a sort key from the classic TokenCharOffsetResults object
+   *
+   * @param docKey                 to be used if sorting by document key
    * @param startTargetTokenOffset
    * @param endTargetTokenOffset
    * @param charOffsets
@@ -39,8 +40,10 @@ public interface SortKeyBuilder {
                               int startTargetTokenOffset, int endTargetTokenOffset,
                               RandomAccessCharOffsetContainer charOffsets,
                               int numTokensPre, int numTokensPost, Map<String, String> metadata);
-  
+
   public boolean requiresAnalysisOfPre();
+
   public boolean requiresAnalysisOfPost();
+
   public boolean requiresAnalysisOfTarget();
 }

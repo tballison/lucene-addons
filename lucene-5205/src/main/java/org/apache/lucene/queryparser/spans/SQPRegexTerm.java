@@ -19,7 +19,7 @@ package org.apache.lucene.queryparser.spans;
 
 class SQPRegexTerm extends SQPTerminal {
   private String term;
-  
+
   public SQPRegexTerm(String t) {
     this.term = t;
   }

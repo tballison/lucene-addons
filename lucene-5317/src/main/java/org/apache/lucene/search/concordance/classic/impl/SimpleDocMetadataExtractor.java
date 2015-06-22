@@ -17,31 +17,33 @@ package org.apache.lucene.search.concordance.classic.impl;
  * limitations under the License.
  */
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * Simple class that returns a map of key value pairs
- * for the fields specified by {@link #setFieldSelector(java.util.Set)}.
+ * for the fields specified during initialization.
  * <p/>
- * For multi-valued fields, this will take only the first value.
- *
+ * Beware! For multi-valued fields, this will take only the first value.
  */
 public class SimpleDocMetadataExtractor implements DocMetadataExtractor {
 
   private Set<String> fields = new HashSet<String>();
 
-  public void setFieldSelector(Set<String> f) {
-    fields.clear();
-    for (String s : f) {
-      fields.add(s);
+  public SimpleDocMetadataExtractor(String... fields) {
+    for (String f : fields) {
+      this.fields.add(f);
     }
+  }
+
+  public void addField(String f) {
+    fields.add(f);
   }
 
   @Override
@@ -62,5 +64,5 @@ public class SimpleDocMetadataExtractor implements DocMetadataExtractor {
     }
     return map;
   }
- 
+
 }

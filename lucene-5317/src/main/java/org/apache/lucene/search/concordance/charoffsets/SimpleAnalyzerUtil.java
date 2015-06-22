@@ -17,13 +17,13 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -34,8 +34,8 @@ public class SimpleAnalyzerUtil {
 
   /**
    * Returns simple list of analyzed strings
-   * 
-   * @param s string to analyze
+   *
+   * @param s        string to analyze
    * @param analyzer analyzer
    * @return list of string tokens
    * @throws java.io.IOException
@@ -49,15 +49,15 @@ public class SimpleAnalyzerUtil {
   /**
    * allows reuse of terms, this method calls terms.clear() before adding new
    * terms
-   * 
-   * @param s string to analyze
+   *
+   * @param s        string to analyze
    * @param analyzer analyzer
-   * @param terms list for reuse
+   * @param terms    list for reuse
    * @return list of strings
    * @throws java.io.IOException
    */
   public static List<String> getTermStrings(String s, Analyzer analyzer,
-      List<String> terms) throws IOException {
+                                            List<String> terms) throws IOException {
     if (terms == null) {
       terms = new ArrayList<String>();
     }
@@ -66,43 +66,42 @@ public class SimpleAnalyzerUtil {
     stream.reset();
     CharTermAttribute termAtt = stream
         .getAttribute(org.apache.lucene.analysis.tokenattributes.CharTermAttribute.class);
-    
+
 
     while (stream.incrementToken()) {
       terms.add(termAtt.toString());
     }
     stream.end();
     stream.close();
-    
+
     return terms;
   }
 
   /**
    * This calculates a substring from an array of StorableFields.
-   * 
+   * <p/>
    * This attempts to do the best job possible, and at worst will
    * return an empty string.  If the start or end is within a gap,
    * or before 0 or after the total number of characters, this will
    * gracefully (blithely?) handle those cases.
-   * 
-   * 
-   * @param start character offset to start
-   * @param end character offset to end
-   * @param fieldValues array of Strings to process
-   * @param offsetGap offsetGap as typically returned by Analyzer's .getOffsetGap()
+   *
+   * @param start            character offset to start
+   * @param end              character offset to end
+   * @param fieldValues      array of Strings to process
+   * @param offsetGap        offsetGap as typically returned by Analyzer's .getOffsetGap()
    * @param interFieldJoiner string to use to mark that a substring goes beyond a single
-   * field entry
+   *                         field entry
    * @return substring, potentially empty, never null.
    */
-  public static String substringFromMultiValuedFields(int start, 
-      int end, String[] fieldValues, int offsetGap, String interFieldJoiner) {
+  public static String substringFromMultiValuedFields(int start,
+                                                      int end, String[] fieldValues, int offsetGap, String interFieldJoiner) {
     start = (start < 0) ? 0 : start;
-    end = (end < 0) ? 0: end;
-    
+    end = (end < 0) ? 0 : end;
+
     if (start > end) {
       start = end;
     }
-    
+
     int charBase = 0;
     StringBuilder sb = new StringBuilder();
     int lastFieldIndex = 0;
@@ -111,13 +110,13 @@ public class SimpleAnalyzerUtil {
     //get start
     for (int fieldIndex = 0; fieldIndex < fieldValues.length; fieldIndex++) {
       String fString = fieldValues[fieldIndex];
-      if (start < charBase+fString.length()) {
-        localStart = start-charBase;
+      if (start < charBase + fString.length()) {
+        localStart = start - charBase;
         lastFieldIndex = fieldIndex;
         foundStart = true;
         break;
       }
-      charBase += fString.length()+offsetGap;
+      charBase += fString.length() + offsetGap;
     }
     if (foundStart == false) {
       return "";
@@ -131,8 +130,8 @@ public class SimpleAnalyzerUtil {
     for (int fieldIndex = lastFieldIndex; fieldIndex < fieldValues.length; fieldIndex++) {
       String fString = fieldValues[fieldIndex];
 
-      if (end <= charBase+fString.length()) {
-        int localEnd = end-charBase;
+      if (end <= charBase + fString.length()) {
+        int localEnd = end - charBase;
         //must be in gap
         if (charBase > end) {
           return sb.toString();
@@ -149,8 +148,8 @@ public class SimpleAnalyzerUtil {
         sb.append(fString.substring(localStart));
         localStart = 0;
       }
-      charBase += fString.length()+offsetGap;
+      charBase += fString.length() + offsetGap;
     }
     return sb.toString();
- }
+  }
 }

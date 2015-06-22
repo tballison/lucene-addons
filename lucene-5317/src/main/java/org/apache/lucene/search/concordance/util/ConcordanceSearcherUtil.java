@@ -17,18 +17,17 @@ package org.apache.lucene.search.concordance.util;
  * limitations under the License.
  */
 
-import java.util.List;
-
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetRequests;
+
+import java.util.List;
 
 /**
  * In other applications with variations on the ConcordanceSearcher, it has been
  * useful to factor out the getCharOffsetRequests.
- * 
+ * <p/>
  * This class should be used for functionality that is generally useful for
  * concordance searching.
- * 
  */
 public class ConcordanceSearcherUtil {
 
@@ -37,21 +36,21 @@ public class ConcordanceSearcherUtil {
    * Simple utility method to build a TokenCharOffsetRequests object
    * from a list of desired tokenOffsets, the number of tokensBefore
    * and the number of tokensAfter.
-   * 
+   *
    * @param tokenOffsets the tokenOffsets that are desired
    * @param tokensBefore the number of tokens before a desired tokenOffset
-   * @param tokensAfter the number of tokens after a desired tokenOffset
-   * @param requests an empty requests to be filled in
+   * @param tokensAfter  the number of tokens after a desired tokenOffset
+   * @param requests     an empty requests to be filled in
    */
   public static void getCharOffsetRequests(
       List<OffsetAttribute> tokenOffsets,
       int tokensBefore, int tokensAfter,
       TokenCharOffsetRequests requests) {
-    
+
     for (OffsetAttribute tokenOffset : tokenOffsets) {
       int start = tokenOffset.startOffset() - tokensBefore;
       start = (start < 0) ? 0 : start;
-      int end = tokenOffset.endOffset() + tokensAfter+1;
+      int end = tokenOffset.endOffset() + tokensAfter + 1;
       for (int i = start; i < end; i++) {
         requests.add(i);
       }

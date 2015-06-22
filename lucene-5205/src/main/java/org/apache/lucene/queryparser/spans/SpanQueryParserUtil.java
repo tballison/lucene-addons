@@ -18,16 +18,16 @@ package org.apache.lucene.queryparser.spans;
 
 public class SpanQueryParserUtil {
 
-    protected static boolean isCharEscaped(String s, int i) {
-      int j = i;
-      int esc = 0;
-      while (--j >=0 && s.charAt(j) == '\\') {
-        esc++;
-      }
-      if (esc % 2 == 0) {
-        return false;
-      }
-      return true;
+  protected static boolean isCharEscaped(String s, int i) {
+    int j = i;
+    int esc = 0;
+    while (--j >= 0 && s.charAt(j) == '\\') {
+      esc++;
     }
+    if (esc % 2 == 0) {
+      return false;
+    }
+    return true;
+  }
 
 }

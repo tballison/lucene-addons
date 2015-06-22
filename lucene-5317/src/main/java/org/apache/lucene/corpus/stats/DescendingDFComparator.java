@@ -21,26 +21,25 @@ package org.apache.lucene.corpus.stats;
 import java.util.Comparator;
 
 /**
- * Comparator for 
- * a) descending doc frequency 
- *    then 
- * b) descending term frequency 
- *    then
+ * Comparator for
+ * a) descending doc frequency
+ * then
+ * b) descending term frequency
+ * then
  * c) ascending alphabetic term
- *
  */
-public class DescendingDFComparator implements Comparator<TermDFTF>{
+public class DescendingDFComparator implements Comparator<TermDFTF> {
 
   @Override
   public int compare(TermDFTF a, TermDFTF b) {
-    if (a.docFreq < b.docFreq){
+    if (a.docFreq < b.docFreq) {
       return 1;
-    } else if (a.docFreq > b.docFreq){
+    } else if (a.docFreq > b.docFreq) {
       return -1;
     }
-    if (a.termFreq < b.termFreq){
+    if (a.termFreq < b.termFreq) {
       return 1;
-    } else if (a.termFreq > b.termFreq){
+    } else if (a.termFreq > b.termFreq) {
       return -1;
     }
     return a.term.compareTo(b.term);

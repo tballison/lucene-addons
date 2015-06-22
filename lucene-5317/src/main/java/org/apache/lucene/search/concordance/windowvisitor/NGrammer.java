@@ -17,24 +17,24 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class NGrammer extends Grammer {
 
-  public NGrammer(int minGram, int maxGram){
+  public NGrammer(int minGram, int maxGram) {
     super(minGram, maxGram);
   }
 
   /**
    * current implementation ignores stopIndices
    */
-  public List<String> getGrams(List<String> strings, 
-      String delimiter) {
+  public List<String> getGrams(List<String> strings,
+                               String delimiter) {
     if (getMinGram() == 1 && getMaxGram() == 1) {
       return strings;
     }

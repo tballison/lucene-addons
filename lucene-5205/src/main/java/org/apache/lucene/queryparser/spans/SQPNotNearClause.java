@@ -18,16 +18,16 @@ package org.apache.lucene.queryparser.spans;
  */
 
 class SQPNotNearClause extends SQPClause {
-  
+
   public static final int NOT_DEFAULT = 0;
 
   private final TYPE type;
-  
+
   private final int notPre;
   private final int notPost;
-  
-  public SQPNotNearClause(int tokenStartOffset, int tokenEndOffset, TYPE type, 
-      int notPre, int notPost) {
+
+  public SQPNotNearClause(int tokenStartOffset, int tokenEndOffset, TYPE type,
+                          int notPre, int notPost) {
     super(tokenStartOffset, tokenEndOffset);
     this.type = type;
     this.notPre = notPre;
@@ -90,7 +90,7 @@ class SQPNotNearClause extends SQPClause {
     builder.append(", notPost=");
     builder.append(notPost);
     builder.append("]");
-    builder.append( getTokenOffsetStart()).append(": ").append(getTokenOffsetEnd());
+    builder.append(getTokenOffsetStart()).append(": ").append(getTokenOffsetEnd());
     return builder.toString();
   }
 }

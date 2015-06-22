@@ -22,18 +22,18 @@ class SQPRangeTerm extends SQPTerminal {
   private final String end;
   private final boolean startInclusive;
   private final boolean endInclusive;
-  
+
   public SQPRangeTerm(String from, String to, boolean startInclusive, boolean endInclusive) {
     this.start = from;
     this.end = to;
     this.startInclusive = startInclusive;
     this.endInclusive = endInclusive;
   }
-  
+
   public String getStart() {
     return start;
   }
-  
+
   public String getEnd() {
     return end;
   }
@@ -41,7 +41,7 @@ class SQPRangeTerm extends SQPTerminal {
   public boolean getStartInclusive() {
     return startInclusive;
   }
-  
+
   public boolean getEndInclusive() {
     return endInclusive;
   }
@@ -52,7 +52,7 @@ class SQPRangeTerm extends SQPTerminal {
     sb.append(start).append(" TO ").append(end);
     return sb.toString();
   }
-  
+
   @Override
   public int hashCode() {
     final int prime = 31;

@@ -22,33 +22,29 @@ import java.util.Map;
 /**
  * Simple class to hold document frequencies and term frequencies
  * for terms.
- *
  */
 public class SimpleTargetTermResults {
   private final Map<String, Integer> tfs;
   private final Map<String, Integer> dfs;
-  
+
   /**
-   * 
    * @param dfs document frequencies
    * @param tfs term frequencies
    */
-  protected SimpleTargetTermResults(Map<String, Integer> dfs, 
-      Map<String, Integer> tfs) {
+  protected SimpleTargetTermResults(Map<String, Integer> dfs,
+                                    Map<String, Integer> tfs) {
     this.dfs = dfs;
     this.tfs = tfs;
   }
-  
+
   /**
-   * 
    * @return term frequency map
    */
   public Map<String, Integer> getTermFreqs() {
     return tfs;
   }
-  
+
   /**
-   * 
    * @return document frequency map
    */
   public Map<String, Integer> getDocFreqs() {

@@ -17,31 +17,29 @@ package org.apache.lucene.search.concordance.classic;
  * limitations under the License.
  */
 
+import org.apache.lucene.document.Document;
+
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.lucene.document.Document;
 
 /**
  * Simple interface for a component that extracts metadata from
  * a document to be stored with a ConcordanceWindow
- *
  */
 public interface DocMetadataExtractor {
+
   /**
-   * 
    * @return the fields that need to be retrieved for the document
    * for proper processing
    */
   public Set<String> getFieldSelector();
-  
+
   /**
-   * 
    * @param document to be processed for metadata.  Only those fields
-   * that were returned by {@link #getFieldSelector()} will be loaded
-   * in the document
+   *                 that were returned by {@link #getFieldSelector()} will be loaded
+   *                 in the document
    * @return document metadata to be stored with each window
    */
   public Map<String, String> extract(Document document);
-  
+
 }

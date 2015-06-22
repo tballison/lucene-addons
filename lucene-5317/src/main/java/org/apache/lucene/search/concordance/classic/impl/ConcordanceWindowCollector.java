@@ -17,24 +17,24 @@ package org.apache.lucene.search.concordance.classic.impl;
  * limitations under the License.
  */
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
 import org.apache.lucene.search.concordance.classic.ConcordanceWindow;
 
-public class ConcordanceWindowCollector extends AbstractConcordanceWindowCollector{
+import java.util.ArrayList;
+import java.util.List;
+
+public class ConcordanceWindowCollector extends AbstractConcordanceWindowCollector {
 
   private List<ConcordanceWindow> windows = new ArrayList<ConcordanceWindow>();
-  
-  public ConcordanceWindowCollector(int maxWindows){
+
+  public ConcordanceWindowCollector(int maxWindows) {
     super(maxWindows);
   }
-  
+
   @Override
-  public void collect(ConcordanceWindow w){
+  public void collect(ConcordanceWindow w) {
     if (getMaxWindows() != AbstractConcordanceWindowCollector.COLLECT_ALL
-        && windows.size() >= getMaxWindows()){
+        && windows.size() >= getMaxWindows()) {
       setHitMax(true);
       return;
     }
@@ -51,6 +51,6 @@ public class ConcordanceWindowCollector extends AbstractConcordanceWindowCollect
   public List<ConcordanceWindow> getWindows() {
     return windows;
   }
-  
-  
+
+
 }

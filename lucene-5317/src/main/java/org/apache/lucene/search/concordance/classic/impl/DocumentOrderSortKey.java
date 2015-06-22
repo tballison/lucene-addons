@@ -16,29 +16,29 @@ package org.apache.lucene.search.concordance.classic.impl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import org.apache.lucene.search.concordance.classic.ConcordanceSortKey;
 
 /**
  * This sorts based alphabetically on the document key
- * and then numerically on the 
- *
+ * and then numerically on the
  */
-public class DocumentOrderSortKey extends ConcordanceSortKey{
-  
+public class DocumentOrderSortKey extends ConcordanceSortKey {
+
   protected final int targetCharStart;
-  
+
   public DocumentOrderSortKey(String docKey, int targetCharStart) {
     super(docKey);
     this.targetCharStart = targetCharStart;
   }
-  
+
   @Override
   public int compareTo(ConcordanceSortKey o) {
     if (o instanceof DocumentOrderSortKey) {
-      DocumentOrderSortKey other = (DocumentOrderSortKey)o;
+      DocumentOrderSortKey other = (DocumentOrderSortKey) o;
       int cmp = super.compareTo(o);
-      if (cmp == 0){
-        return Integer.compare(targetCharStart, other.targetCharStart); 
+      if (cmp == 0) {
+        return Integer.compare(targetCharStart, other.targetCharStart);
       }
       return cmp;
     } else {
