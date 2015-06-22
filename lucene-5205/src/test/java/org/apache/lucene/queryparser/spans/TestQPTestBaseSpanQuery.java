@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
@@ -266,26 +265,15 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
    * Overridden tests follow
    */
 
+
+
+
   @Override
   public void testCollatedRange() throws Exception {
     CommonQueryParserConfiguration qp = getParserConfig(new MockCollationAnalyzer(), new MockCollationAnalyzer());
     Query expected = TermRangeQuery.newStringRange(getDefaultField(), "collatedabc", "collateddef", true, true);
     Query actual = getQuery("[abc TO def]", qp);
     assertQueryEquals(expected, actual);
-  }
-
-  @Override
-  public void testCJKTerm() throws Exception {
-    // individual CJK chars as terms
-    SimpleCJKAnalyzer analyzer = new SimpleCJKAnalyzer();
-    
-    SpanOrQuery expected = new SpanOrQuery(
-        new SpanQuery[]{
-            new SpanTermQuery(new Term("field", "中")),
-            new SpanTermQuery(new Term("field", "国"))
-        }
-        );
-    assertEquals(expected, getQuery("中国", analyzer));
   }
 
   @Override
@@ -300,14 +288,6 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     assertEquals(bq, getQuery("中国^0.5", analyzer));
   }
 
-  @Override
-  public void testNestedAndClausesFoo() throws Exception {
-    String query = "(field1:[1 TO *] AND field1:[* TO 2]) AND field2:(z)";
-    Query q = getQuery(query);
-    assertEquals("nestedAndClausesFoo",
-        "+(+SpanMultiTermQueryWrapper(field1:[1 TO *]) +SpanMultiTermQueryWrapper(field1:[* TO 2])) +field2:z",
-        q.toString());
-  }
 
   @Override
   public void testPhraseQueryToString() throws Exception {

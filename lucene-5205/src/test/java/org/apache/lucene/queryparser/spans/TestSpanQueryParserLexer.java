@@ -39,7 +39,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
   }
 
   public void testSingleDebug() throws Exception {
-    String s = "(term)^2.0";
+    String s = "*:*^2.0";
     List<SQPToken> tokens = lexer.getTokens(s);
     for (SQPToken t : tokens) {
       System.out.println(t.getClass() + " : " + t);
@@ -199,6 +199,31 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     testParseException("fox~+1.0");
     testParseException("fox~+1");
 
+  }
+
+
+  public void testAllDocs() throws ParseException {
+    SQPAllDocsTerm truth = new SQPAllDocsTerm();
+    executeSingleTokenTest(
+        "*:*",
+        0,
+        truth
+    );
+
+
+    truth.setBoost(2.3f);
+    executeSingleTokenTest(
+        "*:*^2.3",
+        0,
+        truth
+    );
+
+    SQPWildcardTerm wildcardTerm = new SQPWildcardTerm("*foobar");
+    executeSingleTokenTest(
+        "*:*foobar",
+        1,
+        wildcardTerm
+    );
   }
 
   public void testWildcard() throws ParseException {

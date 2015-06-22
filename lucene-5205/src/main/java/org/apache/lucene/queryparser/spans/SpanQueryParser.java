@@ -282,11 +282,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
         i = tmpNotNear.getTokenOffsetEnd();
       } else if (token instanceof SQPTerminal) {
         SQPTerminal tmpTerm = (SQPTerminal)token;
-        if (tmpTerm instanceof SQPAllDocsTerm) {
-          q = new MatchAllDocsQuery();
-        } else {
-          q = buildTerminal(currField, tmpTerm);
-        }
+        q = buildTerminal(currField, tmpTerm);
         i++;
       } else {
         //throw exception because this could lead to an infinite loop

@@ -182,13 +182,6 @@ class SpanQueryLexer {
 
         case COLON:
           String fieldName = tokenBuffer.toString();
-          if (fieldName.equals("*")) {
-            if(tryAllDocs()) {
-              tokens.add(new SQPAllDocsTerm());
-              resetTokenBuffer();
-              return true;
-            }
-          }
           resetTokenBuffer();
           tryToAddField(fieldName);
           return true;
@@ -245,7 +238,7 @@ class SpanQueryLexer {
           break;
 
         case EXCLAMATION :
-          if (tokenBuffer.length() == 0 && ! isNextBreak()) {
+          if (tokenBuffer.length() == 0 && ! isNextBreak() && nearDepth == 0) {
             flushBuffer();
             SQPBooleanOpToken notToken = new SQPBooleanOpToken(SpanQueryParserBase.MOD_NOT);
             testBooleanTokens(tokens, notToken);
@@ -255,7 +248,7 @@ class SpanQueryLexer {
           break;
 
         case AMPERSAND :
-          if (tokenBuffer.length() == 0) {
+          if (tokenBuffer.length() == 0 && nearDepth == 0) {
             int n = reader.read();
             if (n == AMPERSAND && isNextBreak()) {
               flushBuffer();
@@ -434,15 +427,6 @@ class SpanQueryLexer {
       return;
     }
     tokens.set(open.getTokenOffsetStart(), newClause);
-  }
-
-  private boolean tryAllDocs() throws IOException {
-    int n0 = reader.read();
-    if (n0 != STAR) {
-      tryToUnread(n0);
-      return false;
-    }
-    return isNextBreak();
   }
 
   private boolean isNextWhitespaceOrEnd() throws IOException {
@@ -709,6 +693,22 @@ class SpanQueryLexer {
       return;
     }
     String term = tokenBuffer.toString();
+    //test for AllDocs
+    if (term.length() == 1 && term.codePointAt(0) == STAR) {
+      if (tokens.size() > 0) {
+        SQPToken t = tokens.get(tokens.size()-1);
+        if (t instanceof SQPField &&
+            ((SQPField)t).getField().equals("*")){
+          SQPAllDocsTerm allDocs = new SQPAllDocsTerm();
+          if (boost != null) {
+            allDocs.setBoost(boost);
+          }
+          tokens.set(tokens.size()-1, allDocs);
+          resetTokenBuffer();
+          return;
+        }
+      }
+    }
 
     //The regex over-captures on a term...Term could be:
     //AND or NOT boolean defaultOperator; and term could have boost
@@ -739,9 +739,7 @@ class SpanQueryLexer {
     }
     //now trim escapes if there are no wildcard characters
     if (wildcardQuestionMarks == 0) {
-      System.out.println("NO WILD CARD: "+tokenBuffer.toString());
       term = stripEscapes(tokenBuffer.toString());
-      System.out.println("AFTER: "+term);
     }
 
     SQPToken token = null;
