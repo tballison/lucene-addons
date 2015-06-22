@@ -28,7 +28,6 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.spans.SpanQuery;
-import org.apache.lucene.util.Version;
 
 /**
  * This parser leverages the power of SpanQuery and can combine them with
@@ -203,12 +202,12 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
 
   private String topLevelQueryString;
 
-  public SpanQueryParser(Version matchVersion, String f, Analyzer a) {
-    init(matchVersion, f, a);
+  public SpanQueryParser(String f, Analyzer a) {
+    init(f, a);
   }
 
-  public SpanQueryParser(Version matchVersion, String f, Analyzer a, Analyzer multitermAnalyzer) {
-    init(matchVersion, f, a, multitermAnalyzer);
+  public SpanQueryParser(String f, Analyzer a, Analyzer multitermAnalyzer) {
+    init(f, a, multitermAnalyzer);
   }
 
   /**
@@ -260,7 +259,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
     int start = clause.getTokenOffsetStart();
     int end = clause.getTokenOffsetEnd();
     testStartEnd(tokens, start, end);
-    List<BooleanClause> clauses = new ArrayList<BooleanClause>();
+    List<BooleanClause> clauses = new ArrayList<>();
     int conj = CONJ_NONE;
     int mods = MOD_NONE;
     String tmpField = field;
@@ -291,9 +290,6 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
         SQPOrClause tmpOr = (SQPOrClause) token;
         q = parseRecursively(tokens, tmpField, tmpOr);
 
-        if (q instanceof BooleanQuery && tmpOr.getMinimumNumberShouldMatch() > 1) {
-          ((BooleanQuery) q).setMinimumNumberShouldMatch(tmpOr.getMinimumNumberShouldMatch());
-        }
         if (q.getBoost() == 1.0f
             && tmpOr.getBoost() != SpanQueryParserBase.UNSPECIFIED_BOOST) {
           q.setBoost(tmpOr.getBoost());
@@ -356,23 +352,36 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
       return clauses.get(0).getQuery();
     }
 
-    BooleanQuery bq = new BooleanQuery();
+    BooleanQuery.Builder bqBuilder = new BooleanQuery.Builder();
     try {
       for (BooleanClause bc : clauses) {
-        bq.add(bc);
+        bqBuilder.add(bc);
       }
     } catch (BooleanQuery.TooManyClauses e) {
       throw new ParseException(e.getMessage());
     }
+    /*TODO:
+      we used to have this
+    if (q instanceof BooleanQuery && tmpOr.getMinimumNumberShouldMatch() > 1) {
 
+      ((BooleanQuery) q).setMinimumNumberShouldMatch(tmpOr.getMinimumNumberShouldMatch());
+    }
+
+    after
+          if (token instanceof SQPOrClause) {
+        //recur!
+        SQPOrClause tmpOr = (SQPOrClause) token;
+        q = parseRecursively(tokens, tmpField, tmpOr);
+
+    do we need to alter whether we get minimumNumberShouldMatch from tmpClause or clause???
+    */
     if (clause instanceof SQPOrClause) {
       SQPOrClause tmpClause = (SQPOrClause) clause;
       if (tmpClause.getMinimumNumberShouldMatch() > SQPOrClause.DEFAULT_MINIMUM_NUMBER_SHOULD_MATCH) {
-        bq.setMinimumNumberShouldMatch(tmpClause.getMinimumNumberShouldMatch());
+        bqBuilder.setMinimumNumberShouldMatch(tmpClause.getMinimumNumberShouldMatch());
       }
     }
-
-    return bq;
+    return bqBuilder.build();
   }
 
   //This is necessary for Solr-ization or anywhere that someone might override getAnalyer(field)
@@ -453,8 +462,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
       }
     } else if (query instanceof BooleanQuery) {
       BooleanQuery bq = (BooleanQuery) query;
-      BooleanClause[] clauses = bq.getClauses();
-      for (BooleanClause clause : clauses) {
+      for (BooleanClause clause : bq.clauses()) {
         if (clause.getOccur() != Occur.MUST_NOT) {
           extractSpanQueries(field, clause.getQuery(), sqs);
         }
@@ -466,7 +474,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
 
   /**
    * If the query contains only Occur.MUST_NOT clauses,
-   * this will add a MatchAllDocsQuery.
+   * this will copy to a new BooleanQuery add a MatchAllDocsQuery.
    *
    * @return query
    */
@@ -474,8 +482,8 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
 
     if (q instanceof BooleanQuery) {
       BooleanQuery bq = (BooleanQuery) q;
-      BooleanClause[] clauses = bq.getClauses();
-      if (clauses.length == 0) {
+      List<BooleanClause> clauses = bq.clauses();
+      if (clauses.size() == 0) {
         return q;
       }
       for (BooleanClause clause : clauses) {
@@ -484,9 +492,14 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
           return q;
         }
       }
-      BooleanQuery ret = bq.clone();
-      ret.add(new MatchAllDocsQuery(), Occur.MUST);
-      return ret;
+      BooleanQuery.Builder builder = new BooleanQuery.Builder();
+      for (BooleanClause clause : bq.clauses()) {
+        builder.add(clause);
+      }
+      builder.add(new MatchAllDocsQuery(), Occur.MUST);
+      builder.setMinimumNumberShouldMatch(bq.getMinimumNumberShouldMatch());
+      builder.setDisableCoord(bq.isCoordDisabled());
+      return builder.build();
     }
     return q;
   }

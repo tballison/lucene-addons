@@ -28,8 +28,7 @@ public class TestComplexPhraseSpanQuery extends TestComplexPhraseQuery {
 
   @Override
   public Query getQuery(String qString) throws Exception {
-    SpanQueryParser p = new SpanQueryParser(TEST_VERSION_CURRENT,
-        defaultFieldName, analyzer);
+    SpanQueryParser p = new SpanQueryParser(defaultFieldName, analyzer);
     return p.parse(qString);
   }
 

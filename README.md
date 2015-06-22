@@ -1,12 +1,16 @@
 lucene-addons
 ======================
 
-Standalone versions of LUCENE_5205 and other patches.
+Standalone versions of LUCENE-5205 and other patches.
 
 Main Branches:
-solr-collab tracks with Lucene/Solr 4.x
-solr-collab-5x tracks with Lucene/Solr 5.x
-master tracks with Lucene/Solr 6.0.0-SNAPSHOT
+1. solr-collab tracks with Lucene/Solr 4.x
+2. solr-collab-5x tracks with Lucene/Solr 5.x
+3. master tracks with Lucene/Solr 6.0.0-SNAPSHOT
+
+As of this writing (6/22/2015), LUCENE-5205 and SOLR-5410 are working on the
+three main branches.  More work remains to update 5.x and trunk to
+work with LUCENE-5317 and SOLR-5411.
 
 To see the fully integrated trunk versions of these, see
 my fork on github and go to the LUCENE-5205 branch.

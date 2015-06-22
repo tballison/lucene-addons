@@ -26,7 +26,6 @@ import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.Version;
 
 /**
  * Enables setting different analyzers for whole term vs.
@@ -49,8 +48,8 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
    * Default initialization. The analyzer is used for both whole terms and multiTerms.
    */
   @Override
-  public void init(Version matchVersion, String f, Analyzer a) {
-    super.init(matchVersion, f, a);
+  public void init(String f, Analyzer a) {
+    super.init(f, a);
     this.multiTermAnalyzer = a;
   }
 
@@ -59,8 +58,8 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
    * <p/>
    * Warning: this initializer has a side effect of setting normMultiTerms = NORM_MULTI_TERMS.ANALYZE
    */
-  public void init(Version matchVersion, String f, Analyzer a, Analyzer multiTermAnalyzer) {
-    super.init(matchVersion, f, a);
+  public void init(String f, Analyzer a, Analyzer multiTermAnalyzer) {
+    super.init(f, a);
     this.multiTermAnalyzer = multiTermAnalyzer;
     setNormMultiTerms(NORM_MULTI_TERMS.ANALYZE);
   }

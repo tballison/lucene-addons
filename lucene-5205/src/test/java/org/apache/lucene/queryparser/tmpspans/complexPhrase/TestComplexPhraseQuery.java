@@ -25,6 +25,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.StoredDocument;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -78,7 +79,7 @@ public class TestComplexPhraseQuery extends LuceneTestCase {
   }
 
   public Query getQuery(String qString) throws Exception {
-    QueryParser qp = new ComplexPhraseQueryParser(TEST_VERSION_CURRENT, defaultFieldName, analyzer);
+    QueryParser qp = new ComplexPhraseQueryParser(defaultFieldName, analyzer);
     return qp.parse(qString);
 
   }
@@ -108,7 +109,7 @@ public class TestComplexPhraseQuery extends LuceneTestCase {
     TopDocs td = searcher.search(q, 10);
     ScoreDoc[] sd = td.scoreDocs;
     for (int i = 0; i < sd.length; i++) {
-      Document doc = searcher.doc(sd[i].doc);
+      StoredDocument doc = searcher.doc(sd[i].doc);
       String id = doc.get("id");
       assertTrue(qString + "matched doc#" + id + " not expected", expecteds
           .contains(id));
@@ -133,7 +134,7 @@ public class TestComplexPhraseQuery extends LuceneTestCase {
 
 
   public void testHashcodeEquals() throws Exception {
-    ComplexPhraseQueryParser qp = new ComplexPhraseQueryParser(TEST_VERSION_CURRENT, defaultFieldName, analyzer);
+    ComplexPhraseQueryParser qp = new ComplexPhraseQueryParser(defaultFieldName, analyzer);
     qp.setInOrder(true);
     qp.setFuzzyPrefixLength(1);
 

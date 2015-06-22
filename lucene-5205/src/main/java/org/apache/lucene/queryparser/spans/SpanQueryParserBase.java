@@ -41,7 +41,6 @@ import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MultiPhraseQuery;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
-import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
@@ -163,15 +162,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   // Lots of boilerplate.  Sorry.
   //////
 
-  /**
-   * Unsupported. Try newNearQuery. Always throws UnsupportedOperationException.
-   *
-   * @return nothing, ever
-   */
-  @Override
-  protected PhraseQuery newPhraseQuery() {
-    throw new UnsupportedOperationException("newPhraseQuery not supported.  Try newNearQuery.");
-  }
 
   /**
    * Unsupported. Try newNearQuery. Always throws UnsupportedOperationException.
@@ -187,8 +177,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Returns new SpanNearQuery.  This is added as parallelism to newPhraseQuery.
    * Not sure it is of any use.
    */
-  protected SpanNearQuery newNearQuery(SpanQuery[] queries, int slop, boolean inOrder, boolean collectPayloads) {
-    return new SpanNearQuery(queries, slop, inOrder, collectPayloads);
+  protected SpanNearQuery newNearQuery(SpanQuery[] queries, int slop, boolean inOrder) {
+    return new SpanNearQuery(queries, slop, inOrder);
   }
 
   @Override
@@ -644,8 +634,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     PositionIncrementAttribute posIncrAtt = null;
     OffsetAttribute offsetAtt = null;
     int numTokens = 0;
-
-    buffer.reset();
 
     if (buffer.hasAttribute(TermToBytesRefAttribute.class)) {
       termAtt = buffer.getAttribute(TermToBytesRefAttribute.class);
