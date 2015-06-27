@@ -57,10 +57,10 @@ import org.apache.lucene.util.BytesRef;
 /**
  * This class overrides some important functionality within QueryParserBase, esp.
  * for generating terminal spanquery nodes: term, range, regex, fuzzy, etc.
- * <p/>
+ * <p>
  * When SpanQueries are eventually nuked, there should be an easyish
  * refactoring of classes that extend this class to extend QueryParserBase.
- * <p/>
+ * <p>
  * This should also allow for an easy transfer to javacc or similar.
  */
 abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
@@ -125,7 +125,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   /**
    * Copied nearly exactly from FuzzyQuery's floatToEdits because
    * FuzzyQuery's floatToEdits requires that the return value
-   * be <= LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE
+   * be &le; LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE
    *
    * @return edits
    */
@@ -241,7 +241,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * nocommit
    *
    * @return query
-   * @throws org.apache.lucene.queryparser.classic.ParseException, RuntimeException if there was an IOException from the analysis process
+   * @throws org.apache.lucene.queryparser.classic.ParseException if there was an IOException from the analysis process
    */
   protected Query getFuzzyQuery(String field, String termStr,
                                 float minSimilarity, int prefixLength, boolean transpositions) throws ParseException {
@@ -326,12 +326,12 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * character as its last character. Since this is a special case
    * of generic wildcard term, and such a query can be optimized easily,
    * this usually results in a different query object.
-   * <p/>
+   * <p>
    * Depending on settings, a prefix term may be lower-cased
    * automatically. It will not go through the default Analyzer,
    * however, since normal Analyzers are unlikely to work properly
    * with wildcard templates.
-   * <p/>
+   * <p>
    * Can be overridden by extending classes, to provide custom handling for
    * wild card queries, which may be necessary due to missing analyzer calls.
    *
@@ -366,12 +366,12 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * parses an input term token that contains one or more wildcard
    * characters (? and *), but is not a prefix term token (one
    * that has just a single * character at the end)
-   * <p/>
+   * <p>
    * Depending on settings, prefix term may be lower-cased
    * automatically. It will not go through the default Analyzer,
    * however, since normal Analyzers are unlikely to work properly
    * with wildcard templates.
-   * <p/>
+   * <p>
    * Can be overridden by extending classes, to provide custom handling for
    * wildcard queries, which may be necessary due to missing analyzer calls.
    *
@@ -471,8 +471,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   /**
    * This identifies and then builds the various single term and/or multiterm
    * queries, including MatchAllDocsQuery. This does not identify a regex or range term query!
-   * <p/>
-   * <p/>
+   * <p>
    * For {@link org.apache.lucene.search.FuzzyQuery}, this defaults to
    * {@link org.apache.lucene.search.FuzzyQuery#defaultMaxEdits}
    * if no value is specified after the ~.
@@ -605,9 +604,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Build what appears to be a simple single term query. If the analyzer breaks
    * it into multiple terms, treat that as a "phrase" or as an "or" depending on
    * the value of {@link #autoGeneratePhraseQueries}.
-   * <p/>
+   * <p>
    * If the analyzer is null, this returns {@link #handleNullAnalyzer(String, String)}
-   * <p/>
+   * <p>
    * Can return null!
    *
    * @param quoted -- is the term quoted
@@ -924,7 +923,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * probably meant: find those two characters within three words of each other,
    * not find those right next to each other and that hit has to be within three
    * words of nothing.
-   * <p/>
+   * <p>
    * If a user entered the same thing and {@link #autoGeneratePhraseQueries} is
    * set to false, then the parser would treat this as [(\u5927\u5B66)]~3: find
    * one character or the other and then that hit has to be within three words
@@ -1002,7 +1001,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * @param spanNearMaxDistance maximum distance for a SpanNear (phrase) query. If < 0,
+   * @param spanNearMaxDistance maximum distance for a SpanNear (phrase) query. If &lt; 0,
    *                            there is no limitation on distances in SpanNear queries.
    */
   public void setSpanNearMaxDistance(int spanNearMaxDistance) {
@@ -1018,7 +1017,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * @param spanNotNearMaxDistance maximum distance for the previous and post distance for a SpanNotNear query. If < 0,
+   * @param spanNotNearMaxDistance maximum distance for the previous and post distance for a SpanNotNear query. If &lt; 0,
    *                               there is no limitation on distances in SpanNotNear queries.
    */
   public void setSpanNotNearMaxDistance(int spanNotNearMaxDistance) {

@@ -32,7 +32,7 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
 
   /**
    * Recursively called to parse a span query
-   * <p/>
+   * <p>
    * This assumes that there are no FIELD tokens and no BOOLEAN operators
    */
   protected SpanQuery _parsePureSpanClause(final List<SQPToken> tokens,

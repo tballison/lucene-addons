@@ -55,7 +55,7 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
 
   /**
    * Expert.  Set a different analyzer for whole terms vs. multiTerm subcomponents.
-   * <p/>
+   * <p>
    * Warning: this initializer has a side effect of setting normMultiTerms = NORM_MULTI_TERMS.ANALYZE
    */
   public void init(String f, Analyzer a, Analyzer multiTermAnalyzer) {
@@ -68,7 +68,7 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
    * Notionally overrides functionality from analyzeMultitermTerm.  Differences
    * are that this consumes the full tokenstream, and it throws ParseException
    * if it encounters no content terms or more than one.
-   * <p/>
+   * <p>
    * If getMultitermAnalyzer(String fieldName) returns null,
    * this returns "part" unaltered.
    *

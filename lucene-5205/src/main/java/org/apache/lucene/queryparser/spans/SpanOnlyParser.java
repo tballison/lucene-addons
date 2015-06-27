@@ -27,9 +27,9 @@ import org.apache.lucene.search.spans.SpanQuery;
  * This is a toy class that enables easy testing of the span only
  * parsing components.  This does not handle boolean operators (AND, NOT, OR, +/-),
  * and it does not handle multiple fields.  It also doesn't handle MatchAllDocsQueries.
- * <p/>
+ * <p>
  * However, it does guarantee that a SpanQuery is returned.
- * <p/>
+ * <p>
  * The functionality of this class was the initial offering in LUCENE-5205.
  *
  * @see SpanQueryParser

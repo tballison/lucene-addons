@@ -41,14 +41,12 @@ import org.apache.lucene.search.spans.SpanQuery;
  * {@link org.apache.lucene.search.FuzzyQuery}, {@link org.apache.lucene.search.RegexpQuery}).</li>
  * <li> {@link org.apache.lucene.queryparser.analyzing.AnalyzingQueryParser}: has an option to analyze multiterms.</li>
  * </ul>
- * <p/>
- * <p/>
+ * <p>
  * <b>Background</b>
  * This parser is designed to expose as much of the sophistication as is available within the Query/SpanQuery components.
  * The basic approach of this parser is to build BooleanQueries comprised of SpanQueries.  The parser recursively works
  * through boolean/fielded chunks and then recursively works through SpanQueries.
- * <p/>
- * <p/>
+ * <p>
  * Goals for this parser:
  * <ul>
  * <li>Expose as much of the underlying capabilities as possible.</li>
@@ -58,7 +56,7 @@ import org.apache.lucene.search.spans.SpanQuery;
  * {@link AnalyzingQueryParserBase}.</li>
  * </ul>
  * <p><b>Similarities and Differences</b>
- * <p/>
+ * <p>
  * <p> Same as classic syntax:
  * <ul>
  * <li> term: test </li>
@@ -76,11 +74,11 @@ import org.apache.lucene.search.spans.SpanQuery;
  * </ul>
  * <p> Main additions in SpanQueryParser syntax vs. classic:
  * <ul>
- * <li> Can require "in order" for phrases with slop with the ~> operator: &quot;jakarta apache&quot;~>3</li>
+ * <li> Can require "in order" for phrases with slop with the ~&gt; operator: &quot;jakarta apache&quot;~&gt;3</li>
  * <li> Can specify "not near" &quot;bieber fever&quot;!~3,10 ::
  * find &quot;bieber&quot; but not if &quot;fever&quot; appears within 3 words before or
  * 10 words after it.</li>
- * <li> Fully recursive phrasal queries with [ and ]; as in: [[jakarta apache]~3 lucene]~>4 ::
+ * <li> Fully recursive phrasal queries with [ and ]; as in: [[jakarta apache]~3 lucene]~&gt;4 ::
  * find &quot;jakarta&quot; within 3 words of &quot;apache&quot;, and that hit has to be within four
  * words before &quot;lucene&quot;.</li>
  * <li> Can also use [] for single level phrasal queries instead of &quot;&quot; as in: [jakarta apache]</li>
@@ -96,39 +94,37 @@ import org.apache.lucene.search.spans.SpanQuery;
  * <li> Can require at least x number of hits at boolean level: "apache AND (lucene solr tika)~2</li>
  * <li> Can have a negative query: -jakarta will return all documents that do not contain jakarta</li>
  * </ul>
- * <p/>
+ * <p>
  * Trivial additions:
  * <ul>
  * <li> Can specify prefix length in fuzzy queries: jakarta~1,2 (edit distance=1, prefix=2)</li>
  * <li> Can specify prefix Optimal String Alignment (OSA) vs Levenshtein
- * in fuzzy queries: jakarta~1 (OSA) vs jakarta~>1 (Levenshtein)</li>
+ * in fuzzy queries: jakarta~1 (OSA) vs jakarta~&gt;1 (Levenshtein)</li>
  * </ul>
- * <p/>
+ * <p>
  * <p> <b>Analysis</b>
  * You can specify different analyzers
  * to handle whole term versus multiterm components.
- * <p/>
- * <p/>
+ * <p>
  * <b>Using quotes for a single term</b>
  * The default with SpanQueryParser is to use single quotes (Classic QueryParser uses double quotes):
  * 'abc~2' will be treated as a single term 'abc~2' not as a fuzzy term.
  * Remember to use quotes or use escapes for anything with backslashes or hyphens:
  * 12/02/04 (is broken into a term "12", a regex "/02/" and a term "04")
  * '12/02/04' is treated a a single token.
- * <p/>
- * <p/>
+ * <p>
  * <p> <b>Stop word handling</b>
  * <p>The parser tries to replicate the behavior of the Classic QueryParser.  Stop words
  * are generally ignored.
  * <p>  However, in a "near" query, extra slop is added for each stop word that
  * occurs after the first non-stop word and before the last non-stop word (or, initial and trailing stop words
  * are ignored in the additions to slop).
- * For example, "walked the dog" is converted to "walked dog"~>1 behind the scenes.  Like the Classic
+ * For example, "walked the dog" is converted to "walked dog"~&gt;1 behind the scenes.  Like the Classic
  * QueryParser this will lead to false positives with any word between "walked" and "dog".  Unlike
  * Classic QueryParser, this will also lead to false positives of "walked dog".
- * <p/>
+ * <p>
  * Examples
- * <p/>
+ * <p>
  * <ul>
  * <li>Term: "the" will return an empty SpanQuery (similar to classic queryparser)</li>
  * <li>BooleanOr: (the apache jakarta) will drop the stop word and return a
@@ -137,18 +133,18 @@ import org.apache.lucene.search.spans.SpanQuery;
  * <li>SpanNear: "apache and jakarta" will drop the "and", add one to the slop and match on
  * any occurrence of "apache" followed by "jakarta" and zero or one words intervening.<li>
  * </ul>
- * <p/>
+ * <p>
  * <p>A parse exception is currently always thrown if the parser analyzes a multiterm, and a subcomponent of the
  * multiterm has a stopword: the*tre
  * <p> Expert: Other subtle differences between SpanQueryParser and classic QueryParser.
  * <ul>
- * <li>Fuzzy queries with slop > 2 are handled by SlowFuzzyQuery.  The developer can set the minFuzzySim to limit
+ * <li>Fuzzy queries with slop &gt; 2 are handled by SlowFuzzyQuery.  The developer can set the minFuzzySim to limit
  * the maximum edit distance (i.e. turn off SlowFuzzyQuery by setting fuzzyMinSim = 2.0f.</li>
- * <li>Fuzzy queries with edit distance >=1 are rounded so that an exception is not thrown.</li>
+ * <li>Fuzzy queries with edit distance &ge; 1 are rounded so that an exception is not thrown.</li>
  * </ul>
  * <p> Truly Expert: there are a few other very subtle differences that are documented in comments
  * in the sourcecode in the header of SpanQueryParser.
- * <p/>
+ * <p>
  * <b>NOTE</b> You must add the sandbox jar to your class path to include
  * the currently deprecated {@link org.apache.lucene.sandbox.queries.SlowFuzzyQuery}.
  * <p> Limitations of SpanQueryParser compared with classic QueryParser:
