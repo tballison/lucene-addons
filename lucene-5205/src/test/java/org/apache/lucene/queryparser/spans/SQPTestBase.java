@@ -56,7 +56,7 @@ public class SQPTestBase extends LuceneTestCase {
     q = (SpanQuery) q.rewrite(reader);
     SpanWeight spanWeight = q.createWeight(searcher, true);
 
-    final Spans spans = spanWeight.getSpans(leafReaderContext, null,
+    final Spans spans = spanWeight.getSpans(leafReaderContext,
         SpanWeight.Postings.POSITIONS);
 
     long i = 0;
@@ -87,7 +87,7 @@ public class SQPTestBase extends LuceneTestCase {
     }
     Bits acceptDocs = context.reader().getLiveDocs();
     SpanWeight spanWeight = q.createWeight(searcher, true);
-    final Spans spans = spanWeight.getSpans(context, acceptDocs, SpanWeight.Postings.POSITIONS);
+    final Spans spans = spanWeight.getSpans(context, SpanWeight.Postings.POSITIONS);
     if (spans != null) {
       while (spans.nextDoc() != Spans.NO_MORE_DOCS) {
         while (spans.nextStartPosition() != Spans.NO_MORE_POSITIONS) {
