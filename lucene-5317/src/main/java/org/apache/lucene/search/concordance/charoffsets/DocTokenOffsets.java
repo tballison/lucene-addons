@@ -42,13 +42,11 @@ public class DocTokenOffsets {
     offsets.add(offset);
   }
 
-  public void reset(int base, int atomicDocId, Document d, int start,
-                    int end) {
+  public void reset(int base, int atomicDocId, Document d) {
     this.atomicDocId = atomicDocId;
     this.uniqueId = base + atomicDocId;
     setDocument(d);
     offsets.clear();
-    addOffset(start, end);
   }
 
   public List<OffsetAttribute> getOffsets() {

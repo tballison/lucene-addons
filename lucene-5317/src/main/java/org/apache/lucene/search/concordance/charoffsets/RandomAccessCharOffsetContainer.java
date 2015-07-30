@@ -125,7 +125,7 @@ public class RandomAccessCharOffsetContainer {
     starts.clear();
     ends.clear();
     last = -1;
-    set = new OpenBitSet();
+    set = new BitSet();
   }
 
   protected boolean isEmpty() {
@@ -213,7 +213,7 @@ public class RandomAccessCharOffsetContainer {
     return sb.toString();
   }
 
-  protected OpenBitSet getSet() {
+  protected BitSet getSet() {
     return set;
   }
 

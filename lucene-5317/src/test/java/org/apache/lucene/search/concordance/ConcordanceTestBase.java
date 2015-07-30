@@ -16,17 +16,17 @@
  */
 package org.apache.lucene.search.concordance;
 
+import java.io.IOException;
+import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.Tokenizer;
-import org.apache.lucene.codecs.Codec;
-import org.apache.lucene.codecs.asserting.AssertingCodec;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
-import org.apache.lucene.index.FieldInfo.IndexOptions;
+import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.search.concordance.charoffsets.SimpleAnalyzerUtil;
@@ -34,10 +34,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestUtil;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.util.List;
 
 public class ConcordanceTestBase extends LuceneTestCase {
 
@@ -53,8 +49,8 @@ public class ConcordanceTestBase extends LuceneTestCase {
     Analyzer analyzer = new Analyzer() {
 
       @Override
-      public TokenStreamComponents createComponents(String fieldName, Reader reader) {
-        Tokenizer tokenizer = new MockTokenizer(reader, MockTokenizer.WHITESPACE, true);
+      public TokenStreamComponents createComponents(String fieldName) {
+        Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE, true);
         TokenFilter filter = new MockTokenFilter(tokenizer, stops);
         return new TokenStreamComponents(tokenizer, filter);
       }
@@ -112,17 +108,12 @@ public class ConcordanceTestBase extends LuceneTestCase {
   protected Directory buildNeedleIndex(String needle,
                                        Analyzer analyzer, int numFieldValues) throws Exception {
 
-    IndexWriterConfig config = newIndexWriterConfig(random(), TEST_VERSION_CURRENT, analyzer)
+    IndexWriterConfig config = newIndexWriterConfig(random(), analyzer)
         .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
         .setMergePolicy(newLogMergePolicy());
 
     Directory directory = newDirectory();
-    String pf = TestUtil.getPostingsFormat(FIELD);
-    if (doesntSupportOffsets.contains(pf)) {
-      //just use Asserting
-      Codec codec = new AssertingCodec();
-      config.setCodec(codec);
-    }
+
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory, config);
     //create document with multivalued field
     String[] fs = new String[numFieldValues];
@@ -143,10 +134,11 @@ public class ConcordanceTestBase extends LuceneTestCase {
     FieldType type = new FieldType();
     type.setIndexOptions(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS);
     type.setStored(true);
-    type.setIndexed(true);
+    type.setTokenized(true);
 
+    //IndexableField field = new IndexableField(type);
     for (String s : fs) {
-      d.add(newField(FIELD, s, type));
+      d.add(newField(random(), FIELD, s, type));
     }
     writer.addDocument(d);
     writer.close();

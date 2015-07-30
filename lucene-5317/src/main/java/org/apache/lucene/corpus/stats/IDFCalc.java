@@ -17,11 +17,9 @@ package org.apache.lucene.corpus.stats;
  */
 
 
+import java.io.IOException;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.util.BytesRef;
-
-import java.io.IOException;
 
 /**
  * Lucene-agnostic IDF calculator
@@ -128,10 +126,8 @@ public class IDFCalc {
   public double multiTermIDFSum(String s, Term t) throws IOException {
 
     double sum = 0.0;
-    Term tmp = new Term(t.field());
-    BytesRef ref = tmp.bytes();
     for (String termString : s.trim().split(" +")) {
-      ref.copyChars(termString);
+      Term tmp = new Term(t.field(), termString);
       sum += getIDF(reader.docFreq(tmp));
     }
     return sum;
@@ -147,11 +143,8 @@ public class IDFCalc {
   public double[] multiTermIDF(String s, Term t) throws IOException {
     // be careful: must pre-analyze and divide subterms by whitespace!!!
     double[] stats = new double[]{0.0, Double.MAX_VALUE}; // sum, min df, ...
-    Term tmp = new Term(t.field());
-    BytesRef ref = tmp.bytes();
     for (String termString : s.trim().split(" +")) {
-      ref.copyChars(termString);
-
+      Term tmp = new Term(t.field(), termString);
       int df = reader.docFreq(tmp);
       double idf = getIDF(df);
       stats[0] += idf;

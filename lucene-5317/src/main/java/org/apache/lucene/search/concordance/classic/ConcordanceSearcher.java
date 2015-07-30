@@ -17,12 +17,18 @@ package org.apache.lucene.search.concordance.classic;
  * limitations under the License.
  */
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexableField;
-import org.apache.lucene.queries.ChainedFilter;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
@@ -38,12 +44,6 @@ import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetsReader;
 import org.apache.lucene.search.concordance.util.ConcordanceSearcherUtil;
 import org.apache.lucene.search.spans.SimpleSpanQueryConverter;
 import org.apache.lucene.search.spans.SpanQuery;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 
 /**
@@ -121,9 +121,12 @@ public class ConcordanceSearcher {
       Filter updatedFilter = origQueryFilter;
 
       if (filter != null) {
-        updatedFilter = new ChainedFilter(new Filter[]{origQueryFilter,
-            filter}, ChainedFilter.AND);
+        BooleanQuery bq = new BooleanQuery();
+        bq.add(query, BooleanClause.Occur.MUST);
+        bq.add(filter, BooleanClause.Occur.MUST);
+        updatedFilter = new QueryWrapperFilter(bq);
       }
+      System.out.println(spanQuery.toString() + " : "+ updatedFilter.toString());
       searchSpan(reader, spanQuery, updatedFilter, analyzer, collector);
     }
   }

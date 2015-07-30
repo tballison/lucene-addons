@@ -358,7 +358,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
 
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10);
     searcher.search(reader,
-        FIELD, (Query) q, null,
+        FIELD, q, null,
         analyzer, collector);
     // shouldn't include document with "d"
     assertEquals(6, collector.size());
@@ -505,4 +505,5 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     reader.close();
     directory.close();
   }
+  //TODO: add tests with deleted documents
 }

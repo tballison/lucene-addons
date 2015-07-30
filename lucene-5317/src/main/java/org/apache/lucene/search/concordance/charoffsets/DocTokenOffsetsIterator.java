@@ -17,10 +17,15 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.AtomicReader;
-import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.LeafReader;
+import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermContext;
 import org.apache.lucene.search.DocIdSet;
@@ -28,14 +33,10 @@ import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.Spans;
+import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
-import org.apache.lucene.util.OpenBitSet;
+import org.apache.lucene.util.FixedBitSet;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Scaffolding/Sugar class around SpanQuery.getSpans(...). This allows the
@@ -49,12 +50,11 @@ public class DocTokenOffsetsIterator {
    */
   private SpanQuery spanQuery;
   private Filter filter;
-  private LinkedList<AtomicReaderContext> atomicReaders = new LinkedList<AtomicReaderContext>();
-  private AtomicReader currReader = null;
+  private LinkedList<LeafReaderContext> leafReaders = new LinkedList<>();
+  private LeafReader currReader = null;
   private Set<String> fields;
   private Spans spans = null;
   private DocTokenOffsets docTokenOffsets = new DocTokenOffsets();
-  private DocTokenOffsets docTokenOffsetsBuffer = new DocTokenOffsets();
   private int currentBase = -1;
 
   private Map<Term, TermContext> termMap = new HashMap<Term, TermContext>();
@@ -69,39 +69,30 @@ public class DocTokenOffsetsIterator {
     this.filter = f;
 
     this.fields = fields;
-    atomicReaders.addAll(reader.leaves());
-    if (atomicReaders.size() > 0) {
+    leafReaders.addAll(reader.leaves());
+    if (leafReaders.size() > 0) {
       reinitSpans();
     }
   }
 
   public boolean next() throws IOException {
 
-    if (spans == null || docTokenOffsetsBuffer.isEmpty()) {
-      if (atomicReaders.size() == 0) {
+    if (spans == null) {
+      if (leafReaders.size() == 0) {
         return false;
       } else if (!reinitSpans()) {
         return false;
       }
 
     }
-    boolean currSpansHasMore = false;
-    while (spans.next()) {
-      if (spans.doc() == docTokenOffsetsBuffer.getAtomicDocId()) {
-        docTokenOffsetsBuffer.addOffset(spans.start(), spans.end());
-      } else {
-        currSpansHasMore = true;
-        break;
+    if (spans.nextDoc() != Spans.NO_MORE_DOCS) {
+      Document d = currReader.document(spans.docID(), fields);
+      docTokenOffsets.reset(currentBase, spans.docID(), d);
+      while (spans.nextStartPosition() != Spans.NO_MORE_POSITIONS) {
+        docTokenOffsets.addOffset(spans.startPosition(), spans.endPosition());
       }
-    }
-    docTokenOffsets = docTokenOffsetsBuffer.deepishCopy();
-
-    if (currSpansHasMore) {
-      Document d = currReader.document(spans.doc(), fields);
-      docTokenOffsetsBuffer.reset(currentBase, spans.doc(), d, spans.start(),
-          spans.end());
     } else {
-      docTokenOffsetsBuffer.pseudoEmpty();
+      return false;
     }
     return true;
   }
@@ -111,8 +102,8 @@ public class DocTokenOffsetsIterator {
   }
 
   private boolean reinitSpans() throws IOException {
-    // must check that atomicReaders.size() > 0 before running this!!!
-    AtomicReaderContext ctx = atomicReaders.pop();
+    // must check that leafReaders.size() > 0 before running this!!!
+    LeafReaderContext ctx = leafReaders.pop();
     currentBase = ctx.docBase;
     currReader = ctx.reader();
     Bits bits = null;
@@ -121,40 +112,37 @@ public class DocTokenOffsetsIterator {
     if (filter == null) {
       bits = liveBits;
     } else {
-      DocIdSet idSet = filter.getDocIdSet(ctx, liveBits);
-
-      DocIdSetIterator itr = idSet.iterator();
-      if (itr != null) {
-        OpenBitSet tmpBits = new OpenBitSet();
-        while (itr.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
-          tmpBits.set(itr.docID());
-        }
-        bits = tmpBits;
-      }
-    }
     /*
      * bits() is optional; this doesn't work!!!! bits = idSet.bits();
+     * TODO: figure out the better way to do this...Ugh.
      */
+
+      DocIdSet idSet = filter.getDocIdSet(ctx, liveBits);
+      DocIdSetIterator itr = idSet.iterator();
+      if (itr != null) {
+        BitSet lBitSet = new FixedBitSet(currReader.numDocs());
+        lBitSet.or(idSet.iterator());
+        bits = lBitSet;
+      }
+    }
+
 
     // bits can be null if all the docs are live
     // or if the filter returned an empty docidset.
     if (filter != null && bits == null) {
-      if (atomicReaders.size() > 0) {
+      if (leafReaders.size() > 0) {
         return reinitSpans();
       } else {
         return false;
       }
     }
-
     spans = spanQuery.getSpans(ctx, bits, termMap);
-    // can getSpans return null?
-    if (spans != null && spans.next()) {
-      Document d = currReader.document(spans.doc(), fields);
 
-      docTokenOffsetsBuffer.reset(currentBase, spans.doc(), d, spans.start(),
-          spans.end());
+    // can getSpans return null?
+
+    if (spans != null) {
       return true;
-    } else if (atomicReaders.size() > 0) {
+    } else if (leafReaders.size() > 0) {
       return reinitSpans();
     } else {
       return false;
