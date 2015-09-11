@@ -30,6 +30,7 @@ import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsets;
@@ -90,7 +91,7 @@ public class ConcordanceSearcher {
 
 
   /**
-   * @param reader    reader to search
+   * @param searcher   searcher to search
    * @param fieldName field to build the windows on
    * @param query     if SpanQuery, this gets passed through as is. If a regular Query, the
    *                  Query is first converted to a SpanQuery and the filter is modified
@@ -103,7 +104,7 @@ public class ConcordanceSearcher {
    * @throws IllegalArgumentException
    * @throws java.io.IOException
    */
-  public void search(IndexReader reader, String fieldName, Query query,
+  public void search(IndexSearcher searcher, String fieldName, Query query,
                      Filter filter, Analyzer analyzer, AbstractConcordanceWindowCollector collector)
       throws TargetTokenNotFoundException, IllegalArgumentException,
       IOException {
@@ -112,7 +113,7 @@ public class ConcordanceSearcher {
     }
     if (query instanceof SpanQuery) {
       // pass through
-      searchSpan(reader, (SpanQuery) query, filter, analyzer, collector);
+      searchSpan(searcher, (SpanQuery) query, filter, analyzer, collector);
     } else {
       // convert regular query to a SpanQuery.
       SpanQuery spanQuery = spanQueryConverter.convert(fieldName, query);
@@ -121,22 +122,21 @@ public class ConcordanceSearcher {
       Filter updatedFilter = origQueryFilter;
 
       if (filter != null) {
-        BooleanQuery bq = new BooleanQuery();
-        bq.add(query, BooleanClause.Occur.MUST);
-        bq.add(filter, BooleanClause.Occur.MUST);
+        BooleanQuery bq = new BooleanQuery.Builder()
+          .add(query, BooleanClause.Occur.MUST)
+          .add(filter, BooleanClause.Occur.MUST).build();
         updatedFilter = new QueryWrapperFilter(bq);
       }
-      System.out.println(spanQuery.toString() + " : "+ updatedFilter.toString());
-      searchSpan(reader, spanQuery, updatedFilter, analyzer, collector);
+      searchSpan(searcher, spanQuery, updatedFilter, analyzer, collector);
     }
   }
 
   /**
    * Like
-   * {@link #search(IndexReader, String, Query, Filter, Analyzer, AbstractConcordanceWindowCollector)}
+   * {@link #search(IndexSearcher, String, Query, Filter, Analyzer, AbstractConcordanceWindowCollector)}
    * but this takes a SpanQuery
    *
-   * @param reader    reader to search
+   * @param searcher    searcher
    * @param spanQuery query to use to identify the targets
    * @param filter    filter for document retrieval
    * @param analyzer  to re-analyze terms for window calculations and sort key building
@@ -146,19 +146,19 @@ public class ConcordanceSearcher {
    * @throws IllegalArgumentException
    * @throws java.io.IOException
    */
-  public void searchSpan(IndexReader reader,
+  public void searchSpan(IndexSearcher searcher,
                          SpanQuery spanQuery,
                          Filter filter, Analyzer analyzer, AbstractConcordanceWindowCollector collector)
       throws TargetTokenNotFoundException, IllegalArgumentException,
       IOException {
 
-    spanQuery = (SpanQuery) spanQuery.rewrite(reader);
+    spanQuery = (SpanQuery) spanQuery.rewrite(searcher.getIndexReader());
     DocTokenOffsetsIterator itr = new DocTokenOffsetsIterator();
-    Set<String> fields = new HashSet<String>(
+    Set<String> fields = new HashSet<>(
         windowBuilder.getFieldSelector());
     fields.add(spanQuery.getField());
-    itr.reset(spanQuery, filter, reader, fields);
-    buildResults(itr, reader, spanQuery.getField(), analyzer, collector);
+    itr.reset(spanQuery, filter, searcher, fields);
+    buildResults(itr, searcher.getIndexReader(), spanQuery.getField(), analyzer, collector);
 
   }
 

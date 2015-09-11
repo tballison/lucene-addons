@@ -17,6 +17,7 @@ package org.apache.lucene.queryparser.tmpspans.complexPhrase;
  * limitations under the License.
  */
 
+import java.util.HashSet;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.document.Document;
@@ -32,9 +33,6 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
-import org.junit.Ignore;
-
-import java.util.HashSet;
 
 public class TestComplexPhraseQuery extends LuceneTestCase {
   protected Analyzer analyzer;
@@ -49,7 +47,7 @@ public class TestComplexPhraseQuery extends LuceneTestCase {
   private IndexSearcher searcher;
   private IndexReader reader;
 
-  @Ignore
+
   public void testComplexPhrases() throws Exception {
     checkMatches("\"john smith\"", "1"); // Simple multi-term still works
     checkMatches("\"j*   smyth~\"", "1,2"); // wildcards and fuzzies are OK in

@@ -18,12 +18,12 @@ package org.apache.lucene.search.concordance.charoffsets;
  */
 
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
@@ -31,11 +31,11 @@ import org.apache.lucene.index.TermContext;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.spans.SpanQuery;
+import org.apache.lucene.search.spans.SpanWeight;
 import org.apache.lucene.search.spans.Spans;
-import org.apache.lucene.util.BitSet;
 import org.apache.lucene.util.Bits;
-import org.apache.lucene.util.FixedBitSet;
 
 
 /**
@@ -48,8 +48,9 @@ public class DocTokenOffsetsIterator {
   /*
    * NOT THREAD SAFE!!!
    */
-  private SpanQuery spanQuery;
+  private SpanWeight spanWeight;
   private Filter filter;
+  private BitSet currFilteredDocs;//null if filter is null or no docs found in leaf
   private LinkedList<LeafReaderContext> leafReaders = new LinkedList<>();
   private LeafReader currReader = null;
   private Set<String> fields;
@@ -62,14 +63,14 @@ public class DocTokenOffsetsIterator {
   public DocTokenOffsetsIterator() {
   }
 
-  public void reset(SpanQuery q, Filter f, IndexReader reader,
+  public void reset(SpanQuery q, Filter f, IndexSearcher searcher,
                     Set<String> fields) throws IOException {
 
-    this.spanQuery = q;
+    this.spanWeight = q.createWeight(searcher, false);
     this.filter = f;
 
     this.fields = fields;
-    leafReaders.addAll(reader.leaves());
+    leafReaders.addAll(searcher.getIndexReader().leaves());
     if (leafReaders.size() > 0) {
       reinitSpans();
     }
@@ -83,18 +84,20 @@ public class DocTokenOffsetsIterator {
       } else if (!reinitSpans()) {
         return false;
       }
-
     }
-    if (spans.nextDoc() != Spans.NO_MORE_DOCS) {
+
+    while (spans.nextDoc() != Spans.NO_MORE_DOCS) {
+      if (currFilteredDocs != null && ! currFilteredDocs.get(spans.docID())) {
+        continue;
+      }
       Document d = currReader.document(spans.docID(), fields);
       docTokenOffsets.reset(currentBase, spans.docID(), d);
       while (spans.nextStartPosition() != Spans.NO_MORE_POSITIONS) {
         docTokenOffsets.addOffset(spans.startPosition(), spans.endPosition());
       }
-    } else {
-      return false;
+      return true;
     }
-    return true;
+    return false;
   }
 
   public DocTokenOffsets getDocTokenOffsets() {
@@ -106,37 +109,41 @@ public class DocTokenOffsetsIterator {
     LeafReaderContext ctx = leafReaders.pop();
     currentBase = ctx.docBase;
     currReader = ctx.reader();
-    Bits bits = null;
-    Bits liveBits = currReader.getLiveDocs();
-    // liveBits can be null if all of the docs are live!!!
-    if (filter == null) {
-      bits = liveBits;
-    } else {
-    /*
-     * bits() is optional; this doesn't work!!!! bits = idSet.bits();
-     * TODO: figure out the better way to do this...Ugh.
-     */
+    if (filter != null) {
+      // liveBits can be null if all of the docs are live!!!
+      Bits liveBits = null;
+      if (currReader.numDeletedDocs() > 0) {
+        liveBits = currReader.getLiveDocs();
+      }
 
-      DocIdSet idSet = filter.getDocIdSet(ctx, liveBits);
-      DocIdSetIterator itr = idSet.iterator();
-      if (itr != null) {
-        BitSet lBitSet = new FixedBitSet(currReader.numDocs());
-        lBitSet.or(idSet.iterator());
-        bits = lBitSet;
+      DocIdSet tmpDocIdSet = filter.getDocIdSet(ctx, liveBits);
+      DocIdSetIterator it = tmpDocIdSet.iterator();
+      if (currFilteredDocs == null) {
+        currFilteredDocs = new BitSet();
+      } else {
+        currFilteredDocs.clear();
+      }
+
+      //there has got to be a better way
+      //one optimization would be to track this iterator
+      //with the spans iterator a la mergesort...
+      // but can we guarantee order?
+      if (it != null) {
+        while (it.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+          currFilteredDocs.set(it.docID());
+        }
       }
     }
-
-
     // bits can be null if all the docs are live
     // or if the filter returned an empty docidset.
-    if (filter != null && bits == null) {
+    if (filter != null && currFilteredDocs == null) {
       if (leafReaders.size() > 0) {
         return reinitSpans();
       } else {
         return false;
       }
     }
-    spans = spanQuery.getSpans(ctx, bits, termMap);
+    spans = spanWeight.getSpans(ctx, SpanWeight.Postings.POSITIONS);
 
     // can getSpans return null?
 

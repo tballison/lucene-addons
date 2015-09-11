@@ -95,7 +95,6 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
     if (multiTermAnalyzer == null) {
       return new BytesRef(part);
     }
-
     try {
       source = multiTermAnalyzer.tokenStream(field, part);
       source.reset();
@@ -104,19 +103,18 @@ public abstract class AnalyzingQueryParserBase extends QueryParserBase {
     }
 
     TermToBytesRefAttribute termAtt = source.getAttribute(TermToBytesRefAttribute.class);
-    BytesRef bytes = termAtt.getBytesRef();
 
     int partCount = 0;
+    BytesRef bytes = null;
     try {
       if (!source.incrementToken()) {
         //intentionally empty
       } else {
         partCount++;
-        termAtt.fillBytesRef();
+        bytes = termAtt.getBytesRef();
         while (source.incrementToken()) {
           partCount++;
         }
-
       }
     } catch (IOException e1) {
       throw new RuntimeException("IO error analyzing multiterm: " + part);

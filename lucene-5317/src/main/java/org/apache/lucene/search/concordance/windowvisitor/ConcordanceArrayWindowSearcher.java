@@ -28,6 +28,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsets;
@@ -57,7 +58,7 @@ public class ConcordanceArrayWindowSearcher {
   private boolean allowTargetOverlaps = false;
 
   /**
-   * @param reader       index reader to search
+   * @param searcher     indexSearcher to search
    * @param fieldName    field to search
    * @param query        query to use
    * @param filter       filter to apply, can be null
@@ -68,14 +69,14 @@ public class ConcordanceArrayWindowSearcher {
    * @throws TargetTokenNotFoundException
    * @throws java.io.IOException
    */
-  public void search(IndexReader reader, String fieldName,
+  public void search(IndexSearcher searcher, String fieldName,
                      Query query, Filter filter, Analyzer analyzer,
                      ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder) throws IllegalArgumentException,
       TargetTokenNotFoundException, IOException {
 
     if (query instanceof SpanQuery) {
       // pass through
-      searchSpan(reader, (SpanQuery) query, filter, analyzer,
+      searchSpan(searcher, (SpanQuery) query, filter, analyzer,
           visitor, docIdBuilder);
     } else {
       // convert regular query to a SpanQuery.
@@ -86,24 +87,24 @@ public class ConcordanceArrayWindowSearcher {
       Filter updatedFilter = origQueryFilter;
 
       if (filter != null) {
-        BooleanQuery bq = new BooleanQuery();
-        bq.add(query, BooleanClause.Occur.MUST);
-        bq.add(filter, BooleanClause.Occur.MUST);
+        BooleanQuery bq = new BooleanQuery.Builder()
+          .add(query, BooleanClause.Occur.MUST)
+          .add(filter, BooleanClause.Occur.MUST).build();
         updatedFilter = new QueryWrapperFilter(bq);
       }
-      searchSpan(reader, spanQuery, updatedFilter, analyzer,
+      searchSpan(searcher, spanQuery, updatedFilter, analyzer,
           visitor, docIdBuilder);
     }
 
   }
 
-  public void searchSpan(IndexReader reader,
+  public void searchSpan(IndexSearcher searcher,
                          SpanQuery query,
                          Filter filter, Analyzer analyzer,
                          ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder) throws IllegalArgumentException,
       TargetTokenNotFoundException, IOException {
-    query = (SpanQuery) query.rewrite(reader);
-    Set<String> fields = new HashSet<String>();
+    query = (SpanQuery) query.rewrite(searcher.getIndexReader());
+    Set<String> fields = new HashSet<>();
     fields.add(query.getField());
     if (docIdBuilder instanceof FieldBasedDocIdBuilder) {
       fields.addAll(((FieldBasedDocIdBuilder) docIdBuilder).getFields());
@@ -113,7 +114,7 @@ public class ConcordanceArrayWindowSearcher {
         analyzer);
 
     DocTokenOffsetsIterator itr = new DocTokenOffsetsIterator();
-    itr.reset(query, filter, reader, fields);
+    itr.reset(query, filter, searcher, fields);
 
     // reusable arrayWindow
     ConcordanceArrayWindow arrayWindow = new ConcordanceArrayWindow(
@@ -159,7 +160,7 @@ public class ConcordanceArrayWindowSearcher {
       tokenOffsetsReader.getTokenCharOffsetResults(document,
           query.getField(), offsetRequests, offsetResults);
 
-      visitWindowsInDoc(reader, offsetResults, fieldValues,
+      visitWindowsInDoc(searcher.getIndexReader(), offsetResults, fieldValues,
           offsets, docId, arrayWindow, visitor, analyzer.getOffsetGap(query.getField()));
 
       if (visitor.getHitMax() == true) {
@@ -174,7 +175,6 @@ public class ConcordanceArrayWindowSearcher {
                                  List<OffsetAttribute> offsets, String docId, ConcordanceArrayWindow window,
                                  ArrayWindowVisitor visitor, int offsetGap) throws IOException,
       TargetTokenNotFoundException {
-    System.out.println("VISITING: "+docId+":"+offsets.size());
     for (OffsetAttribute offset : offsets) {
       // hit max, stop now
       if (visitor.getHitMax() == true) {

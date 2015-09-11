@@ -37,9 +37,9 @@ import java.util.Set;
 public class CooccurVisitor extends ArrayWindowVisitor<List<TermIDF>> {
 
 
-  private final Map<String, MutableValueInt> tfs = new HashMap<String, MutableValueInt>();
+  private final Map<String, MutableValueInt> tfs = new HashMap<>();
   private final IDFCalc idfCalc;
-  private final Set<String> alreadySeen = new HashSet<String>();
+  private final Set<String> alreadySeen = new HashSet<>();
   private final boolean allowDuplicates;
   private Grammer grammer;
   /**

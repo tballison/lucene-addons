@@ -17,20 +17,14 @@
 package org.apache.lucene.queryparser.spans;
 
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexReaderContext;
 import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermContext;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.search.spans.SpanQuery;
+import org.apache.lucene.search.spans.SpanWeight;
 import org.apache.lucene.search.spans.Spans;
-import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.LuceneTestCase;
 
 public class SQPTestBase extends LuceneTestCase {
@@ -50,15 +44,9 @@ public class SQPTestBase extends LuceneTestCase {
 
     assert (ctxs.size() == 1);
     LeafReaderContext leafReaderContext = ctxs.get(0);
-    IndexReaderContext context = reader.getContext();
     q = (SpanQuery) q.rewrite(reader);
-    Map<Term,TermContext> termContexts = new HashMap<>();
-    TreeSet<Term> extractedTerms = new TreeSet<>();
-    searcher.createNormalizedWeight(q, false).extractTerms(extractedTerms);
-    for (Term term : extractedTerms) {
-      termContexts.put(term, TermContext.build(context, term));
-    }
-    final Spans spans = q.getSpans(leafReaderContext, null, termContexts);
+    SpanWeight sw = q.createWeight(searcher, false);
+    final Spans spans = sw.getSpans(leafReaderContext, SpanWeight.Postings.POSITIONS);
 
     long i = 0;
     if (spans != null) {
@@ -75,19 +63,11 @@ public class SQPTestBase extends LuceneTestCase {
     BitSet docs = new BitSet();
     List<LeafReaderContext> ctxs = reader.leaves();
     assert (ctxs.size() == 1);
-    LeafReaderContext ctx = ctxs.get(0);
-    IndexReaderContext parentCtx = reader.getContext();
-    q = (SpanQuery) q.rewrite(ctx.reader());
-
-    LeafReaderContext context =ctx;
-    Map<Term,TermContext> termContexts = new HashMap<>();
-    TreeSet<Term> extractedTerms = new TreeSet<>();
-    searcher.createNormalizedWeight(q, false).extractTerms(extractedTerms);
-    for (Term term : extractedTerms) {
-      termContexts.put(term, TermContext.build(parentCtx, term));
-    }
-    Bits acceptDocs = context.reader().getLiveDocs();
-    final Spans spans = q.getSpans(context, acceptDocs, termContexts);
+    LeafReaderContext leafReaderContext = ctxs.get(0);
+    q = (SpanQuery) q.rewrite(reader);
+    SpanWeight sw = q.createWeight(searcher, false);
+    
+    final Spans spans = sw.getSpans(leafReaderContext, SpanWeight.Postings.POSITIONS);
     if (spans != null) {
       while (spans.nextDoc() != Spans.NO_MORE_DOCS) {
         while (spans.nextStartPosition() != Spans.NO_MORE_POSITIONS) {

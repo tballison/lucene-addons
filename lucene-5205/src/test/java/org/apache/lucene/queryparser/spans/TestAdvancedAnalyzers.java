@@ -445,7 +445,6 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
       text = sb.toString();
       termAtt.setEmpty().append(text);
       return true;
-
     }
 
     @Override

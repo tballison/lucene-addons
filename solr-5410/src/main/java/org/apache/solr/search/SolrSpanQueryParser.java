@@ -47,7 +47,7 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   //  private static Logger log = LoggerFactory.getLogger(SolrCore.class);
 
   public SolrSpanQueryParser(String f, Analyzer a, IndexSchema schema, QParser nonTextParser) {
-    super(f, a);
+    super(f, a, null);
     this.schema = schema;
     this.nonTextParser = nonTextParser;
   }

@@ -452,8 +452,8 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
       }
     } else if (query instanceof BooleanQuery) {
       BooleanQuery bq = (BooleanQuery) query;
-      BooleanClause[] clauses = bq.getClauses();
-      for (BooleanClause clause : clauses) {
+
+      for (BooleanClause clause : bq.clauses()) {
         if (clause.getOccur() != Occur.MUST_NOT) {
           extractSpanQueries(field, clause.getQuery(), sqs);
         }
@@ -473,8 +473,8 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
 
     if (q instanceof BooleanQuery) {
       BooleanQuery bq = (BooleanQuery) q;
-      BooleanClause[] clauses = bq.getClauses();
-      if (clauses.length == 0) {
+      List<BooleanClause> clauses = bq.clauses();
+      if (clauses.size() == 0) {
         return q;
       }
       for (BooleanClause clause : clauses) {
@@ -483,9 +483,12 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
           return q;
         }
       }
-      BooleanQuery ret = bq.clone();
-      ret.add(new MatchAllDocsQuery(), Occur.MUST);
-      return ret;
+      BooleanQuery.Builder b = new BooleanQuery.Builder();
+      for (BooleanClause clause : bq.clauses()) {
+        b.add(clause);
+      }
+      b.add(new MatchAllDocsQuery(), Occur.MUST);
+      return b.build();
     }
     return q;
   }

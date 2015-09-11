@@ -21,6 +21,7 @@ package org.apache.solr.search;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
+import org.apache.lucene.queryparser.spans.AnalyzingQueryParserBase;
 import org.apache.lucene.search.Query;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
@@ -80,25 +81,25 @@ public class SpanQParser extends QParser {
     }
     parser.setFuzzyMinSim(solrParams.getFloat(MIN_FUZZY_DIST, 2.0f));
     parser.setFuzzyPrefixLength(solrParams.getInt(PREFIX_LENGTH, 0));
-    parser.setNormMultiTerms(getNorm(solrParams.get(NORMMULTITERMS), NORM_MULTI_TERMS.ANALYZE));
+    parser.setNormMultiTerms(getNorm(solrParams.get(NORMMULTITERMS), AnalyzingQueryParserBase.NORM_MULTI_TERMS.ANALYZE));
     parser.setPhraseSlop(solrParams.getInt(PHRASE_SLOP, 0));
     parser.setSpanNearMaxDistance(solrParams.getInt(NEAR_MAX, -1));
     parser.setSpanNotNearMaxDistance(solrParams.getInt(NOT_NEAR_MAX, -1));
 
   }
 
-  private NORM_MULTI_TERMS getNorm(
-      String string, NORM_MULTI_TERMS defaultNorm) {
+  private AnalyzingQueryParserBase.NORM_MULTI_TERMS getNorm(
+      String string, AnalyzingQueryParserBase.NORM_MULTI_TERMS defaultNorm) {
     if (string == null) {
       return defaultNorm;
     }
     String lc = string.toLowerCase();
     if (lc.equals("none")) {
-      return NORM_MULTI_TERMS.NONE;
+      return AnalyzingQueryParserBase.NORM_MULTI_TERMS.NONE;
     } else if (lc.equals("lc")) {
-      return NORM_MULTI_TERMS.LOWERCASE;
+      return AnalyzingQueryParserBase.NORM_MULTI_TERMS.LOWERCASE;
     } else if (lc.equals("analyze")) {
-      return NORM_MULTI_TERMS.ANALYZE;
+      return AnalyzingQueryParserBase.NORM_MULTI_TERMS.ANALYZE;
     }
     return defaultNorm;
   }

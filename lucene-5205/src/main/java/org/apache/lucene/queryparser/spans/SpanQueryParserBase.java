@@ -17,6 +17,15 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CachingTokenFilter;
 import org.apache.lucene.analysis.TokenStream;
@@ -32,7 +41,6 @@ import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MultiPhraseQuery;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
-import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
@@ -45,16 +53,6 @@ import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.util.BytesRef;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This class overrides some important functionality within QueryParserBase, esp.
@@ -163,16 +161,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   // Override getXQueries to return span queries
   // Lots of boilerplate.  Sorry.
   //////
-
-  /**
-   * Unsupported. Try newNearQuery. Always throws UnsupportedOperationException.
-   *
-   * @return nothing, ever
-   */
-  @Override
-  protected PhraseQuery newPhraseQuery() {
-    throw new UnsupportedOperationException("newPhraseQuery not supported.  Try newNearQuery.");
-  }
 
   /**
    * Unsupported. Try newNearQuery. Always throws UnsupportedOperationException.
@@ -630,7 +618,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     if (analyzer == null) {
       return handleNullAnalyzer(fieldName, termText);
     }
-    //largely plagiarized from QueryParserBase
+    //largely plagiarized from QueryParserBase's createFieldQuery
     TokenStream source;
     try {
       source = analyzer.tokenStream(fieldName, termText);
@@ -640,43 +628,43 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       p.initCause(e);
       throw p;
     }
-    CachingTokenFilter buffer = new CachingTokenFilter(source);
+    CachingTokenFilter stream = new CachingTokenFilter(source);
     TermToBytesRefAttribute termAtt = null;
     PositionIncrementAttribute posIncrAtt = null;
     OffsetAttribute offsetAtt = null;
     int numTokens = 0;
 
 /*    try {
-      buffer.reset();
+      stream.reset();
     } catch (IOException e) {
       throw new ParseException(e.getMessage());
     }
 */
-    if (buffer.hasAttribute(TermToBytesRefAttribute.class)) {
-      termAtt = buffer.getAttribute(TermToBytesRefAttribute.class);
+    if (stream.hasAttribute(TermToBytesRefAttribute.class)) {
+      termAtt = stream.getAttribute(TermToBytesRefAttribute.class);
     }
-    if (buffer.hasAttribute(PositionIncrementAttribute.class)) {
-      posIncrAtt = buffer.getAttribute(PositionIncrementAttribute.class);
+    if (stream.hasAttribute(PositionIncrementAttribute.class)) {
+      posIncrAtt = stream.getAttribute(PositionIncrementAttribute.class);
     }
-    if (buffer.hasAttribute(OffsetAttribute.class)) {
-      offsetAtt = buffer.getAttribute(OffsetAttribute.class);
+    if (stream.hasAttribute(OffsetAttribute.class)) {
+      offsetAtt = stream.getAttribute(OffsetAttribute.class);
     }
 
     boolean hasMoreTokens = false;
     if (termAtt != null) {
       try {
-        hasMoreTokens = buffer.incrementToken();
+        hasMoreTokens = stream.incrementToken();
         while (hasMoreTokens) {
           numTokens++;
-          hasMoreTokens = buffer.incrementToken();
+          hasMoreTokens = stream.incrementToken();
         }
       } catch (IOException e) {
         // ignore
       }
     }
     try {
-      // rewind the buffer stream
-      buffer.reset();
+      // rewind the stream stream
+      stream.reset();
       //source.end();
       // close original stream - all tokens buffered
       source.close();
@@ -686,37 +674,34 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       throw p;
     }
 
-    BytesRef bytes = termAtt == null ? null : termAtt.getBytesRef();
 
     if (numTokens == 0) {
       return null;
     } else if (numTokens == 1) {
       try {
-        boolean hasNext = buffer.incrementToken();
+        boolean hasNext = stream.incrementToken();
         assert hasNext == true;
-        termAtt.fillBytesRef();
       } catch (IOException e) {
         // safe to ignore, because we know the number of tokens
       }
-      return newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes)));
+      return newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(termAtt.getBytesRef())));
     } else {
 
-      List<SpanQuery> queries = new ArrayList<SpanQuery>();
+      List<SpanQuery> queries = new ArrayList<>();
       try {
         if (posIncrAtt != null) {
-          analyzeComplexSingleTerm(fieldName, buffer, termAtt, bytes, posIncrAtt, queries);
+          analyzeComplexSingleTerm(fieldName, stream, termAtt, posIncrAtt, queries);
         } else if (offsetAtt != null) {
-          analyzeComplexSingleTerm(fieldName, buffer, termAtt, bytes, offsetAtt, queries);
+          analyzeComplexSingleTerm(fieldName, stream, termAtt, offsetAtt, queries);
         } else {
-          while (buffer.incrementToken()) {
-            termAtt.fillBytesRef();
-            queries.add((SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+          while (stream.incrementToken()) {
+            queries.add((SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(termAtt.getBytesRef()))));
           }
         }
       } catch (IOException e) {
         //ignore
       }
-      List<SpanQuery> nonEmpties = new LinkedList<SpanQuery>();
+      List<SpanQuery> nonEmpties = new LinkedList<>();
       for (SpanQuery piece : queries) {
         if (piece != null) {
           nonEmpties.add(piece);
@@ -776,41 +761,39 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
         TermRangeQuery.newStringRange(fieldName, start, end, startInclusive, endInclusive);
 
     query.setRewriteMethod(getMultiTermRewriteMethod(fieldName));
-    return new SpanMultiTermQueryWrapper<TermRangeQuery>(query);
+    return new SpanMultiTermQueryWrapper<>(query);
   }
 
   private void analyzeComplexSingleTerm(String fieldName,
-                                        CachingTokenFilter ts, TermToBytesRefAttribute termAtt, BytesRef bytes,
+                                        CachingTokenFilter ts, TermToBytesRefAttribute termAtt,
                                         OffsetAttribute offAtt,
                                         List<SpanQuery> queries) throws IOException {
     int lastStart = -1;
     while (ts.incrementToken()) {
-      termAtt.fillBytesRef();
       //if start is the same, treat it as a synonym...ignore end because
       //of potential for shingles
       if (lastStart > -1 && offAtt.startOffset() == lastStart) {
-        handleSyn(queries, (SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+        handleSyn(queries, (SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(termAtt.getBytesRef()))));
       } else {
-        queries.add((SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+        queries.add((SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(termAtt.getBytesRef()))));
       }
       lastStart = offAtt.startOffset();
     }
   }
 
   private void analyzeComplexSingleTerm(String fieldName,
-                                        CachingTokenFilter ts, TermToBytesRefAttribute termAtt, BytesRef bytes,
+                                        CachingTokenFilter ts, TermToBytesRefAttribute termAtt,
                                         PositionIncrementAttribute posAtt,
                                         List<SpanQuery> queries) throws IOException {
     while (ts.incrementToken()) {
-      termAtt.fillBytesRef();
       if (posAtt.getPositionIncrement() == 0) {
-        handleSyn(queries, (SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+        handleSyn(queries, (SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(termAtt.getBytesRef()))));
       } else {
         //add null for stop words
         for (int i = 1; i < posAtt.getPositionIncrement(); i++) {
           queries.add(null);
         }
-        queries.add((SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(bytes))));
+        queries.add((SpanTermQuery) newTermQuery(new Term(fieldName, BytesRef.deepCopyOf(termAtt.getBytesRef()))));
       }
     }
   }
