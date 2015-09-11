@@ -961,3 +961,4 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
   }
 
 }
+

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
@@ -33,12 +34,14 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.RandomIndexWriter;
-import org.apache.lucene.queryparser.spans.AnalyzingQueryParserBase.NORM_MULTI_TERMS;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.spans.SpanNearQuery;
+import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
-import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.TestUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -46,14 +49,15 @@ import org.junit.Test;
 
 public class TestAdvancedAnalyzers extends SQPTestBase {
 
+  private static Analyzer synAnalyzer;
+  private static Analyzer baseAnalyzer;
+  private static Analyzer ucVowelAnalyzer;
+  private static Analyzer ucVowelMTAnalyzer;
+  private static Analyzer lcMultiTermAnalyzer;
   private static final String FIELD1 = "f1";
   private static final String FIELD2 = "f2";
   private static final String FIELD3 = "f3";
   private static final String FIELD4 = "f4";
-  private static Directory directory;
-  private static Analyzer synAnalyzer;
-  private static Analyzer baseAnalyzer;
-  private static Analyzer ucVowelAnalyzer;
 
 
   //   private static final CharacterRunAutomaton STOP_WORDS = new CharacterRunAutomaton(
@@ -61,6 +65,7 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
 
   @BeforeClass
   public static void beforeClass() throws Exception {
+    lcMultiTermAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
 
     synAnalyzer = new Analyzer() {
       @Override
@@ -93,6 +98,17 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
         return new TokenStreamComponents(tokenizer, filter);
       }
     };
+
+    ucVowelMTAnalyzer = new Analyzer() {
+          @Override
+          public TokenStreamComponents createComponents(String fieldName) {
+            Tokenizer tokenizer = new MockTokenizer(MockTokenizer.KEYWORD,
+                true);
+            TokenFilter filter = new MockUCVowelFilter(tokenizer);
+            return new TokenStreamComponents(tokenizer, filter);
+          }
+        };
+
     Analyzer tmpUCVowelAnalyzer = new Analyzer() {
       @Override
       public TokenStreamComponents createComponents(String fieldName) {
@@ -105,9 +121,9 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
     directory = newDirectory();
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
         newIndexWriterConfig(baseAnalyzer)
-            .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
-            .setMergePolicy(newLogMergePolicy()));
-    String[] docs = new String[]{
+        .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
+        .setMergePolicy(newLogMergePolicy()));
+    String[] docs = new String[] {
         "abc_def",
         "lmnop",
         "abc",
@@ -140,23 +156,25 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
     directory = null;
     synAnalyzer = null;
     baseAnalyzer = null;
+    ucVowelAnalyzer = null;
+    ucVowelAnalyzer = null;
   }
 
   public void testSynBasic() throws Exception {
-    SpanQueryParser p = new SpanQueryParser(FIELD1, synAnalyzer);
-    countSpansDocs(p, "tuv", 2, 2);
+    SpanQueryParser p = new SpanQueryParser(FIELD1, synAnalyzer, synAnalyzer);
+    countSpansDocs(p, FIELD1, "tuv", 2, 2);
 
-    countSpansDocs(p, "abc", 6, 4);
+    countSpansDocs(p, FIELD1, "abc", 6, 4);
   }
 
   @Test
   public void testNonWhiteSpace() throws Exception {
-    SpanQueryParser p = new SpanQueryParser(FIELD1, baseAnalyzer);
+    SpanQueryParser p = new SpanQueryParser(FIELD1, baseAnalyzer, baseAnalyzer);
     String s = "[zqx_qrs^3.0]~3^2";
     Query q = p.parse(s);
     assertTrue(q instanceof SpanNearQuery);
 
-    SpanNearQuery near = (SpanNearQuery) q;
+    SpanNearQuery near = (SpanNearQuery)q;
     SpanQuery[] clauses = near.getClauses();
     assertEquals(2, clauses.length);
 
@@ -164,8 +182,8 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
     assertTrue(clauses[0] instanceof SpanTermQuery);
     assertTrue(clauses[1] instanceof SpanTermQuery);
 
-    assertEquals("zqx", ((SpanTermQuery) clauses[0]).getTerm().text());
-    assertEquals("qrs", ((SpanTermQuery) clauses[1]).getTerm().text());
+    assertEquals("zqx", ((SpanTermQuery)clauses[0]).getTerm().text());
+    assertEquals("qrs", ((SpanTermQuery)clauses[1]).getTerm().text());
 
     //take the boost from the phrase, ignore boost on term
     //not necessarily right choice, but this is how it works now
@@ -176,7 +194,7 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
     q = p.parse(s);
     assertTrue(q instanceof SpanQuery);
     assertTrue(q instanceof SpanNearQuery);
-    near = (SpanNearQuery) q;
+    near = (SpanNearQuery)q;
     clauses = near.getClauses();
     assertEquals(2, clauses.length);
 
@@ -184,172 +202,185 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
     assertTrue(clauses[0] instanceof SpanNearQuery);
     assertTrue(clauses[1] instanceof SpanTermQuery);
 
-    SpanNearQuery child = (SpanNearQuery) clauses[0];
+    SpanNearQuery child = (SpanNearQuery)clauses[0];
     SpanQuery[] childClauses = child.getClauses();
     assertEquals(2, childClauses.length);
 
-    assertEquals("zqx", ((SpanTermQuery) childClauses[0]).getTerm().text());
-    assertEquals("qrs", ((SpanTermQuery) childClauses[1]).getTerm().text());
+    assertEquals("zqx", ((SpanTermQuery)childClauses[0]).getTerm().text());
+    assertEquals("qrs", ((SpanTermQuery)childClauses[1]).getTerm().text());
 
     assertTrue(child.isInOrder());
     assertEquals(child.getSlop(), 0);
   }
 
   //test different initializations/settings with multifield analyzers
-  public void testAnalyzerCombos() throws Exception {
+  public void testAnalyzerCombos() throws Exception{
 
     //basic, correct set up
-    SpanQueryParser p = new SpanQueryParser(FIELD1, baseAnalyzer);
-    assertEquals(1, countDocs((SpanQuery) p.parse("lmnop")));
-    assertEquals(1, countDocs((SpanQuery) p.parse("lm*op")));
-    assertEquals(1, countDocs((SpanQuery) p.parse("LMNOP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse("LM*OP")));
-    assertEquals(NORM_MULTI_TERMS.LOWERCASE, p.getNormMultiTerms());
+    SpanQueryParser p = new SpanQueryParser(FIELD1, baseAnalyzer, lcMultiTermAnalyzer);
+    assertEquals(1, countDocs(p.getField(), p.parse("lmnop")));
+    assertEquals(1, countDocs(p.getField(), p.parse("lm*op")));
+    assertEquals(1, countDocs(p.getField(), p.parse("LMNOP")));
+    assertEquals(1, countDocs(p.getField(), p.parse("LM*OP")));
 
     //basic, correct set up
-    p = new SpanQueryParser(FIELD2, ucVowelAnalyzer);
-    assertEquals(NORM_MULTI_TERMS.LOWERCASE, p.getNormMultiTerms());
-    assertEquals(1, countDocs((SpanQuery) p.parse("lmnop")));
-    assertEquals(1, countDocs((SpanQuery) p.parse("LMNOP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse("LM*OP")));
+    p = new SpanQueryParser(FIELD2, ucVowelAnalyzer, lcMultiTermAnalyzer);
+    assertEquals(1, countDocs(p.getField(), p.parse("lmnop")));
+    assertEquals(1, countDocs(p.getField(), p.parse("LMNOP")));
+    assertEquals(0, countDocs(p.getField(), p.parse("LM*OP")));
 
     //set to lowercase only, won't analyze
-    assertEquals(0, countDocs((SpanQuery) p.parse("lm*op")));
-    p.setNormMultiTerms(NORM_MULTI_TERMS.ANALYZE);
-    assertEquals(1, countDocs((SpanQuery) p.parse("lm*op")));
-    assertEquals(1, countDocs((SpanQuery) p.parse("LM*OP")));
+    assertEquals(0, countDocs(p.getField(), p.parse("lm*op")));
+
+    p = new SpanQueryParser(FIELD2, ucVowelAnalyzer, ucVowelMTAnalyzer);
+    assertEquals(1, countDocs(p.getField(), p.parse("lm*op")));
+    assertEquals(1, countDocs(p.getField(), p.parse("LM*OP")));
 
     //try sister field, to prove that default analyzer is ucVowelAnalyzer for 
     //unspecified fieldsd
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD4 + ":lmnop")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD4 + ":lm*op")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD4 + ":LMNOP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD4 + ":LM*OP")));
+    assertEquals(1, countDocs(FIELD4, p.parse(FIELD4+":lmnop")));
+    assertEquals(1, countDocs(FIELD4, p.parse(FIELD4+":lm*op")));
+    assertEquals(1, countDocs(FIELD4, p.parse(FIELD4+":LMNOP")));
+    assertEquals(1, countDocs(FIELD4, p.parse(FIELD4+":LM*OP")));
 
     //try mismatching sister field
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD3 + ":lmnop")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD3 + ":lm*op")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD3 + ":LMNOP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD3 + ":LM*OP")));
+    assertEquals(0, countDocs(FIELD3, p.parse(FIELD3+":lmnop")));
+    assertEquals(0, countDocs(FIELD3, p.parse(FIELD3+":lm*op")));
+    assertEquals(0, countDocs(FIELD3, p.parse(FIELD3+":LMNOP")));
+    assertEquals(0, countDocs(FIELD3, p.parse(FIELD3+":LM*OP")));
 
 
-    p = new SpanQueryParser(FIELD1, baseAnalyzer);
-    assertEquals(p.getNormMultiTerms(), NORM_MULTI_TERMS.LOWERCASE);
 
-    p = new SpanQueryParser(FIELD1, baseAnalyzer, ucVowelAnalyzer);
-    assertEquals(NORM_MULTI_TERMS.ANALYZE, p.getNormMultiTerms());
-    assertEquals(1, countDocs((SpanQuery) p.parse("lmnop")));
-    assertEquals(1, countDocs((SpanQuery) p.parse("LMNOP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lm*op")));
+    p = new SpanQueryParser(FIELD1, baseAnalyzer, ucVowelMTAnalyzer);
+    assertEquals(1, countDocs(FIELD1, p.parse("lmnop")));
+    assertEquals(1, countDocs(FIELD1, p.parse("LMNOP")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lm*op")));
 
     //advanced, correct set up for both
-    p = new SpanQueryParser(FIELD2, ucVowelAnalyzer, ucVowelAnalyzer);
-    assertEquals(NORM_MULTI_TERMS.ANALYZE, p.getNormMultiTerms());
-    assertEquals(1, countDocs((SpanQuery) p.parse("lmnop")));
-    assertEquals(1, countDocs((SpanQuery) p.parse("LMNOP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lmnop")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LMNOP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lm*op")));
+    p = new SpanQueryParser(FIELD2, ucVowelAnalyzer, ucVowelMTAnalyzer);
+    assertEquals(1, countDocs(FIELD2, p.parse("lmnop")));
+    assertEquals(1, countDocs(FIELD2, p.parse("LMNOP")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lmnop")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LMNOP")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lm*op")));
 
-    p.setNormMultiTerms(NORM_MULTI_TERMS.NONE);
-    assertEquals(NORM_MULTI_TERMS.NONE, p.getNormMultiTerms());
-    assertEquals(1, countDocs((SpanQuery) p.parse("lmnop")));
+    p = new SpanQueryParser(FIELD2, ucVowelAnalyzer, null);
+    assertEquals(1, countDocs(FIELD2, p.parse("lmnop")));
     //analyzer still used on whole terms; don't forget!
-    assertEquals(1, countDocs((SpanQuery) p.parse("LMNOP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse("LM*OP")));
+    assertEquals(1, countDocs(FIELD2, p.parse("LMNOP")));
+    assertEquals(0, countDocs(FIELD2, p.parse("LM*OP")));
 
-    p.setNormMultiTerms(NORM_MULTI_TERMS.LOWERCASE);
-    assertEquals(NORM_MULTI_TERMS.LOWERCASE, p.getNormMultiTerms());
-    assertEquals(1, countDocs((SpanQuery) p.parse("lmnop")));
-    assertEquals(1, countDocs((SpanQuery) p.parse("LMNOP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse("LM*OP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":LM*OP")));
+    p = new SpanQueryParser(FIELD2, ucVowelAnalyzer, lcMultiTermAnalyzer);
+    assertEquals(1, countDocs(FIELD2, p.parse("lmnop")));
+    assertEquals(1, countDocs(FIELD2, p.parse("LMNOP")));
+    assertEquals(0, countDocs(FIELD2, p.parse("LM*OP")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":LM*OP")));
 
     //mismatch between default field and default analyzer; should return 0
-    p = new SpanQueryParser(FIELD1, ucVowelAnalyzer);
-    assertEquals(0, countDocs((SpanQuery) p.parse("lmnop")));
-    assertEquals(0, countDocs((SpanQuery) p.parse("LMNOP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse("lmnOp")));
+    p = new SpanQueryParser(FIELD1, ucVowelAnalyzer, ucVowelMTAnalyzer);
+    assertEquals(0, countDocs(FIELD2, p.parse("lmnop")));
+    assertEquals(0, countDocs(FIELD2, p.parse("LMNOP")));
+    assertEquals(0, countDocs(FIELD2, p.parse("lmnOp")));
 
-    p = new SpanQueryParser(FIELD1, baseAnalyzer, ucVowelAnalyzer);
+    p = new SpanQueryParser(FIELD1, baseAnalyzer, ucVowelMTAnalyzer);
     //cstr with two analyzers sets normMultiTerms = NORM_MULTI_TERM.ANALYZE
     //can't find any in field1 because these trigger multiTerm analysis
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD1 + ":lm*op")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD1 + ":lmno*")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD1 + ":lmmop~1")));
+    assertEquals(0, countDocs(FIELD1, p.parse(FIELD1+":lm*op")));
+    assertEquals(0, countDocs(FIELD1, p.parse(FIELD1+":lmno*")));
+    assertEquals(0, countDocs(FIELD1, p.parse(FIELD1+":lmmop~1")));
 
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD1 + ":LM*OP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD1 + ":LMNO*")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD1 + ":LMMOP~1")));
+    assertEquals(0, countDocs(FIELD1, p.parse(FIELD1+":LM*OP")));
+    assertEquals(0, countDocs(FIELD1, p.parse(FIELD1+":LMNO*")));
+    assertEquals(0, countDocs(FIELD1, p.parse(FIELD1+":LMMOP~1")));
 
     //can find these in field2 because of multiterm analysis
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lm*op")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lmno*")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lmmop~1")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lm*op")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lmno*")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lmmop~1")));
 
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LM*OP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LMNO*")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LMMOP~1")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LM*OP")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LMNO*")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LMMOP~1")));
 
     //try basic use case
-    p = new SpanQueryParser(FIELD1, baseAnalyzer);
+    p = new SpanQueryParser(FIELD1, baseAnalyzer, lcMultiTermAnalyzer);
     //can't find these in field2 because multiterm analysis is using baseAnalyzer
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":lm*op")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":lmno*")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":lmmop~1")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":lm*op")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":lmno*")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":lmmop~1")));
 
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":LM*OP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":LMNO*")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":LMMOP~1")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":LM*OP")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":LMNO*")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":LMMOP~1")));
 
 
-    p.setNormMultiTerms(NORM_MULTI_TERMS.ANALYZE);
-    p = new SpanQueryParser(FIELD1, ucVowelAnalyzer, ucVowelAnalyzer);
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lmnop")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lm*op")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lmno*")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lmmop~1")));
+    p = new SpanQueryParser(FIELD1, ucVowelAnalyzer, ucVowelMTAnalyzer);
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lmnop")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lm*op")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lmno*")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lmmop~1")));
 
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LMNOP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LM*OP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LMNO*")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LMMOP~1")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LMNOP")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LM*OP")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LMNO*")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LMMOP~1")));
 
 
     //now try adding the wrong analyzer for the whole term, but the
     //right multiterm analyzer    
-    p = new SpanQueryParser(FIELD2, baseAnalyzer, ucVowelAnalyzer);
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":lmnop")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lm*op")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lmno*")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":lmmop~1")));
+    p = new SpanQueryParser(FIELD2, baseAnalyzer, ucVowelMTAnalyzer);
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":lmnop")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lm*op")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lmno*")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lmmop~1")));
 
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":LMNOP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LM*OP")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LMNO*")));
-    assertEquals(1, countDocs((SpanQuery) p.parse(FIELD2 + ":LMMOP~1")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":LMNOP")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LM*OP")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LMNO*")));
+    assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LMMOP~1")));
 
     //now set them completely improperly
-    p = new SpanQueryParser(FIELD2, baseAnalyzer, baseAnalyzer);
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":lmnop")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":lm*op")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":lmno*")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":lmmop~1")));
+    p = new SpanQueryParser(FIELD2, baseAnalyzer, lcMultiTermAnalyzer);
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":lmnop")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":lm*op")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":lmno*")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":lmmop~1")));
 
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":LMNOP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":LM*OP")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":LMNO*")));
-    assertEquals(0, countDocs((SpanQuery) p.parse(FIELD2 + ":LMMOP~1")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":LMNOP")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":LM*OP")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":LMNO*")));
+    assertEquals(0, countDocs(FIELD2, p.parse(FIELD2+":LMMOP~1")));
   }
 
 
+  //Just enough for these tests!  This is not
+  //a full solution!
+  private SpanQuery simpleConvert(Query q) {
+    SpanQuery sq;
+    if (q instanceof TermQuery) {
+      sq = new SpanTermQuery(((TermQuery) q).getTerm());
+    } else if (q instanceof SpanQuery) {
+      sq = (SpanQuery)q;
+    } else if (q instanceof BooleanQuery) {
+      List<SpanQuery> parts = new LinkedList<>();
+      for (BooleanClause c : ((BooleanQuery) q).getClauses()) {
+        parts.add(new SpanTermQuery(((TermQuery) c.getQuery()).getTerm()));
+      }
+      sq = new SpanOrQuery(parts.toArray(new SpanQuery[parts.size()]));
+    } else {
+      throw new RuntimeException("Need to convert: " + q.getClass());
+    }
+    return sq;
+  }
+
   /**
-   * Mocks a synonym filter. When it encounters "abc" it adds "qrs" and "tuv"
+   * Mocks a synonym filter. When it encounters "abc" it adds "qrs" and "tuv" 
    */
   private final static class MockSynFilter extends TokenFilter {
+    private List<String> synBuffer = new LinkedList<String>();
+
     private final CharTermAttribute termAtt;
     private final PositionIncrementAttribute posIncrAtt;
-    private List<String> synBuffer = new LinkedList<String>();
 
     public MockSynFilter(TokenStream in) {
       super(in);
@@ -376,6 +407,11 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
         return true;
       }
     }
+
+    @Override
+    public void reset() throws IOException {
+      super.reset();
+    }
   }
 
 
@@ -383,8 +419,9 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
    * Mocks what happens in a non-whitespace language. Tokenizes on white space and "_".
    */
   private final static class MockNonWhitespaceFilter extends TokenFilter {
-    private final CharTermAttribute termAtt;
     private List<String> buffer = new LinkedList<String>();
+
+    private final CharTermAttribute termAtt;
 
     public MockNonWhitespaceFilter(TokenStream in) {
       super(in);
@@ -416,6 +453,10 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
       }
     }
 
+    @Override
+    public void reset() throws IOException {
+      super.reset();
+    }
   }
 
   //mocks uppercasing vowels to test different analyzers for different fields
@@ -445,6 +486,7 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
       text = sb.toString();
       termAtt.setEmpty().append(text);
       return true;
+
     }
 
     @Override

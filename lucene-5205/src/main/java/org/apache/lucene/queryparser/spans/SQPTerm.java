@@ -17,7 +17,7 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-class SQPTerm extends SQPTerminal {
+final class SQPTerm extends SQPTerminal {
   private final String string;
   private boolean isQuoted = false;
 

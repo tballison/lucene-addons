@@ -17,47 +17,23 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-class SQPOpenClause extends SQPClause {
-  private final TYPE type;
+class SQPPrefixTerm extends SQPTerminal {
 
-  public SQPOpenClause(int startTokenOffset, TYPE type) {
-    super(startTokenOffset);
-    this.type = type;
+  private String prefix;
+
+  SQPPrefixTerm(String prefix) {
+    this.prefix = prefix;
   }
-
-  public TYPE getType() {
-    return type;
-  }
-
+  
   @Override
-  public int hashCode() {
-    final int prime = 31;
-    int result = super.hashCode();
-    result = prime * result + ((type == null) ? 0 : type.hashCode());
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (!super.equals(obj)) {
-      return false;
-    }
-    if (!(obj instanceof SQPOpenClause)) {
-      return false;
-    }
-    SQPOpenClause other = (SQPOpenClause) obj;
-    return type == other.type;
+  public String getString() {
+    return prefix;
   }
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SQPOpenClause [type=");
-    builder.append(type);
-    builder.append("]");
-    return builder.toString();
+    return "SQPPrefixTerm{" +
+        "prefix='" + prefix + '\'' +
+        '}';
   }
 }
