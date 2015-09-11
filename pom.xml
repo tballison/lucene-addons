@@ -33,8 +33,8 @@
   <packaging>pom</packaging>
   <name>Lucene Addons</name>
   <description>This package offers standalone
-  versions of LUCENE-5205 (and some others to come: LUCENE-5317 and LUCENE-5318)
-  for Lucene 4.x versions
+  versions of LUCENE-5205 and LUCENE-5317 (and some others to come: LUCENE-5318)
+  for versions of Lucene 4.x-trunk
   </description>
 
 
