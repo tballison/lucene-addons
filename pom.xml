@@ -34,7 +34,7 @@
   <name>Lucene Addons</name>
   <description>This package offers standalone
   versions of LUCENE-5205 and LUCENE-5317 (and some others to come: LUCENE-5318)
-  for versions of Lucene 4.x-trunk
+  for versions of Lucene 5.0-5.2
   </description>
 
 
