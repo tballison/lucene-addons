@@ -21,7 +21,6 @@ import static org.apache.lucene.util.automaton.Automata.makeString;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -39,12 +38,11 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.RandomIndexWriter;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermContext;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
+import org.apache.lucene.search.spans.SpanWeight;
 import org.apache.lucene.search.spans.Spans;
 import org.apache.lucene.util.TestUtil;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
@@ -602,7 +600,9 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     assert (ctxs.size() == 1);
     LeafReaderContext ctx = ctxs.get(0);
     q = (SpanQuery) q.rewrite(ctx.reader());
-    Spans spans = q.getSpans(ctx, null, new HashMap<Term, TermContext>());
+    SpanWeight sw = q.createWeight(searcher, false);
+
+    final Spans spans = sw.getSpans(ctx, SpanWeight.Postings.POSITIONS);
 
     int i = 0;
     int spanStart = -1;

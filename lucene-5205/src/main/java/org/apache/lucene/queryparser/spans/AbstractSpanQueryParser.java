@@ -17,6 +17,10 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
@@ -42,8 +46,8 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
    * will return a non-null value.
    */
   protected SpanQuery _parsePureSpanClause(final List<SQPToken> tokens,
-      String field, SQPClause parentClause)
-          throws ParseException {
+                                           String field, SQPClause parentClause)
+      throws ParseException {
 
     int start = parentClause.getTokenOffsetStart();
     int end = parentClause.getTokenOffsetEnd();
@@ -85,11 +89,11 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
       queries.add(q);
     }
     return buildSpanQueryClause(queries, parentClause);
-  }   
+  }
 
   private SpanQuery trySpecialHandlingForSpanNearWithOneComponent(String field,
-      SQPTerm token, SQPNearClause clause)
-          throws ParseException {
+                                                                  SQPTerm token, SQPNearClause clause)
+      throws ParseException {
 
     int slop = (clause.getSlop() == null) ? getPhraseSlop() : clause.getSlop();
     boolean order = true;
@@ -101,29 +105,6 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
         token.getString(), slop, order);
     return ret;
 
-  }
-
-  protected SpanQuery buildSpanTerminal(String field, SQPTerminal token) throws ParseException {
-    Query q = null;
-    if (token instanceof SQPRegexTerm) {
-      q = getRegexpQuery(field, ((SQPRegexTerm)token).getString());
-    } else if (token instanceof SQPTerm) {
-      q = buildAnySingleTermQuery(field, ((SQPTerm)token).getString(), ((SQPTerm)token).isQuoted());
-    } else if (token instanceof SQPRangeTerm) {
-      SQPRangeTerm rt = (SQPRangeTerm)token;
-      q = getRangeQuery(field, rt.getStart(), rt.getEnd(), 
-          rt.getStartInclusive(), rt.getEndInclusive());
-    }
-    if (q != null && token instanceof SQPBoostableToken) {
-      float boost = ((SQPBoostableToken)token).getBoost();
-      if (boost != SpanQueryParserBase.UNSPECIFIED_BOOST) {
-        q.setBoost(boost);
-      } 
-    }
-    if (q != null && q instanceof SpanQuery) {
-      return (SpanQuery)q;
-    }
-    return null;
   }
 
   private SpanQuery buildSpanQueryClause(List<SpanQuery> queries, SQPClause clause)
@@ -146,28 +127,27 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
       Boolean inOrder = ((SQPNearClause)clause).getInOrder();
       boolean order = false;
       if (inOrder == null) {
-        order = slop > 0 ? false : true; 
+        order = slop > 0 ? false : true;
       } else {
         order = inOrder.booleanValue();
       }
-      q = buildSpanNearQuery(queries, 
+      q = buildSpanNearQuery(queries,
           slop, order);
     } else if (clause instanceof SQPNotNearClause) {
-      q = buildSpanNotNearQuery(queries, 
+      q = buildSpanNotNearQuery(queries,
           ((SQPNotNearClause)clause).getNotPre(),
           ((SQPNotNearClause)clause).getNotPost());
-
     } else {
       //throw early and loudly. This should never happen.
       throw new IllegalArgumentException("clause not recognized: "+clause.getClass());
     }
 
-    if (clause.getBoost() != UNSPECIFIED_BOOST) {
-      q.setBoost(clause.getBoost());      
+    if (clause.getBoost() != null) {
+      q.setBoost(clause.getBoost());
     }
     //now update boost if clause only had one child
     if (clause.getBoost() != null && (
-            q instanceof SpanTermQuery ||
+        q instanceof SpanTermQuery ||
             q instanceof SpanMultiTermQueryWrapper)) {
       q.setBoost(clause.getBoost());
     }
@@ -179,3 +159,4 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
     return defaultField;
   }
 }
+

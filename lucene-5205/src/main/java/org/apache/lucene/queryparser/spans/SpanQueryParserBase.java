@@ -17,6 +17,11 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -49,15 +54,13 @@ import org.apache.lucene.util.automaton.LevenshteinAutomata;
  * This mimics QueryParserBase.  Instead of extending it, though, this now makes
  * a cleaner start via QueryBuilder.
  * <p>
- * When SpanQueries are eventually nuked, there should be an easyish 
+ * When SpanQueries are eventually nuked, there should be an easyish
  * refactoring of classes that extend this class to extend QueryParserBase.
  * <p>
  * This should also allow for an easy transfer to javacc or similar.
- * 
+ *
  */
 abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
-
-  //better to make these public in QueryParserBase
 
   //they are needed in addClause
   public static final int CONJ_NONE   = 0;
@@ -96,23 +99,10 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     return new SpanNearQuery(queries, slop, inOrder, collectPayloads);
   }
 
-  ///////
-  // Override getXQueries to return span queries
-  // Lots of boilerplate.  Sorry.
-  //////
-
-  @Override 
-  protected Query newRegexpQuery(Term t) {
-    RegexpQuery query = new RegexpQuery(t);
-    query.setRewriteMethod(getMultiTermRewriteMethod(t.field()));
-    return new SpanMultiTermQueryWrapper<RegexpQuery>(query);
-  }
-
   /**
    * Currently returns multiTermRewriteMethod no matter the field.
    * This allows for hooks for overriding to handle
    * field-specific MultiTermRewriteMethod handling
-   *
    * @return RewriteMethod for a given field
    */
   public RewriteMethod getMultiTermRewriteMethod(String field) {
@@ -174,81 +164,26 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     return ret;
   }
 
-  @Override
-  protected Query newPrefixQuery(Term t) {
-    PrefixQuery q = new PrefixQuery(t);
-    q.setRewriteMethod(getMultiTermRewriteMethod(t.field()));
-    return new SpanMultiTermQueryWrapper<PrefixQuery>(q);
-  }
-
   /**
-   * Factory method for generating a query (similar to
-   * {@link #getWildcardQuery}). Called when parser parses an input term
-   * token that uses prefix notation; that is, contains a single '*' wildcard
-   * character as its last character. Since this is a special case
-   * of generic wildcard term, and such a query can be optimized easily,
-   * this usually results in a different query object.
-   *<p>
-   * Depending on settings, a prefix term may be lower-cased
-   * automatically. It will not go through the default Analyzer,
-   * however, since normal Analyzers are unlikely to work properly
-   * with wildcard templates.
-   *<p>
-   * Can be overridden by extending classes, to provide custom handling for
-   * wild card queries, which may be necessary due to missing analyzer calls.
-   *
-   * @param field Name of the field query will use.
-   * @param termStr Term token to use for building term for the query
-   *    (<b>without</b> trailing '*' character!)
-   *
-   * @return Resulting {@link org.apache.lucene.search.Query} built for the term
-   * @exception org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
+   * Builds a SpanQuery from an SQPTerminal.
+   * <p>
+   * Can return null, e.g. if the terminal is a stopword.
+   * @param fieldName
+   * @param terminal
+   * @return
+   * @throws ParseException
    */
-  protected Query getPrefixQuery(String field, String termStr) throws ParseException {
-    if (!getAllowLeadingWildcard() && termStr.startsWith("*"))
-      throw new ParseException("'*' not allowed as first character in PrefixQuery");
-
-    if (getNormMultiTerms() == NORM_MULTI_TERMS.ANALYZE) {
-      termStr = analyzeMultitermTermParseEx(field, termStr).utf8ToString();
-    } else if (getNormMultiTerms() == NORM_MULTI_TERMS.LOWERCASE) {
-      termStr = termStr.toLowerCase(getLocale());
+  protected SpanQuery buildSpanTerminal(String fieldName, SQPTerminal terminal) throws ParseException {
+    if (terminal instanceof SQPTerm) {
+      return newFieldSpanQuery(fieldName, terminal.getString(), ((SQPTerm) terminal).isQuoted());
     }
-    Term t = new Term(field, unescape(termStr));
-    return newPrefixQuery(t);
-  }
-
-  @Override
-  protected Query newWildcardQuery(Term t) {
-    WildcardQuery q = new WildcardQuery(t);
-    q.setRewriteMethod(getMultiTermRewriteMethod(t.field()));
-    return new SpanMultiTermQueryWrapper<WildcardQuery>(q);
-  }
-
-  /**
-   * Factory method for generating a query. Called when parser
-   * parses an input term token that contains one or more wildcard
-   * characters (? and *), but is not a prefix term token (one
-   * that has just a single * character at the end)
-   *<p>
-   * Depending on settings, prefix term may be lower-cased
-   * automatically. It will not go through the default Analyzer,
-   * however, since normal Analyzers are unlikely to work properly
-   * with wildcard templates.
-   *<p>
-   * Can be overridden by extending classes, to provide custom handling for
-   * wildcard queries, which may be necessary due to missing analyzer calls.
-   *
-   * @param field Name of the field query will use.
-   * @param termStr Term token that contains one or more wild card
-   *   characters (? or *), but is not simple prefix term
-   *
-   * @return Resulting {@link org.apache.lucene.search.Query} built for the term
-   * @exception org.apache.lucene.queryparser.classic.ParseException throw in overridden method to disallow
-   */
-  @Override
-  protected Query getWildcardQuery(String field, String termStr) throws ParseException {
-    if ("*".equals(field)) {
-      if ("*".equals(termStr)) return newMatchAllDocsQuery();
+    Query q = buildTerminal(fieldName, terminal);
+    if (q instanceof MultiTermQuery) {
+      return new SpanMultiTermQueryWrapper<>((MultiTermQuery)q);
+    } else if (q instanceof TermQuery){
+      //this happens when fuzzy query has a fuzzy = 0, and a TermQuery is generated
+      //straight from the analyzed str
+      return new SpanTermQuery(((TermQuery)q).getTerm());
     }
 
     return (SpanQuery)q;
@@ -331,20 +266,19 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     }
     return buildSpanOrQuery(queries);
   }
-  
+
   /**
    * Build what appears to be a simple single term query. If the analyzer breaks
    * it into multiple terms, treat that as a "phrase" or as an "or" depending on
    * the value of {@link #autoGeneratePhraseQueries}.
-   * 
+   *
    * If the analyzer is null, this calls {@link #handleNullAnalyzer(String, String)}
-   * 
+   *
    * Can return null!
    * @param quoted -- is the term quoted
    * @return query
    */
-  @Override 
-  protected Query newFieldQuery(Analyzer analyzer, String fieldName, String termText, boolean quoted)
+  protected Query newFieldQuery(String fieldName, String termText, boolean quoted, int phraseSlop)
       throws ParseException {
     Analyzer analyzer = getAnalyzer(fieldName);
 
@@ -397,17 +331,15 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     if (mtAnalyzer == null) {
       return handleNullAnalyzerRange(fieldName, lowerTerm, upperTerm, includeLower, includeUpper);
     }
-    if (buffer.hasAttribute(PositionIncrementAttribute.class)) {
-      posIncrAtt = buffer.getAttribute(PositionIncrementAttribute.class);
-    }
-    if (buffer.hasAttribute(OffsetAttribute.class)) {
-      offsetAtt = buffer.getAttribute(OffsetAttribute.class);
-    }
+    BytesRef lowerBytesRef = (lowerTerm == null) ? null :
+        analyzeMultitermTermParseEx(mtAnalyzer, fieldName, lowerTerm);
+    BytesRef upperBytesRef = (upperTerm == null) ? null :
+        analyzeMultitermTermParseEx(mtAnalyzer, fieldName, upperTerm);
 
     return wrapMultiTermRewrite(new TermRangeQuery(fieldName, lowerBytesRef, upperBytesRef, includeLower, includeUpper));
   }
   protected Query newFuzzyQuery(String fieldName, String termText,
-      int maxEdits, int prefixLen, int maxExpansions, boolean transpositions) throws ParseException {
+                                int maxEdits, int prefixLen, int maxExpansions, boolean transpositions) throws ParseException {
     maxEdits = Math.min(maxEdits, getFuzzyMaxEdits());
     Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
     String analyzed = termText;
@@ -472,15 +404,15 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     MultiTermQuery mtq = new PrefixQuery(new Term(fieldName, prefix));
     return mtq;
   }
-  
+
   /**
    * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
    * with no modifications to termText
-   * 
+   *
    * @return query
    */
   public Query handleNullAnalyzerRange(String fieldName, String start,
-      String end, boolean startInclusive, boolean endInclusive) {
+                                       String end, boolean startInclusive, boolean endInclusive) {
     final TermRangeQuery query =
         TermRangeQuery.newStringRange(fieldName, start, end, startInclusive, endInclusive);
 
@@ -490,10 +422,10 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
 
   /**
-   * 
+   *
    * @return {@link org.apache.lucene.search.spans.SpanOrQuery} might be empty if clauses is null or contains
    *         only empty queries
-   */   
+   */
   protected SpanQuery buildSpanOrQuery(List<SpanQuery> clauses)
       throws ParseException {
     if (clauses == null || clauses.size() == 0)
@@ -598,8 +530,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @return query
    */
   protected Query specialHandlingForSpanNearWithOneComponent(String field,
-      String termText, 
-      int ancestralSlop, Boolean ancestralInOrder) throws ParseException {
+                                                             String termText,
+                                                             int ancestralSlop, Boolean ancestralInOrder) throws ParseException {
     Query q = newFieldSpanQuery(field, termText, true);
     if (q instanceof SpanNearQuery) {
       SpanQuery[] childClauses = ((SpanNearQuery)q).getClauses();
@@ -609,7 +541,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   protected SpanQuery buildSpanNotNearQuery(List<SpanQuery> clauses, Integer pre,
-      Integer post) throws ParseException {
+                                            Integer post) throws ParseException {
     if (clauses.size() != 2) {
       throw new ParseException(
           String.format("SpanNotNear query must have two clauses. I count %d",
@@ -644,7 +576,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     for (SpanQuery q : queries) {
       if (!isEmptyQuery(q)) {
         nonEmpties.add(q);
-      } 
+      }
     }
     return nonEmpties;
   }
@@ -663,7 +595,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * 
+   *
    * @return maximum distance allowed for a SpanNear query.  Can return negative values.
    */
   public int getSpanNearMaxDistance() {
@@ -671,8 +603,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * 
-   * @param spanNearMaxDistance maximum distance for a SpanNear (phrase) query. If < 0, 
+   *
+   * @param spanNearMaxDistance maximum distance for a SpanNear (phrase) query. If < 0,
    * there is no limitation on distances in SpanNear queries.
    */
   public void setSpanNearMaxDistance(int spanNearMaxDistance) {
@@ -680,8 +612,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * 
-   * @return maximum distance allowed for a SpanNotNear query.  
+   *
+   * @return maximum distance allowed for a SpanNotNear query.
    * Can return negative values.
    */
   public int getSpanNotNearMaxDistance() {
@@ -689,29 +621,62 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   }
 
   /**
-   * 
-   * @param spanNotNearMaxDistance maximum distance for the previous and post distance for a SpanNotNear query. If < 0, 
+   *
+   * @param spanNotNearMaxDistance maximum distance for the previous and post distance for a SpanNotNear query. If < 0,
    * there is no limitation on distances in SpanNotNear queries.
    */
   public void setSpanNotNearMaxDistance(int spanNotNearMaxDistance) {
     this.spanNotNearMaxDistance = spanNotNearMaxDistance;
   }
 
-    /**
-   * Copied nearly exactly from FuzzyQuery's floatToEdits because
-   * FuzzyQuery's floatToEdits requires that the return value 
-   * be <= LevenshteinAutomata.MAXIMUM_SUPPORTED_DISTANCE
-   * 
-   * @return edits
-   */
-  public static int unboundedFloatToEdits(float minimumSimilarity, int termLen) {
-    if (minimumSimilarity >= 1f) {
-      return (int)minimumSimilarity;
-    } else if (minimumSimilarity == 0.0f) {
-      return 0; // 0 means exact, not infinite # of edits!
-    } else {
-      return (int)((1f-minimumSimilarity) * termLen);
-    }
+  public boolean getAllowLeadingWildcard() {
+    return allowLeadingWildcard;
   }
-  
+
+  public int getPhraseSlop() {
+    return defaultPhraseSlop;
+  }
+
+  public void setPhraseSlop(int slop) {
+    defaultPhraseSlop = slop;
+  }
+  public int getMaxExpansions() {
+    return maxExpansions;
+  }
+  public void setMaxExpansions(int maxExpansions) {
+    this.maxExpansions = maxExpansions;
+  }
+
+  public void setAutoGeneratePhraseQueries(boolean autoGeneratePhraseQueries) {
+    this.autoGeneratePhraseQueries = autoGeneratePhraseQueries;
+  }
+
+  public boolean getAutoGeneratePhraseQueries() {
+    return autoGeneratePhraseQueries;
+  }
+
+  public void setAllowLeadingWildcard(boolean allowLeadingWildcard) {
+    this.allowLeadingWildcard = allowLeadingWildcard;
+  }
+
+  public int getFuzzyPrefixLength() { return fuzzyPrefixLength; }
+  public void setFuzzyPrefixLength(int fuzzyPrefixLength) { this.fuzzyPrefixLength = fuzzyPrefixLength; }
+
+  public boolean getFuzzyIsTranspositions() {
+    return fuzzyIsTranspositions;
+  }
+
+  public void setDefaultOperator(QueryParser.Operator defaultOperator) {
+    this.defaultOperator = defaultOperator;
+    this.singleTermBooleanOperator = (defaultOperator == QueryParser.Operator.OR) ?
+        BooleanClause.Occur.SHOULD : BooleanClause.Occur.MUST;
+  }
+
+  public int getFuzzyMaxEdits() {
+    return fuzzyMaxEdits;
+  }
+  public void setFuzzyMaxEdits(int fuzzyMaxEdits) {
+    this.fuzzyMaxEdits = fuzzyMaxEdits;
+  }
 }
+

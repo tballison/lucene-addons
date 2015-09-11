@@ -21,7 +21,6 @@ package org.apache.solr.search;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
-import org.apache.lucene.queryparser.spans.AnalyzingQueryParserBase.NORM_MULTI_TERMS;
 import org.apache.lucene.search.Query;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
@@ -41,7 +40,6 @@ public class SpanQParser extends QParser {
   private final String NEAR_MAX = "nmax";
   private final String NOT_NEAR_MAX = "nnmax";
   private final String ALLOW_LEADING_WILDCARD = "ldwc";
-//  private final String ANALYZE_RANGE_TERMS = "art";
   private final String AUTO_GENERATE_PHRASE = "ap";
   private final String PHRASE_SLOP = "ps";
   private final String PREFIX_LENGTH = "pl";

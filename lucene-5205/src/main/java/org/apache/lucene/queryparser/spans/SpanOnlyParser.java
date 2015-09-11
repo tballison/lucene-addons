@@ -31,21 +31,13 @@ import org.apache.lucene.search.spans.SpanQuery;
  * However, it does guarantee that a SpanQuery is returned.
  * <p>
  * The functionality of this class was the initial offering in LUCENE-5205.
- * 
+ *
  *
 
  * @see SpanQueryParser
  */
 public class SpanOnlyParser extends AbstractSpanQueryParser {
 
-  /**
-   * Initializes the SpanOnlyParser.
-   * @param f default field
-   * @param a analyzer to use
-   */
-  public SpanOnlyParser(Version matchVersion, String f, Analyzer a) {
-    init(matchVersion, f, a);
-  }
 
   /**
    * Initializes SpanOnlyParser.
@@ -64,32 +56,6 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
     return q;
   }
 
-  /**
-   * This is an artifact of extending QueryParserBase. 
-   * Do not use this.  It will always assert(false) and fail to set the stream.
-   * Instead, set the default field in the initializer and 
-   * use {@link #parse(String)}.
-   */
-  @Deprecated
-  @Override
-  public void ReInit(CharStream stream) {
-    assert(false);
-  }
-
-  /**
-   * This is an artifact of extending QueryParserBase. 
-   * Do not use this.  It will always assert(false) and return null.
-   * Instead, set the default field in the initializer and 
-   * use {@link #parse(String)}.
-   */
-  @Deprecated
-  @Override
-  public Query TopLevelQuery(String field) throws ParseException {
-    assert(false);
-    return null;
-  }
-
-
   protected Query _parsePureSpan(String field, String queryString) throws ParseException {
     SpanQueryLexer lexer = new SpanQueryLexer();
     List<SQPToken> tokens = lexer.getTokens(queryString);
@@ -97,3 +63,4 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
     return _parsePureSpanClause(tokens, field, overallClause);
   }
 }
+

@@ -17,17 +17,13 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import java.io.IOException;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.util.BytesRef;
-import org.apache.lucene.util.Version;
-
-import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import org.apache.lucene.util.QueryBuilder;
 
 /**
  * Enables setting different analyzers for whole term vs. 
@@ -127,17 +123,6 @@ public abstract class AnalyzingQueryParserBase extends QueryBuilder {
     return BytesRef.deepCopyOf(bytes);
   }
 
-  /**
-   * Analysis of wildcards is a bit tricky.  This splits a term by wildcard
-   * and then analyzes the subcomponents.
-   * 
-   * @return analyzed wildcard
-   */
-  protected String analyzeWildcard(String field, String termText) throws ParseException {    
-    // plagiarized from AnalyzingQueryParser
-    Matcher wildcardMatcher = WILDCARD_PATTERN.matcher(termText);
-    StringBuilder sb = new StringBuilder();
-    int last = 0;
 
   /**
    * In this base class, this simply returns 
