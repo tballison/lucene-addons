@@ -57,7 +57,7 @@ public class ReanalyzingTokenCharOffsetsReader implements
     int charBase = 0;
     for (String fieldValue : d.getValues(fieldName)) {
 
-      currPosInc = addFieldValue(fieldIndex, currPosInc, charBase, fieldValue, requests,
+      currPosInc = addFieldValue(fieldName, currPosInc, charBase, fieldValue, requests,
           results);
 
       if (currPosInc == GOT_ALL_REQUESTS) {
@@ -70,11 +70,11 @@ public class ReanalyzingTokenCharOffsetsReader implements
 
   }
 
-  private int addFieldValue(int fieldIndex, int currInd, int charBase, String fieldValue,
+  private int addFieldValue(String fieldName, int currInd, int charBase, String fieldValue,
                             TokenCharOffsetRequests requests, RandomAccessCharOffsetContainer results)
       throws IOException {
     //Analyzer limitAnalyzer = new LimitTokenCountAnalyzer(baseAnalyzer, 10, true);
-    TokenStream stream = baseAnalyzer.tokenStream("", fieldValue);
+    TokenStream stream = baseAnalyzer.tokenStream(fieldName, fieldValue);
     stream.reset();
 
     int defaultInc = 1;

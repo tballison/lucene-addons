@@ -25,7 +25,6 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
@@ -34,11 +33,12 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsets;
-import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsetsIterator;
+import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsetsVisitor;
 import org.apache.lucene.search.concordance.charoffsets.OffsetLengthStartComparator;
 import org.apache.lucene.search.concordance.charoffsets.OffsetUtil;
 import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
 import org.apache.lucene.search.concordance.charoffsets.ReanalyzingTokenCharOffsetsReader;
+import org.apache.lucene.search.concordance.charoffsets.SpansCrawler;
 import org.apache.lucene.search.concordance.charoffsets.TargetTokenNotFoundException;
 import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetRequests;
 import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetsReader;
@@ -153,74 +153,19 @@ public class ConcordanceSearcher {
       IOException {
 
     spanQuery = (SpanQuery) spanQuery.rewrite(searcher.getIndexReader());
-    DocTokenOffsetsIterator itr = new DocTokenOffsetsIterator();
     Set<String> fields = new HashSet<>(
         windowBuilder.getFieldSelector());
     fields.add(spanQuery.getField());
-    itr.reset(spanQuery, filter, searcher, fields);
-    buildResults(itr, searcher.getIndexReader(), spanQuery.getField(), analyzer, collector);
-
-  }
-
-  private void buildResults(DocTokenOffsetsIterator itr,
-                            IndexReader reader, String fieldName, Analyzer analyzer, AbstractConcordanceWindowCollector collector)
-      throws IllegalArgumentException, TargetTokenNotFoundException,
-      IOException {
-
-    collector.setTotalDocs(reader.numDocs());
-    TokenCharOffsetRequests requests = new TokenCharOffsetRequests();
-
-    TokenCharOffsetsReader tokenOffsetsRecordReader =
-        new ReanalyzingTokenCharOffsetsReader(analyzer);
-
-    RandomAccessCharOffsetContainer offsetResults = new RandomAccessCharOffsetContainer();
-    DocTokenOffsets result = null;
-    OffsetLengthStartComparator offsetLengthStartComparator = new OffsetLengthStartComparator();
-    boolean stop = false;
-    while (itr.next() && !stop) {
-      result = itr.getDocTokenOffsets();
-      Document document = result.getDocument();
-
-      String[] fieldValues = document.getValues(fieldName);
-
-      if (fieldValues == null || fieldValues.length == 0) {
-        throwMissingField(document);
-      }
-      Map<String, String> metadata = windowBuilder.extractMetadata(document);
-      String docId = windowBuilder.getUniqueDocumentId(document, result.getUniqueDocId());
-
-      List<OffsetAttribute> tokenOffsets = result.getOffsets();
-      if (!allowTargetOverlaps) {
-        // remove overlapping hits!!!
-        tokenOffsets = OffsetUtil.removeOverlapsAndSort(tokenOffsets,
-            offsetLengthStartComparator, null);
-      }
-
-      //clear then get new requests       
-      requests.clear();
-      ConcordanceSearcherUtil.getCharOffsetRequests(tokenOffsets,
-          windowBuilder.getTokensBefore(), windowBuilder.getTokensAfter(), requests);
-
-      offsetResults.clear();
-
-      tokenOffsetsRecordReader.getTokenCharOffsetResults(
-          document, fieldName, requests, offsetResults);
-
-      for (OffsetAttribute offset : tokenOffsets) {
-
-        ConcordanceWindow w = windowBuilder.buildConcordanceWindow(
-            docId, offset.startOffset(),
-            offset.endOffset() - 1, fieldValues,
-            offsetResults, metadata);
-
-        collector.collect(w);
-        if (collector.getHitMax()) {
-          stop = true;
-          break;
-        }
-      }
+    DocTokenOffsetsVisitor visitor = new ConcDTOffsetVisitor(spanQuery.getField(), analyzer,
+        fields, collector);
+    if (filter == null) {
+      SpansCrawler.crawl(spanQuery, searcher, visitor);
+    } else {
+      SpansCrawler.crawl(spanQuery, filter, searcher, visitor);
     }
+    collector.setTotalDocs(searcher.getIndexReader().numDocs());
   }
+
 
   /**
    * Spans can overlap: a search for ["ab cd" "ab"] would have
@@ -253,5 +198,86 @@ public class ConcordanceSearcher {
    */
   public void setSpanQueryConverter(SimpleSpanQueryConverter converter) {
     this.spanQueryConverter = converter;
+  }
+
+  class ConcDTOffsetVisitor implements DocTokenOffsetsVisitor {
+    final Set<String> fields;
+    final DocTokenOffsets docTokenOffsets = new DocTokenOffsets();
+    final Analyzer analyzer;
+    final String fieldName;
+    final AbstractConcordanceWindowCollector collector;
+    TokenCharOffsetRequests requests = new TokenCharOffsetRequests();
+
+    TokenCharOffsetsReader tokenOffsetsRecordReader;
+
+
+    RandomAccessCharOffsetContainer offsetResults = new RandomAccessCharOffsetContainer();
+    OffsetLengthStartComparator offsetLengthStartComparator = new OffsetLengthStartComparator();
+
+
+    ConcDTOffsetVisitor(String fieldName, Analyzer analyzer, Set<String> fields,
+                        AbstractConcordanceWindowCollector collector) {
+      this.fieldName = fieldName;
+      this.analyzer = analyzer;
+      this.fields = fields;
+      this.collector = collector;
+      tokenOffsetsRecordReader = new ReanalyzingTokenCharOffsetsReader(analyzer);
+
+    }
+    @Override
+    public DocTokenOffsets getDocTokenOffsets() {
+      return docTokenOffsets;
+    }
+
+    @Override
+    public Set<String> getFields() {
+      return fields;
+    }
+
+    @Override
+    public boolean visit(DocTokenOffsets docTokenOffsets) throws IOException {
+      Document document = docTokenOffsets.getDocument();
+
+      String[] fieldValues = document.getValues(fieldName);
+
+      if (fieldValues == null || fieldValues.length == 0) {
+        throwMissingField(document);
+      }
+      Map<String, String> metadata = windowBuilder.extractMetadata(document);
+      String docId = windowBuilder.getUniqueDocumentId(document, docTokenOffsets.getUniqueDocId());
+
+      List<OffsetAttribute> tokenOffsets = docTokenOffsets.getOffsets();
+      if (!allowTargetOverlaps) {
+        // remove overlapping hits!!!
+        tokenOffsets = OffsetUtil.removeOverlapsAndSort(tokenOffsets,
+            offsetLengthStartComparator, null);
+      }
+
+      //clear then get new requests
+      requests.clear();
+      ConcordanceSearcherUtil.getCharOffsetRequests(tokenOffsets,
+          windowBuilder.getTokensBefore(), windowBuilder.getTokensAfter(), requests);
+
+      offsetResults.clear();
+
+      tokenOffsetsRecordReader.getTokenCharOffsetResults(
+          document, fieldName, requests, offsetResults);
+
+      for (OffsetAttribute offset : tokenOffsets) {
+        try {
+          ConcordanceWindow w = windowBuilder.buildConcordanceWindow(
+              docId, offset.startOffset(),
+              offset.endOffset() - 1, fieldValues,
+              offsetResults, metadata);
+          collector.collect(w);
+        } catch (TargetTokenNotFoundException e) {
+          throw new IllegalArgumentException(e);
+        }
+        if (collector.getHitMax()) {
+          return false;
+        }
+      }
+      return true;
+    }
   }
 }

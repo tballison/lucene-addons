@@ -43,7 +43,7 @@
     <module>lucene-5205</module>
     <module>solr-5410</module>
     <module>lucene-5317</module>
-    <module>solr-5411</module>
+   <!-- turn off for now<module>solr-5411</module>-->
   </modules>
 
 

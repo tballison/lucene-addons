@@ -19,15 +19,11 @@ package org.apache.lucene.search.concordance.charoffsets;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Set;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.index.TermContext;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Filter;
@@ -58,8 +54,6 @@ public class DocTokenOffsetsIterator {
   private DocTokenOffsets docTokenOffsets = new DocTokenOffsets();
   private int currentBase = -1;
 
-  private Map<Term, TermContext> termMap = new HashMap<Term, TermContext>();
-
   public DocTokenOffsetsIterator() {
   }
 
@@ -67,6 +61,8 @@ public class DocTokenOffsetsIterator {
                     Set<String> fields) throws IOException {
 
     this.spanWeight = q.createWeight(searcher, false);
+
+    System.out.println("WEIGHT: " + spanWeight.toString());
     this.filter = f;
 
     this.fields = fields;
@@ -77,7 +73,6 @@ public class DocTokenOffsetsIterator {
   }
 
   public boolean next() throws IOException {
-
     if (spans == null) {
       if (leafReaders.size() == 0) {
         return false;
@@ -85,18 +80,24 @@ public class DocTokenOffsetsIterator {
         return false;
       }
     }
+    System.out.println("finishing iteration 2");
 
     while (spans.nextDoc() != Spans.NO_MORE_DOCS) {
+      System.out.println("spans: "+spans.docID());
       if (currFilteredDocs != null && ! currFilteredDocs.get(spans.docID())) {
         continue;
       }
       Document d = currReader.document(spans.docID(), fields);
       docTokenOffsets.reset(currentBase, spans.docID(), d);
       while (spans.nextStartPosition() != Spans.NO_MORE_POSITIONS) {
+        System.out.println("START: "+spans.startPosition() + " : "+spans.docID());
         docTokenOffsets.addOffset(spans.startPosition(), spans.endPosition());
       }
+      System.out.println("returning true");
       return true;
     }
+    System.out.println("finishing iteration 3");
+
     return false;
   }
 
@@ -105,6 +106,7 @@ public class DocTokenOffsetsIterator {
   }
 
   private boolean reinitSpans() throws IOException {
+    System.out.println("REINIT!");
     // must check that leafReaders.size() > 0 before running this!!!
     LeafReaderContext ctx = leafReaders.pop();
     currentBase = ctx.docBase;
@@ -144,7 +146,7 @@ public class DocTokenOffsetsIterator {
       }
     }
     spans = spanWeight.getSpans(ctx, SpanWeight.Postings.POSITIONS);
-
+    System.out.println("SPANS2: "+spans);
     // can getSpans return null?
 
     if (spans != null) {

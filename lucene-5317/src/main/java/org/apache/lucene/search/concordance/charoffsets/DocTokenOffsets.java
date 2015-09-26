@@ -34,7 +34,7 @@ public class DocTokenOffsets {
   private int atomicDocId = -1;
   private long uniqueId = -1;
   private Document document = null;
-  private List<OffsetAttribute> offsets = new ArrayList<OffsetAttribute>();
+  private List<OffsetAttribute> offsets = new ArrayList<>();
 
   public void addOffset(int start, int end) {
     OffsetAttributeImpl offset = new OffsetAttributeImpl();

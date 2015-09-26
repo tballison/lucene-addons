@@ -16,6 +16,8 @@
  */
 package org.apache.lucene.search.concordance;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +34,7 @@ import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.TermQuery;
@@ -51,6 +54,7 @@ import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -516,5 +520,36 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     reader.close();
     directory.close();
   }
-  //TODO: add tests with deleted documents
+
+  @Test
+  public void testRewrites() throws Exception {
+    String[] docs = new String[]{"fox fox", "fax fax", "fex", "fix"};
+    Analyzer analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET);
+    Path dir = Paths.get("C:\\Users\\tallison\\Documents\\My Projects\\Rhapsode\\v03_dev\\resources\\index\\index");
+    Directory directory = FSDirectory.open(dir);
+    IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
+    System.out.println("MAX DOC: " + indexSearcher.getIndexReader().maxDoc());
+    WindowBuilder wb = new WindowBuilder(10, 10,
+        analyzer.getOffsetGap("content"),
+        new DefaultSortKeyBuilder(ConcordanceSortOrder.PRE), metadataExtractor, docIdBuilder);
+    ConcordanceSearcher searcher = new ConcordanceSearcher(wb);
+
+    Query q = new PrefixQuery(new Term("content", "f"));
+    System.err.println(q.toString());
+
+    ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10000);
+    searcher.search(indexSearcher, "content",
+        q, null, analyzer, collector);
+    System.err.println("HERE: " + collector.getWindows().size());
+    for (ConcordanceWindow w : collector.getSortedWindows()) {
+      System.err.println(w);
+    }
+    reader.close();
+    directory.close();
+
+  }
+
+    //TODO: add tests with deleted documents
+
 }
