@@ -156,7 +156,7 @@ public class ConcordanceTestBase extends LuceneTestCase {
       sb.append(TestUtil.randomUnicodeString(random(), 31));
       sb.append(" ");
     }
-    List<String> terms = SimpleAnalyzerUtil.getTermStrings(sb.toString(), analyzer);
+    List<String> terms = SimpleAnalyzerUtil.getTermStrings(sb.toString(),FIELD, analyzer);
     StringBuilder rsb = new StringBuilder();
     int words = -1;
     while (words++ < numWords && words < terms.size()) {
@@ -181,7 +181,7 @@ public class ConcordanceTestBase extends LuceneTestCase {
       try {
         //run it through the analyzer, and take the first thing
         //that comes out of it if the length > 0
-        List<String> terms = SimpleAnalyzerUtil.getTermStrings(baseString, analyzer);
+        List<String> terms = SimpleAnalyzerUtil.getTermStrings(baseString, FIELD, analyzer);
         for (String t : terms) {
           if (t.length() > 0) {
             return t;

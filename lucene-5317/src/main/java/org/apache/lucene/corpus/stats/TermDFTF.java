@@ -19,15 +19,15 @@ package org.apache.lucene.corpus.stats;
 
 public class TermDFTF extends TermDF {
 
-  public final int termFreq;
+  public final long termFreq;
 
-  public TermDFTF(String term, int docFreq, int termFreq) {
+  public TermDFTF(String term, int docFreq, long termFreq) {
     super(term, docFreq);
     this.termFreq = termFreq;
   }
 
 
-  public int getTermFreq() {
+  public long getTermFreq() {
     return termFreq;
   }
 

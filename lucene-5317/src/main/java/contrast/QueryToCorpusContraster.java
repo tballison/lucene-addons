@@ -5,7 +5,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.util.CharArrayMap;
 import org.apache.lucene.analysis.util.CharArraySet;
-import org.apache.lucene.corpus.stats.IDFCalc;
+import org.apache.lucene.corpus.stats.IDFIndexCalc;
 import org.apache.lucene.corpus.stats.TFIDFPriorityQueue;
 import org.apache.lucene.corpus.stats.TermIDF;
 import org.apache.lucene.document.Document;
@@ -94,7 +94,7 @@ public class QueryToCorpusContraster {
   private List<TermIDF> getResults(String fieldName,
                                    CharArrayMap<MutableValueInt> map, int numResults) {
     TFIDFPriorityQueue queue = new TFIDFPriorityQueue(numResults);
-    IDFCalc idfCalc = new IDFCalc(searcher.getIndexReader());
+    IDFIndexCalc idfCalc = new IDFIndexCalc(searcher.getIndexReader());
     int tf = -1;
     double idf = -1.0;
     int minTf = minTermFreq;

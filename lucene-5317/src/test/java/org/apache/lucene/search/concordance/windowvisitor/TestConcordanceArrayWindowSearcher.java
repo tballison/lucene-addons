@@ -19,7 +19,7 @@ package org.apache.lucene.search.concordance.windowvisitor;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
-import org.apache.lucene.corpus.stats.IDFCalc;
+import org.apache.lucene.corpus.stats.IDFIndexCalc;
 import org.apache.lucene.corpus.stats.TermIDF;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -62,7 +62,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     IndexSearcher indexSearcher = new IndexSearcher(reader);
 
 
-    IDFCalc idfCalc = new IDFCalc(reader);
+    IDFIndexCalc idfCalc = new IDFIndexCalc(reader);
 
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfCalc, 100, true);
@@ -122,7 +122,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     IndexReader reader = DirectoryReader.open(directory);
     IndexSearcher indexSearcher = new IndexSearcher(reader);
 
-    IDFCalc idfer = new IDFCalc(reader);
+    IDFIndexCalc idfer = new IDFIndexCalc(reader);
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfer, 100, true);
 
@@ -162,7 +162,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     IndexSearcher indexSearcher = new IndexSearcher(reader);
 
 
-    IDFCalc idfer = new IDFCalc(reader);
+    IDFIndexCalc idfer = new IDFIndexCalc(reader);
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfer, 100, true);
 
@@ -227,7 +227,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     IndexReader reader = DirectoryReader.open(directory);
     IndexSearcher indexSearcher = new IndexSearcher(reader);
 
-    IDFCalc idfer = new IDFCalc(reader);
+    IDFIndexCalc idfer = new IDFIndexCalc(reader);
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfer, 100, true);
 

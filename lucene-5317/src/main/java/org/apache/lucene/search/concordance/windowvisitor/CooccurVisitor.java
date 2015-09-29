@@ -17,7 +17,7 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
-import org.apache.lucene.corpus.stats.IDFCalc;
+import org.apache.lucene.corpus.stats.IDFIndexCalc;
 import org.apache.lucene.corpus.stats.TFIDFPriorityQueue;
 import org.apache.lucene.corpus.stats.TermIDF;
 import org.apache.lucene.index.Term;
@@ -38,7 +38,7 @@ public class CooccurVisitor extends ArrayWindowVisitor<List<TermIDF>> {
 
 
   private final Map<String, MutableValueInt> tfs = new HashMap<>();
-  private final IDFCalc idfCalc;
+  private final IDFIndexCalc idfCalc;
   private final Set<String> alreadySeen = new HashSet<>();
   private final boolean allowDuplicates;
   private Grammer grammer;
@@ -64,7 +64,7 @@ public class CooccurVisitor extends ArrayWindowVisitor<List<TermIDF>> {
    */
   public CooccurVisitor(String fieldName,
                         int tokensBefore, int tokensAfter, Grammer grammer,
-                        IDFCalc idfCalc, int maxWindows, boolean allowDuplicates) {
+                        IDFIndexCalc idfCalc, int maxWindows, boolean allowDuplicates) {
     super(fieldName, tokensBefore, tokensAfter, false, false, maxWindows);
     this.grammer = grammer;
     this.idfCalc = idfCalc;

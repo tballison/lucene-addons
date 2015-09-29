@@ -33,17 +33,17 @@ public class SimpleAnalyzerUtil {
   private final static String DEFAULT_FIELD = "FIELD";
 
   /**
-   * Returns simple list of analyzed strings
    *
-   * @param s        string to analyze
-   * @param analyzer analyzer
-   * @return list of string tokens
-   * @throws java.io.IOException
+   * @param s string to analyze
+   * @param field field to analyze
+   * @param analyzer analyzer to use
+   * @return
+   * @throws IOException
    */
-  public static List<String> getTermStrings(String s, Analyzer analyzer)
+  public static List<String> getTermStrings(String s, String field, Analyzer analyzer)
       throws IOException {
-    List<String> terms = new ArrayList<String>();
-    return getTermStrings(s, analyzer, terms);
+    List<String> terms = new ArrayList<>();
+    return getTermStrings(s, field, analyzer, terms);
   }
 
   /**
@@ -51,18 +51,19 @@ public class SimpleAnalyzerUtil {
    * terms
    *
    * @param s        string to analyze
+   * @param field    to use in analysis
    * @param analyzer analyzer
    * @param terms    list for reuse
    * @return list of strings
    * @throws java.io.IOException
    */
-  public static List<String> getTermStrings(String s, Analyzer analyzer,
+  public static List<String> getTermStrings(String s, String field, Analyzer analyzer,
                                             List<String> terms) throws IOException {
     if (terms == null) {
-      terms = new ArrayList<String>();
+      terms = new ArrayList<>();
     }
     terms.clear();
-    TokenStream stream = analyzer.tokenStream(DEFAULT_FIELD, s);
+    TokenStream stream = analyzer.tokenStream(field, s);
     stream.reset();
     CharTermAttribute termAtt = stream
         .getAttribute(org.apache.lucene.analysis.tokenattributes.CharTermAttribute.class);
