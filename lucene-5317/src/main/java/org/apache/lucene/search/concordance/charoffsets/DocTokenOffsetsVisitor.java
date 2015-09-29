@@ -11,5 +11,5 @@ public interface DocTokenOffsetsVisitor {
    */
   public DocTokenOffsets getDocTokenOffsets();
   public Set<String> getFields();
-  public boolean visit(DocTokenOffsets docTokenOffsets) throws IOException;
+  public boolean visit(DocTokenOffsets docTokenOffsets) throws IOException, TargetTokenNotFoundException;
 }

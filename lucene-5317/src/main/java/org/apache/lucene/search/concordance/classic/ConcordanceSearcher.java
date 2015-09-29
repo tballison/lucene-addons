@@ -158,11 +158,8 @@ public class ConcordanceSearcher {
     fields.add(spanQuery.getField());
     DocTokenOffsetsVisitor visitor = new ConcDTOffsetVisitor(spanQuery.getField(), analyzer,
         fields, collector);
-    if (filter == null) {
-      SpansCrawler.crawl(spanQuery, searcher, visitor);
-    } else {
-      SpansCrawler.crawl(spanQuery, filter, searcher, visitor);
-    }
+    SpansCrawler.crawl(spanQuery, filter, searcher, visitor);
+
     collector.setTotalDocs(searcher.getIndexReader().numDocs());
   }
 

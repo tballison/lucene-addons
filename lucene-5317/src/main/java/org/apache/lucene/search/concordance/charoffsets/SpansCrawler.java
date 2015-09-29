@@ -11,56 +11,49 @@ import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanWeight;
 import org.apache.lucene.search.spans.Spans;
 
-/**
- * Created by TALLISON on 9/25/2015.
- */
+
 public class SpansCrawler {
 
-  public static void crawl(SpanQuery query, IndexSearcher searcher,
-                           DocTokenOffsetsVisitor visitor) throws IOException {
-    SpanWeight w = query.createWeight(searcher, false);
-    for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
-      int docBase = ctx.docBase;
-
-      Spans spans = w.getSpans(ctx, SpanWeight.Postings.POSITIONS);
-      if (spans == null) {
-        continue;
-      }
-      boolean cont = visitLeafReader(ctx, spans, visitor);
-      if (! cont) {
-        break;
-      }
-    }
-
-  }
-
   public static void crawl(SpanQuery query, Filter filter, IndexSearcher searcher,
-                           DocTokenOffsetsVisitor visitor) throws IOException {
+                           DocTokenOffsetsVisitor visitor) throws IOException, TargetTokenNotFoundException {
     SpanWeight w = query.createWeight(searcher, false);
-    for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
-      int docBase = ctx.docBase;
-      DocIdSet filterSet = filter.getDocIdSet(ctx, ctx.reader().getLiveDocs());
-      if (filterSet == null) {
-        return;
-      }
+    if (filter == null) {
+      for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
 
-      Spans spans = w.getSpans(ctx, SpanWeight.Postings.POSITIONS);
-      if (spans == null) {
-        continue;
+        Spans spans = w.getSpans(ctx, SpanWeight.Postings.POSITIONS);
+        if (spans == null) {
+          continue;
+        }
+        boolean cont = visitLeafReader(ctx, spans, visitor);
+        if (!cont) {
+          break;
+        }
       }
-      DocIdSetIterator filterItr = filterSet.iterator();
-      if (filterItr == null) {
-        continue;
-      }
-      boolean cont = visitLeafReader(ctx, spans, filterItr, visitor);
-      if (! cont) {
-        break;
+    } else {
+      for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
+        DocIdSet filterSet = filter.getDocIdSet(ctx, ctx.reader().getLiveDocs());
+        if (filterSet == null) {
+          return;
+        }
+
+        Spans spans = w.getSpans(ctx, SpanWeight.Postings.POSITIONS);
+        if (spans == null) {
+          continue;
+        }
+        DocIdSetIterator filterItr = filterSet.iterator();
+        if (filterItr == null) {
+          continue;
+        }
+        boolean cont = visitLeafReader(ctx, spans, filterItr, visitor);
+        if (!cont) {
+          break;
+        }
       }
     }
   }
 
-  public static boolean visitLeafReader(LeafReaderContext leafCtx,
-                                     Spans spans, DocIdSetIterator filterItr, DocTokenOffsetsVisitor visitor) throws IOException {
+  static boolean visitLeafReader(LeafReaderContext leafCtx,
+                                     Spans spans, DocIdSetIterator filterItr, DocTokenOffsetsVisitor visitor) throws IOException, TargetTokenNotFoundException {
     int filterDoc = -1;
     int spansDoc = spans.nextDoc();
     while (true) {
@@ -99,9 +92,9 @@ public class SpansCrawler {
     return true;
   }
 
-  public static boolean visitLeafReader(LeafReaderContext leafCtx,
+  static boolean visitLeafReader(LeafReaderContext leafCtx,
                                         Spans spans,
-                                        DocTokenOffsetsVisitor visitor) throws IOException {
+                                        DocTokenOffsetsVisitor visitor) throws IOException, TargetTokenNotFoundException {
     while (spans.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
       boolean cont = visit(leafCtx, spans, visitor);
       if (! cont) {
@@ -112,7 +105,7 @@ public class SpansCrawler {
   }
 
 
-  private static boolean visit(LeafReaderContext leafCtx, Spans spans, DocTokenOffsetsVisitor visitor) throws IOException {
+  static boolean visit(LeafReaderContext leafCtx, Spans spans, DocTokenOffsetsVisitor visitor) throws IOException, TargetTokenNotFoundException {
     Document document = leafCtx.reader().document(spans.docID(), visitor.getFields());
     DocTokenOffsets offsets = visitor.getDocTokenOffsets();
     offsets.reset(leafCtx.docBase, spans.docID(), document);

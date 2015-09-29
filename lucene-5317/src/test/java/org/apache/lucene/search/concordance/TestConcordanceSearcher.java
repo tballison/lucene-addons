@@ -529,21 +529,21 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Directory directory = FSDirectory.open(dir);
     IndexReader reader = DirectoryReader.open(directory);
     IndexSearcher indexSearcher = new IndexSearcher(reader);
-    System.out.println("MAX DOC: " + indexSearcher.getIndexReader().maxDoc());
+    //System.out.println("MAX DOC: " + indexSearcher.getIndexReader().maxDoc());
     WindowBuilder wb = new WindowBuilder(10, 10,
         analyzer.getOffsetGap("content"),
         new DefaultSortKeyBuilder(ConcordanceSortOrder.PRE), metadataExtractor, docIdBuilder);
     ConcordanceSearcher searcher = new ConcordanceSearcher(wb);
 
     Query q = new PrefixQuery(new Term("content", "f"));
-    System.err.println(q.toString());
+  //  System.err.println(q.toString());
 
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10000);
     searcher.search(indexSearcher, "content",
         q, null, analyzer, collector);
-    System.err.println("HERE: " + collector.getWindows().size());
+    //System.err.println("HERE: " + collector.getWindows().size());
     for (ConcordanceWindow w : collector.getSortedWindows()) {
-      System.err.println(w);
+      //System.err.println(w);
     }
     reader.close();
     directory.close();

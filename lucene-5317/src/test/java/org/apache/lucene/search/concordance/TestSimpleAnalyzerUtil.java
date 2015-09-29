@@ -126,7 +126,6 @@ public class TestSimpleAnalyzerUtil extends ConcordanceTestBase {
   private void executeNeedleTests(Analyzer analyzer) throws Exception {
 
     String needle = getNeedle(analyzer);
-    System.out.println("NEEDLE: "+needle);
     int numFieldValues = 23;
 
     Directory directory = buildNeedleIndex(needle, analyzer, numFieldValues);

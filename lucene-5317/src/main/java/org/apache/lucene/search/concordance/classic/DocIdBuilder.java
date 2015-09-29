@@ -1,5 +1,6 @@
 package org.apache.lucene.search.concordance.classic;
 
+import java.util.Set;
 import org.apache.lucene.document.Document;
 
 /*
@@ -28,5 +29,6 @@ import org.apache.lucene.document.Document;
  */
 public interface DocIdBuilder {
 
+  public Set<String> getFields();
   public String build(Document document, long docId);
 }
