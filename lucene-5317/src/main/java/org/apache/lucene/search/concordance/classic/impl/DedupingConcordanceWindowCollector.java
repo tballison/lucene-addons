@@ -66,6 +66,7 @@ public class DedupingConcordanceWindowCollector extends AbstractConcordanceWindo
     }
 
     map.put(key, oldWindow);
+    addDocId(w.getUniqueDocID());
   }
 
 
@@ -79,7 +80,7 @@ public class DedupingConcordanceWindowCollector extends AbstractConcordanceWindo
 
   @Override
   public List<ConcordanceWindow> getWindows() {
-    List<ConcordanceWindow> windows = new ArrayList<ConcordanceWindow>();
+    List<ConcordanceWindow> windows = new ArrayList<>();
     windows.addAll(map.values());
     return windows;
   }
