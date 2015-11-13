@@ -155,4 +155,10 @@ public class CooccurVisitor extends ArrayWindowVisitor<List<TermIDF>> {
     this.minTermFreq = minTermFreq;
   }
 
+  public void setNumResults(int numResults) {
+    if (numResults < 0) {
+      throw new IllegalArgumentException("Number of results must be >= 0:" +numResults);
+    }
+    this.numResults = numResults;
+  }
 }
