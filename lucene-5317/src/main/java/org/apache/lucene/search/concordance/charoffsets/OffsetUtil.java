@@ -46,8 +46,8 @@ public class OffsetUtil {
       return offsets;
 
     Collections.sort(offsets, comparator);
-    Set<Integer> seen = new HashSet<Integer>();
-    List<OffsetAttribute> filtered = new ArrayList<OffsetAttribute>();
+    Set<Integer> seen = new HashSet<>();
+    List<OffsetAttribute> filtered = new ArrayList<>();
     for (OffsetAttribute offset : offsets) {
       if (!alreadySeen(offset, seen)) {
         filtered.add(offset);
