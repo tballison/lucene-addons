@@ -85,7 +85,10 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
         "blah disco fever blah", //10
         "blah bieber fever blah", //11
         "blah dengue fever blah", //12
-        "blah saturday night fever with john travolta" //13
+        "blah saturday night fever with john travolta", //13
+        "understanding (span query)", //14
+        "understanding (sp'an query)",//15
+        "understanding something about (span query)"//16
 
     };
     String [] f2Docs = new String[] {
@@ -102,7 +105,10 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
         "ten",
         "eleven",
         "twelve",
-        "thirteen"
+        "thirteen",
+        "fourteen",
+        "fifteen",
+        "sixteen"
     };
     for (int i = 0; i < f1Docs.length; i++) {
       Document doc = new Document();
@@ -127,6 +133,15 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     analyzer = null;
   }
 
+  public void testEscaping() throws Exception {
+    //example to show escaping
+    compareHits("\"understanding '(span' 'query)'\"", 14);
+    compareHits("\"understanding '(sp''an' 'query)'\"", 15);
+
+    compareHits("\"understanding \\(span query\\)\"", 14);
+    compareHits("\"understanding \\(sp\\'an query\\)\"", 15);
+
+  }
   public void testComplexQueries() throws Exception {
     //complex span not 
     compareHits("+f1:[fever (bieber [jo*n travlota~1] disc*)]!~2,5 +f2:(ten eleven twelve thirteen)", 12);
@@ -138,9 +153,9 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
   public void testNegativeOnly() throws Exception {
     //negative only queries
-    compareHits("-fever", 0,1,2,3,4,5,6,7,8,9);
-    compareHits("-f1:fever", 0,1,2,3,4,5,6,7,8,9);
-    compareHits("-fever -brown", 3,4,5,6,7,8,9);
+    compareHits("-fever", 0,1,2,3,4,5,6,7,8,9,14,15,16);
+    compareHits("-f1:fever", 0,1,2,3,4,5,6,7,8,9,14,15,16);
+    compareHits("-fever -brown", 3,4,5,6,7,8,9,14,15,16);
   }
 
   public void testUnlimitedRange() throws Exception {
@@ -237,7 +252,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     TopScoreDocCollector results = TopScoreDocCollector.create(1000);
     searcher.search(q, results);
     ScoreDoc[] scoreDocs = results.topDocs().scoreDocs;
-    Set<Integer> hits = new HashSet<Integer>();
+    Set<Integer> hits = new HashSet<>();
 
     for (int i = 0; i < scoreDocs.length; i++) {
       hits.add(scoreDocs[i].doc);

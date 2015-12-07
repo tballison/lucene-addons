@@ -85,7 +85,7 @@ class SpanQueryLexer {
   PushbackReader reader;
   StringBuilder tokenBuffer = new StringBuilder();
   List<SQPToken> tokens = new ArrayList<>();
-  Stack<SQPOpenClause> stack = new Stack();
+  Stack<SQPOpenClause> stack = new Stack<>();
 
   public List<SQPToken> getTokens(String s) throws ParseException {
     if (s.trim().length() == 0) {
@@ -94,7 +94,6 @@ class SpanQueryLexer {
     //TODO: no need to init if initialize lexer w string and change to getTokens()
     tokens.clear();
     stack.clear();
-    resetTokenBuffer();
     resetTokenBuffer();
     nearDepth = 0;
     inDQuote = false;
@@ -119,7 +118,6 @@ class SpanQueryLexer {
       c = reader.read();
     }
 
-    boolean keepGoing = true;
     while (true) {
       if (Character.isWhitespace(c)) {
         flushBuffer();
@@ -386,7 +384,7 @@ class SpanQueryLexer {
         } else {
           throw new ParseException("Not near query must be followed by ~");
         }
-      } else if (n0 == TILDE) { //span
+      } else if (n0 == TILDE) { //span with slop
         Boolean inOrder = false;
         int n1 = reader.read();
         if (n1 == GREATER_THAN) {
@@ -400,8 +398,10 @@ class SpanQueryLexer {
 
       } else { // no special marker at end of near phrase
         tryToUnread(n0);
-        if (open.getTokenOffsetStart() + 2 == tokens.size()) {
+/*        if (open.getTokenOffsetStart() + 2 == tokens.size()) {
           testBadRange(open.getType() == SQPClause.TYPE.CURLY || closeType == SQPClause.TYPE.CURLY);
+
+          System.out.println("SINGLE TERM:"+tokens.get(tokens.size()-1));
           //if single child between double quotes or brackets, treat it as a quoted SQPTerm
           SQPTerm t = new SQPTerm(((SQPTerminal) tokens.get(tokens.size() - 1)).getString(), true);
           Float boost = tryToReadBoost();
@@ -412,10 +412,10 @@ class SpanQueryLexer {
           tokens.remove(tokens.size()-1);//remove opening clause marker
           tokens.add(t);
           return;
-        } else {
+        } else {*/
           newClause = new SQPNearClause(open.getTokenOffsetStart() + 1, tokens.size(),
               open.getType(), null, null);
-        }
+        //}
       }
     }
     Float boost = tryToReadBoost();

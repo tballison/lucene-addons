@@ -344,6 +344,11 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     countSpansDocs(p, "brwon~1", 3, 2);
     countSpansDocs(p, "brwon~>1", 0, 0);
 
+    countSpansDocs(p, "brwon~1,1", 3, 2);
+    countSpansDocs(p, "borwn~2,2", 0, 0);
+    countSpansDocs(p, "brwon~,1", 3, 2);
+
+
     countSpansDocs(p, "crown~1,1", 0, 0);
     countSpansDocs(p, "crown~2,1", 0, 0);
     countSpansDocs(p, "crown~3,1", 0, 0);
@@ -510,12 +515,8 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
 
     countSpansDocs(stopsParser, "ponml [ * TO bird] edcba", 4, 3);
     countSpansDocs(stopsParser, "ponml [ '*' TO bird] edcba", 4, 3);
-    //this is no longer allowed
-    countSpansDocs(stopsParser, "ponml [ \"*\" TO bird] edcba", 4, 3);
     countSpansDocs(stopsParser, "ponml [ umbrella TO *] edcba", 7, 3);
     countSpansDocs(stopsParser, "ponml [ umbrella TO '*'] edcba", 0, 0);
-    //no longer allowed
-    countSpansDocs(stopsParser, "ponml [ umbrella TO \"*\"] edcba", 0, 0);
   }
 
   public void testRecursion() throws Exception {

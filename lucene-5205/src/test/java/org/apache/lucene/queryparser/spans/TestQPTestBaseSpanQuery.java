@@ -12,6 +12,7 @@ import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.document.DateTools.Resolution;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.queryparser.flexible.standard.CommonQueryParserConfiguration;
@@ -277,6 +278,20 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   }
 
   @Override
+  public void testCJKSloppyPhrase() throws Exception {
+    // individual CJK chars as terms
+    SimpleCJKAnalyzer analyzer = new SimpleCJKAnalyzer();
+
+    List<SpanQuery> clauses = new ArrayList<>();
+    clauses.add(new SpanTermQuery(new Term("field", "中")));
+    clauses.add(new SpanTermQuery(new Term("field", "国")));
+
+    SpanNearQuery expected = new SpanNearQuery(clauses.toArray(new SpanQuery[clauses.size()]), 3, false);
+
+    assertEquals(expected, getQuery("\"中国\"~3", analyzer));
+  }
+
+  @Override
   public void testCJKBoostedTerm() throws Exception {
     // individual CJK chars as terms
     SimpleCJKAnalyzer analyzer = new SimpleCJKAnalyzer();
@@ -288,6 +303,34 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     assertEquals(bq, getQuery("中国^0.5", analyzer));
   }
 
+  @Override
+  public void testCJKPhrase() throws Exception {
+    // individual CJK chars as terms
+    SimpleCJKAnalyzer analyzer = new SimpleCJKAnalyzer();
+
+    List<SpanQuery> clauses = new ArrayList<>();
+    clauses.add(new SpanTermQuery(new Term("field", "中")));
+    clauses.add(new SpanTermQuery(new Term("field", "国")));
+
+    SpanNearQuery expected = new SpanNearQuery(clauses.toArray(new SpanQuery[clauses.size()]), 0, true);
+
+    assertEquals(expected, getQuery("\"中国\"", analyzer));
+  }
+
+  @Override
+  public void testCJKBoostedPhrase() throws Exception {
+    // individual CJK chars as terms
+    SimpleCJKAnalyzer analyzer = new SimpleCJKAnalyzer();
+
+    List<SpanQuery> clauses = new ArrayList<>();
+    clauses.add(new SpanTermQuery(new Term("field", "中")));
+    clauses.add(new SpanTermQuery(new Term("field", "国")));
+
+    SpanNearQuery expected = new SpanNearQuery(clauses.toArray(new SpanQuery[clauses.size()]), 0, true);
+    expected.setBoost(0.5f);
+
+    assertEquals(expected, getQuery("\"中国\"^0.5", analyzer));
+  }
 
   @Override
   public void testPhraseQueryToString() throws Exception {
@@ -311,7 +354,6 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     expected.add(new Term("field", "pos"));
     expected.add(new Term("field", "stopped"));
     expected.add(new Term("field", "phrasequery"));
-    System.out.println(pq.toString());
   }
 
   @Override
@@ -323,24 +365,71 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   public void testPhraseQueryPositionIncrements() throws Exception {
     //doesn't apply
   }
-  @Override
-  public void testCJKSloppyPhrase() throws Exception {
-    // individual CJK chars as terms
-    SimpleCJKAnalyzer analyzer = new SimpleCJKAnalyzer();
 
-    List<SpanQuery> clauses = new ArrayList<>();
-    clauses.add(new SpanTermQuery(new Term("field", "中")));
-    clauses.add(new SpanTermQuery(new Term("field", "国")));
-
-    SpanNearQuery expected = new SpanNearQuery(clauses.toArray(new SpanQuery[clauses.size()]), 3, false);
-
-    assertEquals(expected, getQuery("\"中国\"~3", analyzer));
-  }
 
   @Override
   public void testDateRange() throws Exception {
     //no-op.  Date are not parsed in range queries in SpanQueryParser any more.
   }
+
+
+  //the following are added directly from TestQueryParser.
+  //should refactor so that getQuery etc is used.
+  /** adds synonym of "dog" for "dogs". */
+  static class MockSynonymAnalyzer extends Analyzer {
+    @Override
+    protected TokenStreamComponents createComponents(String fieldName) {
+      MockTokenizer tokenizer = new MockTokenizer();
+      return new TokenStreamComponents(tokenizer, new MockSynonymFilter(tokenizer));
+    }
+  }
+  public void testSynonyms() throws Exception {
+    BooleanQuery expected = new BooleanQuery(true);
+    expected.add(new TermQuery(new Term("field", "dogs")), BooleanClause.Occur.SHOULD);
+    expected.add(new TermQuery(new Term("field", "dog")), BooleanClause.Occur.SHOULD);
+    QueryParser qp = new QueryParser("field", new MockSynonymAnalyzer());
+    assertEquals(expected, qp.parse("dogs"));
+    assertEquals(expected, qp.parse("\"dogs\""));
+    qp.setDefaultOperator(QueryParser.Operator.AND);
+    assertEquals(expected, qp.parse("dogs"));
+    assertEquals(expected, qp.parse("\"dogs\""));
+    expected.setBoost(2.0f);
+    assertEquals(expected, qp.parse("dogs^2"));
+    assertEquals(expected, qp.parse("\"dogs\"^2"));
+  }
+
+  /** forms multiphrase query */
+  public void testSynonymsPhrase() throws Exception {
+    SpanNearQuery expected = new SpanNearQuery(
+        new SpanQuery[]{
+            new SpanTermQuery(new Term("field", "old")),
+            new SpanOrQuery(
+                new SpanTermQuery(new Term("field", "dogs")),
+                new SpanTermQuery(new Term("field", "dog")))
+        }, 0, true
+    );
+
+
+    SpanQueryParser qp = new SpanQueryParser("field", new MockSynonymAnalyzer(), null);
+    assertEquals(expected, qp.parse("\"old dogs\""));
+    qp.setDefaultOperator(QueryParser.Operator.AND);
+    assertEquals(expected, qp.parse("\"old dogs\""));
+    expected.setBoost(2.0f);
+    assertEquals(expected, qp.parse("\"old dogs\"^2"));
+
+    expected = new SpanNearQuery(
+        new SpanQuery[]{
+            new SpanTermQuery(new Term("field", "old")),
+            new SpanOrQuery(
+                new SpanTermQuery(new Term("field", "dogs")),
+                new SpanTermQuery(new Term("field", "dog")))
+        }, 3, false
+    );
+    expected.setBoost(2.0f);
+
+    assertEquals(expected, qp.parse("\"old dogs\"~3^2"));
+  }
+
 
   //string query equality tests that have to be rewritten
   //if parser is generating a SpanQuery
@@ -375,8 +464,6 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     complex.add(new RegexpQuery(new Term("field", "[a-z]/[123]")), BooleanClause.Occur.MUST);
     complex.add(new TermQuery(new Term("path", "/etc/init.d/")), BooleanClause.Occur.MUST);
     complex.add(new TermQuery(new Term("field", "/etc/init[.]d/lucene/")), BooleanClause.Occur.SHOULD);
-    //two escape options, first the classic
-    assertEquals(complex, getQuery("/[a-z]//[123]/ AND path:\"\\/etc\\/init.d\\/\" field:\"\\/etc\\/init\\[.\\]d\\/lucene\\/\"",qp));
     //then the simpler single quote
     assertEquals(complex, getQuery("/[a-z]//[123]/ AND path:'/etc/init.d/' field:'/etc/init[.]d/lucene/'",qp));
 
@@ -460,6 +547,12 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
       e = true;
     }
     assertTrue("Empty: "+q.toString(), e);
+  }
+
+  @Override
+  public void testRangeWithPhrase() throws Exception {
+    assertQueryEquals("[\\* TO '*']",null,"[\\* TO \\*]");
+    assertQueryEquals("['*' TO *]",null,"[\\* TO *]");
   }
 
 }

@@ -17,11 +17,9 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-import java.util.Date;
 import java.util.List;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.util.LuceneTestCase;
-import org.junit.Ignore;
 
 /**
  * Low level tests of the lexer.
@@ -38,9 +36,10 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
   }
 
-  @Ignore
+  /*
   public void testSingleDebug() throws Exception {
-    String s = "*:*^2.0";
+
+    String s = "[\\* TO '*']";
     List<SQPToken> tokens = lexer.getTokens(s);
     for (SQPToken t : tokens) {
       System.out.println(t.getClass() + " : " + t);
@@ -48,7 +47,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         System.out.println("BOOST: " + ((SQPBoostableToken)t).getBoost());
       }
     }
-  }
+  }*/
 /*
   public void testOneOffs() throws ParseException {
     String s = "the \"quick brown\"";
@@ -84,8 +83,30 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
       sb.append("TERM_" + i);
     }
     sb.append(")");
-    long start = new Date().getTime();
     lexer.getTokens(sb.toString());
+  }
+
+  public void testDoubleVsSingleQuotesAroundSingleTerm() throws Exception {
+    //Thanks to Modassar Ather for finding this!
+    //if a term is in double-quotes, treat it as a regular single term within a phrase
+    //which pretty much means that the phrasal part is not calculated.
+    //before this bug fix, the lexer was dropping the "*"
+    SQPPrefixTerm truth = new SQPPrefixTerm("term");
+
+    executeSingleTokenTest(
+        "\"term*\"",
+        1,
+        truth
+    );
+
+    //use single quotes for literal 'fox*'
+    SQPTerm truthTerm = new SQPTerm("fox*", true);
+
+    executeSingleTokenTest(
+        "'fox*'",
+        0,
+        truthTerm
+    );
   }
 
   public void testSingleQuoteExceptions() throws ParseException {
@@ -98,25 +119,6 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
     //need to have something between single quotes
     testParseException("the '' quick");
-  }
-
-  public void testDoubleQuotes() throws Exception {
-    SQPTerm truth = new SQPTerm("fo x", true);
-
-    executeSingleTokenTest(
-        "abc \"fo\\ x\" def",
-        1,
-        truth
-    );
-
-    executeSingleTokenTest(
-        "abc [fo\\ x] def",
-        1,
-        truth
-    );
-
-    testParseException("abc {fo\\ x} def");
-
   }
 
   public void testFuzzy() throws Exception {
