@@ -488,4 +488,19 @@ public class TestQueryParser extends QueryParserTestBase {
     assertEquals(expected, qp.parse("\"中国\"~3^2"));
   }
 
+  /*
+  public void testSingleTermDoubleQuotes() throws Exception {
+    //double quotes around a single whitespace term, analyze it.
+    //if one term is returned via the analyzer return TermQuery
+    //if more than one term is returned with different offsets (e.g. cjk), return basic SpanNear
+    //if more than one term is returned with same offsets (synonym analyzer) return SpanOr
+    QueryParser qp = new QueryParser("field", new MockSynonymAnalyzer());
+    Query q = qp.parse("quick \"dogs\" fox");
+    if (q instanceof BooleanQuery) {
+      BooleanQuery bq = (BooleanQuery)q;
+      for (BooleanClause bc : bq.clauses()) {
+        System.out.println(bc.getQuery() + " : " + bc.getQuery().getClass());
+      }
+    }
+  }*/
 }

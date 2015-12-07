@@ -110,12 +110,19 @@ import org.apache.lucene.search.Query;
  * 
  * <p>
  * <b>Using quotes for a single term</b>
- * The default with SpanQueryParser is to use single quotes (Classic QueryParser uses double quotes):
+ * Unlike the Classic QueryParser which uses double quotes around a single term
+ * to effectively escape operators, the SpanQueryParser uses single quotes.
  * 'abc~2' will be treated as a single term 'abc~2' not as a fuzzy term.
- * Remember to use quotes or use escapes for anything with backslashes or hyphens:
+ * Remember to use quotes for anything with backslashes or hyphens:
  * 12/02/04 (is broken into a term "12", a regex "/02/" and a term "04")
  * '12/02/04' is treated a a single token.
- * 
+ * <p>
+ * If a single term (according to whitespace) is found within double quotes or square brackets,
+ * and the Analyzer returns one term "cat", that will be treated as a single term.
+ * If a single term (according to whitespace) is found within double quotes or square brackets,
+ * and the Analyzer returns more than one term (e.g. non-whitespace language), that
+ * will be treated as a SpanNear query.
+ *
  * 
  * <p> <b>Stop word handling</b>
  * <p>The parser tries to replicate the behavior of the Classic QueryParser.  Stop words
@@ -135,11 +142,9 @@ import org.apache.lucene.search.Query;
  * {@link org.apache.lucene.search.spans.SpanOrQuery} for &quot;apache&quot; 
  * or &quot;jakarta&quot;
  * <li>SpanNear: "apache and jakarta" will drop the "and", add one to the slop and match on 
- * any occurrence of "apache" followed by "jakarta" and zero or one words intervening.<li>
+ * any occurrence of "apache" followed by "jakarta" with zero or one word intervening.<li>
  * </ul>
- * 
- * <p>A parse exception is currently always thrown if the parser analyzes a multiterm, and a subcomponent of the
- * multiterm has a stopword: the*tre
+
  * <p> Expert: Other subtle differences between SpanQueryParser and classic QueryParser.
  * <ul>
  * <li>Fuzzy queries with slop > 2 are handled by SlowFuzzyQuery.  The developer can set the minFuzzySim to limit
