@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -29,6 +28,7 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.sandbox.queries.SlowFuzzyQuery;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.FuzzyQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MultiPhraseQuery;
@@ -41,6 +41,7 @@ import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.WildcardQuery;
+import org.apache.lucene.search.spans.SpanBoostQuery;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanNotQuery;
@@ -159,7 +160,11 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       throw new IllegalArgumentException("Can't build Query from: " + terminal.getClass());
     }
     if (ret != null && terminal.getBoost() != null) {
-      ret.setBoost(terminal.getBoost());
+      if (ret instanceof SpanQuery) {
+        ret = new SpanBoostQuery((SpanQuery)ret, terminal.getBoost());
+      } else {
+        ret = new BoostQuery(ret, terminal.getBoost());
+      }
     }
     return ret;
   }
@@ -448,7 +453,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     if (clauses == null || clauses.size() == 0)
       return getEmptySpanQuery();
     slop = (slop == null) ? defaultPhraseSlop : slop;
-    List<SpanQuery> nonEmpties = new LinkedList<SpanQuery>();
+    List<SpanQuery> nonEmpties = new LinkedList<>();
     //find first non-null and last non-null entry
     int start = 0;
     int end = clauses.size();

@@ -19,11 +19,13 @@ import org.apache.lucene.queryparser.flexible.standard.CommonQueryParserConfigur
 import org.apache.lucene.queryparser.tmpspans.util.QueryParserTestBase;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.search.spans.SpanBoostQuery;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
@@ -291,17 +293,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     assertEquals(expected, getQuery("\"中国\"~3", analyzer));
   }
 
-  @Override
-  public void testCJKBoostedTerm() throws Exception {
-    // individual CJK chars as terms
-    SimpleCJKAnalyzer analyzer = new SimpleCJKAnalyzer();
-    BooleanQuery bq = new BooleanQuery();
 
-    bq.add(new TermQuery(new Term("field", "中")), BooleanClause.Occur.SHOULD);
-    bq.add(new TermQuery(new Term("field", "国")), BooleanClause.Occur.SHOULD);
-    bq.setBoost(0.5f);
-    assertEquals(bq, getQuery("中国^0.5", analyzer));
-  }
 
   @Override
   public void testCJKPhrase() throws Exception {
@@ -326,8 +318,8 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     clauses.add(new SpanTermQuery(new Term("field", "中")));
     clauses.add(new SpanTermQuery(new Term("field", "国")));
 
-    SpanNearQuery expected = new SpanNearQuery(clauses.toArray(new SpanQuery[clauses.size()]), 0, true);
-    expected.setBoost(0.5f);
+    SpanQuery expected = new SpanNearQuery(clauses.toArray(new SpanQuery[clauses.size()]), 0, true);
+    expected = new SpanBoostQuery(expected, 0.5f);
 
     assertEquals(expected, getQuery("\"中国\"^0.5", analyzer));
   }
@@ -384,23 +376,33 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     }
   }
   public void testSynonyms() throws Exception {
-    BooleanQuery expected = new BooleanQuery(true);
-    expected.add(new TermQuery(new Term("field", "dogs")), BooleanClause.Occur.SHOULD);
-    expected.add(new TermQuery(new Term("field", "dog")), BooleanClause.Occur.SHOULD);
-    QueryParser qp = new QueryParser("field", new MockSynonymAnalyzer());
+    SpanQuery expectedSpan = new SpanOrQuery(
+        new SpanQuery[]{
+            new SpanTermQuery(new Term("field", "dogs")),
+            new SpanTermQuery(new Term("field", "dog"))
+        });
+
+    BooleanQuery.Builder expectedB = new BooleanQuery.Builder();
+    expectedB.setDisableCoord(true);
+    expectedB.add(new TermQuery(new Term("field", "dogs")), BooleanClause.Occur.SHOULD);
+    expectedB.add(new TermQuery(new Term("field", "dog")), BooleanClause.Occur.SHOULD);
+    Query expected = expectedB.build();
+
+    SpanQueryParser qp = new SpanQueryParser("field", new MockSynonymAnalyzer(), null);
     assertEquals(expected, qp.parse("dogs"));
-    assertEquals(expected, qp.parse("\"dogs\""));
-    qp.setDefaultOperator(QueryParser.Operator.AND);
+    assertEquals(expectedSpan, qp.parse("\"dogs\""));
+    qp.setDefaultOperator(Operator.AND);
     assertEquals(expected, qp.parse("dogs"));
-    assertEquals(expected, qp.parse("\"dogs\""));
-    expected.setBoost(2.0f);
+    assertEquals(expectedSpan, qp.parse("\"dogs\""));
+    expected = new BoostQuery(expected, 2f);
+    expectedSpan = new SpanBoostQuery(expectedSpan, 2f);
     assertEquals(expected, qp.parse("dogs^2"));
-    assertEquals(expected, qp.parse("\"dogs\"^2"));
+    assertEquals(expectedSpan, qp.parse("\"dogs\"^2"));
   }
 
   /** forms multiphrase query */
   public void testSynonymsPhrase() throws Exception {
-    SpanNearQuery expected = new SpanNearQuery(
+    SpanQuery expected = new SpanNearQuery(
         new SpanQuery[]{
             new SpanTermQuery(new Term("field", "old")),
             new SpanOrQuery(
@@ -414,7 +416,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     assertEquals(expected, qp.parse("\"old dogs\""));
     qp.setDefaultOperator(QueryParser.Operator.AND);
     assertEquals(expected, qp.parse("\"old dogs\""));
-    expected.setBoost(2.0f);
+    expected = new SpanBoostQuery(expected, 2.0f);
     assertEquals(expected, qp.parse("\"old dogs\"^2"));
 
     expected = new SpanNearQuery(
@@ -425,9 +427,15 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
                 new SpanTermQuery(new Term("field", "dog")))
         }, 3, false
     );
-    expected.setBoost(2.0f);
+    expected = new SpanBoostQuery(expected, 2.0f);
 
     assertEquals(expected, qp.parse("\"old dogs\"~3^2"));
+  }
+
+  @Override
+  public void testSlop() throws Exception {
+    assertQueryEquals("\"term\"~2", null, "term");
+    assertQueryEquals("\" \"~2 germ", null, "germ");
   }
 
 
@@ -460,12 +468,12 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     assertEquals(escaped2, getQuery("/[a-z]\\*[123]/",qp));
 
 
-    BooleanQuery complex = new BooleanQuery();
+    BooleanQuery.Builder complex = new BooleanQuery.Builder();
     complex.add(new RegexpQuery(new Term("field", "[a-z]/[123]")), BooleanClause.Occur.MUST);
     complex.add(new TermQuery(new Term("path", "/etc/init.d/")), BooleanClause.Occur.MUST);
     complex.add(new TermQuery(new Term("field", "/etc/init[.]d/lucene/")), BooleanClause.Occur.SHOULD);
     //then the simpler single quote
-    assertEquals(complex, getQuery("/[a-z]//[123]/ AND path:'/etc/init.d/' field:'/etc/init[.]d/lucene/'",qp));
+    assertEquals(complex.build(), getQuery("/[a-z]//[123]/ AND path:'/etc/init.d/' field:'/etc/init[.]d/lucene/'",qp));
 
     assertEquals(new TermQuery(new Term("field", "/boo/")), getQuery("'/boo/'",qp));
 
@@ -499,6 +507,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
 
     //testSlop
     assertQueryEquals("\"term germ\"~2 flork", null, "spanNear([term, germ], 2, false) flork");
+    assertQueryEquals("\"term germ\"~2^2", null, "spanNear([term, germ], 2, false)^2.0");
 
 
   }

@@ -26,8 +26,11 @@ import org.apache.lucene.queryparser.classic.QueryParserConstants;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.spans.SpanBoostQuery;
+import org.apache.lucene.search.spans.SpanQuery;
 
 /**
  * This parser leverages the power of SpanQuery and can combine them with
@@ -267,14 +270,17 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
         //recurse!
         SQPOrClause tmpOr = (SQPOrClause)token;
         q = parseRecursively(tokens, currField, tmpOr);
+        //if it isn't already boosted, apply the boost from the token
+        if (!(q instanceof BoostQuery) && !(q instanceof SpanBoostQuery) &&
+            tmpOr.getBoost() != null) {
+          if (q instanceof SpanQuery) {
+            q = new SpanBoostQuery((SpanQuery)q, tmpOr.getBoost());
+          } else {
+            q = new BoostQuery(q, tmpOr.getBoost());
+          }
+        }
 
-        if (q instanceof BooleanQuery && tmpOr.getMinimumNumberShouldMatch() != null) {
-          ((BooleanQuery)q).setMinimumNumberShouldMatch(tmpOr.getMinimumNumberShouldMatch());
-        }
-        if (q.getBoost() == 1.0f
-            &&  tmpOr.getBoost() != null) {
-          q.setBoost(tmpOr.getBoost());
-        }
+
         i = tmpOr.getTokenOffsetEnd();
       } else if (token instanceof SQPNearClause) {
         SQPNearClause tmpNear = (SQPNearClause)token;
@@ -310,7 +316,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
       return clauses.get(0).getQuery();
     }
 
-    BooleanQuery bq = new BooleanQuery();
+    BooleanQuery.Builder bq = new BooleanQuery.Builder();
     try {
       for (BooleanClause bc : clauses) {
         bq.add(bc);
@@ -320,13 +326,13 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
     }
 
     if (clause instanceof SQPOrClause) {
-      SQPOrClause tmpClause = (SQPOrClause)clause;
-      if (tmpClause.getMinimumNumberShouldMatch() != null) {
-        bq.setMinimumNumberShouldMatch(tmpClause.getMinimumNumberShouldMatch());
+      SQPOrClause orClause = (SQPOrClause)clause;
+      if (orClause.getMinimumNumberShouldMatch() != null) {
+        bq.setMinimumNumberShouldMatch(orClause.getMinimumNumberShouldMatch());
       }
     }
 
-    return bq;
+    return bq.build();
   }
 
 
@@ -336,7 +342,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
         ((SQPTerm)tmpTerm).getString().equals("*")) {
       Query q = new MatchAllDocsQuery();
       if (tmpTerm.getBoost() != null) {
-        q.setBoost(tmpTerm.getBoost());
+        q = new BoostQuery(q, tmpTerm.getBoost());
       }
       return q;
     }
@@ -373,8 +379,9 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
     
     if (q instanceof BooleanQuery) {
       BooleanQuery bq = (BooleanQuery)q;
-      BooleanClause[] clauses = bq.getClauses();
-      if (clauses.length == 0) {
+
+      List<BooleanClause> clauses = bq.clauses();
+      if (clauses.size() == 0) {
         return q;
       }
       for (BooleanClause clause : clauses) {
@@ -412,7 +419,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
     if (clauses.size() > 0 && conj == CONJ_AND) {
       BooleanClause c = clauses.get(clauses.size()-1);
       if (!c.isProhibited())
-        c.setOccur(BooleanClause.Occur.MUST);
+        clauses.set(clauses.size()-1, new BooleanClause(c.getQuery(), Occur.MUST));
     }
 
     if (clauses.size() > 0 && defaultOperator == QueryParser.Operator.AND && conj == CONJ_OR) {
@@ -422,7 +429,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
       // this modification a OR b would parsed as +a OR b
       BooleanClause c = clauses.get(clauses.size()-1);
       if (!c.isProhibited())
-        c.setOccur(BooleanClause.Occur.SHOULD);
+        clauses.set(clauses.size()-1, new BooleanClause(c.getQuery(), Occur.SHOULD));
     }
 
     // We might have been passed a null query; the term might have been

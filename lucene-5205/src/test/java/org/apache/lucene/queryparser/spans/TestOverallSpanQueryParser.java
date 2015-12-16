@@ -20,7 +20,6 @@ package org.apache.lucene.queryparser.spans;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
@@ -47,6 +46,7 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 
 public class TestOverallSpanQueryParser extends LuceneTestCase {
   private final static String FIELD1 = "f1";
@@ -142,6 +142,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     compareHits("\"understanding \\(sp\\'an query\\)\"", 15);
 
   }
+  @Ignore("this doesn't work in 5.4.0. See LUCENE-6929")
   public void testComplexQueries() throws Exception {
     //complex span not 
     compareHits("+f1:[fever (bieber [jo*n travlota~1] disc*)]!~2,5 +f2:(ten eleven twelve thirteen)", 12);

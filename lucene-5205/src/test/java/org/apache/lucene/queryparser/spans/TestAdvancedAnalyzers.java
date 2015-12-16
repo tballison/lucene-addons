@@ -35,6 +35,7 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.spans.SpanBoostQuery;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
@@ -168,9 +169,10 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
     SpanQueryParser p = new SpanQueryParser(FIELD1, baseAnalyzer, baseAnalyzer);
     String s = "[zqx_qrs^3.0]~3^2";
     Query q = p.parse(s);
-    assertTrue(q instanceof SpanNearQuery);
+    assertTrue(q instanceof SpanBoostQuery);
+    assertTrue(((SpanBoostQuery)q).getQuery() instanceof SpanNearQuery);
 
-    SpanNearQuery near = (SpanNearQuery) q;
+    SpanNearQuery near = (SpanNearQuery) ((SpanBoostQuery)q).getQuery();
     SpanQuery[] clauses = near.getClauses();
     assertEquals(2, clauses.length);
 

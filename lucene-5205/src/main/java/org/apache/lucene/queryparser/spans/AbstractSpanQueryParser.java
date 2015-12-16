@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.spans.SpanBoostQuery;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
@@ -63,7 +64,7 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
           SpanQuery ret = trySpecialHandlingForSpanNearWithOneComponent(field, (SQPTerm)t, nc);
           if (ret != null) {
             if (parentClause.getBoost() != null) {
-              ret.setBoost(parentClause.getBoost());
+              ret = new SpanBoostQuery(ret, parentClause.getBoost());
             }
             return ret;
           }
@@ -143,13 +144,13 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
     }
 
     if (clause.getBoost() != null) {
-      q.setBoost(clause.getBoost());
+      q = new SpanBoostQuery(q, clause.getBoost());
     }
     //now update boost if clause only had one child
     if (clause.getBoost() != null && (
         q instanceof SpanTermQuery ||
             q instanceof SpanMultiTermQueryWrapper)) {
-      q.setBoost(clause.getBoost());
+      q = new SpanBoostQuery(q, clause.getBoost());
     }
 
     return q;
