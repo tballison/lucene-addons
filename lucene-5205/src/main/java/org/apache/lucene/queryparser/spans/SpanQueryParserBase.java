@@ -170,7 +170,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Can return null, e.g. if the terminal is a stopword.
    * @param fieldName
    * @param terminal
-   * @return
+   * @return spanquery
    * @throws ParseException
    */
   protected SpanQuery buildSpanTerminal(String fieldName, SQPTerminal terminal) throws ParseException {
@@ -322,7 +322,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @param upperTerm
    * @param includeLower
    * @param includeUpper
-   * @return
+   * @return range query
    * @throws ParseException
    */
   protected Query newRangeQuery(String fieldName, String lowerTerm, String upperTerm,

@@ -68,12 +68,7 @@ class SpanQueryLexer {
   private static final int DECIMAL_POINT = (int)'.';
   private static final int STAR = (int)'*';
   private static final int QMARK = (int)'?';
-  private static final int CHAR_O = (int)'O';
-  private static final int CHAR_T = (int)'T';
-  private static final int CHAR_N = (int)'N';
-  private static final int CHAR_D = (int)'D';
-  private static final int CHAR_R = (int)'R';
-  private static final int CHAR_A = (int)'A';
+
 
 
   boolean inDQuote = false;
