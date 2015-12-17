@@ -117,7 +117,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   public RewriteMethod getMultiTermRewriteMethod() { return multiTermRewriteMethod;}
   /**
    * This currently sets the method for all fields.
-   * @param method
+   * @param method rewrite method
    */
   public void setMultiTermRewriteMethod(MultiTermQuery.RewriteMethod method) {
     this.multiTermRewriteMethod = method;
@@ -127,8 +127,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
   /**
    *
-   * @param fieldName
-   * @param terminal
+   * @param fieldName field
+   * @param terminal terminal
    * @return Query that was built or <code>null</code> if a stop word
    * @throws ParseException
    */
@@ -173,9 +173,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Builds a SpanQuery from an SQPTerminal.
    * <p>
    * Can return null, e.g. if the terminal is a stopword.
-   * @param fieldName
-   * @param terminal
-   * @return
+   * @param fieldName field
+   * @param terminal terminal
+   * @return a SpanQuery
    * @throws ParseException
    */
   protected SpanQuery buildSpanTerminal(String fieldName, SQPTerminal terminal) throws ParseException {
@@ -322,12 +322,12 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * {@link #handleNullAnalyzerRange(String, String, String, boolean, boolean)}.
    *
    *
-   * @param fieldName
-   * @param lowerTerm
-   * @param upperTerm
-   * @param includeLower
-   * @param includeUpper
-   * @return
+   * @param fieldName field
+   * @param lowerTerm lower term
+   * @param upperTerm upper term
+   * @param includeLower include lower
+   * @param includeUpper include upper
+   * @return RangeQuery
    * @throws ParseException
    */
   protected Query newRangeQuery(String fieldName, String lowerTerm, String upperTerm,
@@ -577,7 +577,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   private List<SpanQuery> removeEmpties(List<SpanQuery> queries)
       throws ParseException {
 
-    List<SpanQuery> nonEmpties = new ArrayList<SpanQuery>();
+    List<SpanQuery> nonEmpties = new ArrayList<>();
     for (SpanQuery q : queries) {
       if (!isEmptyQuery(q)) {
         nonEmpties.add(q);
