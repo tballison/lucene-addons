@@ -19,16 +19,10 @@ package org.apache.lucene.queryparser.spans;
 
 class SQPOpenClause extends SQPClause {
   private final TYPE type;
-  private final int startCharOffset;
 
-  public SQPOpenClause(int startTokenOffset, int startCharOffset, TYPE type) {
+  public SQPOpenClause(int startTokenOffset, TYPE type) {
     super(startTokenOffset);
     this.type = type;
-    this.startCharOffset = startCharOffset;
-  }
-
-  public int getStartCharOffset() {
-    return startCharOffset;
   }
 
   public TYPE getType() {

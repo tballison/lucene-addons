@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.TokenFilter;
@@ -38,13 +39,11 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.spans.AnalyzingQueryParserBase.NORM_MULTI_TERMS;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.SpanWeight;
 import org.apache.lucene.search.spans.Spans;
-import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.TestUtil;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
 import org.apache.lucene.util.automaton.Operations;
@@ -53,27 +52,29 @@ import org.junit.BeforeClass;
 
 public class TestSpanOnlyQueryParser extends SQPTestBase {
 
-  private static final String FIELD = "f1";
-  private static final CharacterRunAutomaton STOP_WORDS = new CharacterRunAutomaton(
-      Operations.union(Arrays.asList(makeString("a"), makeString("an"),
-          makeString("and"), makeString("are"), makeString("as"),
-          makeString("at"), makeString("be"), makeString("but"),
-          makeString("by"), makeString("for"), makeString("if"),
-          makeString("in"), makeString("into"), makeString("is"),
-          makeString("it"), makeString("no"), makeString("not"),
-          makeString("of"), makeString("on"), makeString("or"),
-          makeString("such"), makeString("that"), makeString("the"),
-          makeString("their"), makeString("then"), makeString("there"),
-          makeString("these"), makeString("they"), makeString("this"),
-          makeString("to"), makeString("was"), makeString("will"),
-          makeString("with"), makeString("\u5927"))));
-  private static Directory directory;
   private static Analyzer stopAnalyzer;
   private static Analyzer noStopAnalyzer;
+  private static Analyzer lcMultiTermAnalyzer;
+  private static final String FIELD = "f1";
+
+  private static final CharacterRunAutomaton STOP_WORDS = new CharacterRunAutomaton(
+      Operations.union(Arrays.asList(makeString("a"), makeString("an"),
+              makeString("and"), makeString("are"), makeString("as"),
+              makeString("at"), makeString("be"), makeString("but"),
+              makeString("by"), makeString("for"), makeString("if"),
+              makeString("in"), makeString("into"), makeString("is"),
+              makeString("it"), makeString("no"), makeString("not"),
+              makeString("of"), makeString("on"), makeString("or"),
+              makeString("such"), makeString("that"), makeString("the"),
+              makeString("their"), makeString("then"), makeString("there"),
+              makeString("these"), makeString("they"), makeString("this"),
+              makeString("to"), makeString("was"), makeString("will"),
+              makeString("with"), makeString("\u5927"))));
 
   @BeforeClass
   public static void beforeClass() throws Exception {
 
+    lcMultiTermAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
     noStopAnalyzer = new Analyzer() {
       @Override
       public TokenStreamComponents createComponents(String fieldName) {
@@ -98,9 +99,9 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     directory = newDirectory();
     RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
         newIndexWriterConfig(stopAnalyzer)
-            .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
-            .setMergePolicy(newLogMergePolicy()));
-    String[] docs = new String[]{
+        .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
+        .setMergePolicy(newLogMergePolicy()));
+    String[] docs = new String[] {
         "the quick brown fox ",
         "jumped over the lazy brown dog and the brown green cat",
         "quick green fox",
@@ -108,8 +109,8 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
         "over green lazy",
         // longish doc for recursion test
         "eheu fugaces postume postume labuntur anni nec "
-            + "pietas moram rugis et instanti senectae "
-            + "adferet indomitaeque morti",
+        + "pietas moram rugis et instanti senectae "
+        + "adferet indomitaeque morti",
         // non-whitespace language
         "\u666E \u6797 \u65AF \u987F \u5927 \u5B66",
         "reg/exp",
@@ -142,12 +143,29 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     noStopAnalyzer = null;
   }
 
+/*  public void testAnalyzers() throws Exception {
+    QueryParser p = new QueryParser("f", stopAnalyzer);
+    p.setAutoGeneratePhraseQueries(true);
+    Query q = p.parse("\u666E\u6797\u65AF\u987F\u5927\u5B66");
+    TokenStream ts = stopAnalyzer.tokenStream("f", "\u666E\u6797\u65AF\u987F\u5927\u5B66");
+    ts.reset();
+
+    TermToBytesRefAttribute termAtt = ts.getAttribute(TermToBytesRefAttribute.class);
+    BytesRef bytes = termAtt == null ? null : termAtt.getBytesRef();
+    PositionIncrementAttribute posIncrAtt = ts.getAttribute(PositionIncrementAttribute.class);
+    while (ts.incrementToken()){
+      termAtt.fillBytesRef();
+      System.out.println(bytes.utf8ToString() + " : " + posIncrAtt.getPositionIncrement());
+    }
+    ts.end();
+    ts.close();
+  }*/
   public void testBasic() throws Exception {
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, stopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, stopAnalyzer, lcMultiTermAnalyzer);
 
     // test null and empty
     boolean ex = false;
-    try {
+    try{
       countSpansDocs(p, null, 0, 0);
 
     } catch (NullPointerException e) {
@@ -160,21 +178,19 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
   }
 
   public void testNear() throws Exception {
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
 
     // unmatched "
     try {
       p.parse("\"brown \"dog\"");
       fail("didn't get expected exception");
-    } catch (ParseException expected) {
-    }
+    } catch (ParseException expected) {}
 
     // unmatched [
     try {
       p.parse("[brown [dog]");
       fail("didn't get expected exception");
-    } catch (ParseException expected) {
-    }
+    } catch (ParseException expected) {}
 
     testOffsetForSingleSpanMatch(p, "\"brown dog\"", 1, 4, 6);
 
@@ -203,14 +219,13 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
   }
 
   public void testNotNear() throws Exception {
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
 
     // must have two components
     try {
       p.parse("\"brown dog car\"!~2,2");
       fail("didn't get expected exception");
-    } catch (ParseException expected) {
-    }
+    } catch (ParseException expected) {}
 
     countSpansDocs(p, "\"brown dog\"!~2,2", 2, 2);
 
@@ -234,7 +249,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
   }
 
   public void testWildcard() throws Exception {
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
 
     //default: don't allow leading wildcards
     try {
@@ -248,27 +263,29 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     // lowercasing as default
     testOffsetForSingleSpanMatch(p, "*OG", 1, 5, 6);
 
-    p.setNormMultiTerms(NORM_MULTI_TERMS.NONE);
-
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, null);
+    p.setAllowLeadingWildcard(true);
     countSpansDocs(p, "*OG", 0, 0);
 
     testOffsetForSingleSpanMatch(p, "*og", 1, 5, 6);
     testOffsetForSingleSpanMatch(p, "?og", 1, 5, 6);
 
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
+    p.setAllowLeadingWildcard(true);
     // brown dog and brown fox
     countSpansDocs(p, "[brown ?o?]", 2, 2);
     countSpansDocs(p, "[br* ?o?]", 2, 2);
   }
 
   public void testPrefix() throws Exception {
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
 
     // lowercasing as default
     countSpansDocs(p, "BR*", 3, 2);
 
     countSpansDocs(p, "br*", 3, 2);
 
-    p.setNormMultiTerms(NORM_MULTI_TERMS.NONE);
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, null);
     countSpansDocs(p, "BR*", 0, 0);
 
     // not actually a prefix query
@@ -279,7 +296,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
   }
 
   public void testRegex() throws Exception {
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer, noStopAnalyzer);
 
 
     countSpansDocs(p, "/b[wor]+n/", 3, 2);
@@ -291,21 +308,21 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
 
     countSpansDocs(p, " [/b[wor]+n/ (fox dog)]", 2, 2);
 
-    p.setNormMultiTerms(NORM_MULTI_TERMS.LOWERCASE);
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
 
     //there should be no processing of regexes!
     countSpansDocs(p, "/(?i)B[wor]+n/", 0, 0);
 
-    p.setNormMultiTerms(NORM_MULTI_TERMS.NONE);
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, null);
     countSpansDocs(p, "/B[wor]+n/", 0, 0);
 
     //test special regex escape
-    countSpansDocs(p, "/reg\\/exp/", 1, 1);
+    countSpansDocs(p, "/reg//exp/", 1, 1);
   }
 
   public void testFuzzy() throws Exception {
     //could use more testing of requested and fuzzyMinSim < 1.0f
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer, noStopAnalyzer);
 
     countSpansDocs(p, "bruun~", 3, 2);
     countSpansDocs(p, "bruun~2", 3, 2);
@@ -313,23 +330,29 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     //default should reduce 3 to 2 and therefore not have any hits
     countSpansDocs(p, "abcdefgh~3", 0, 0);
 
-    p.setFuzzyMinSim(3.0f);
+    p.setFuzzyMaxEdits(3);
+
     testOffsetForSingleSpanMatch(p, "abcdefgh~3", 3, 0, 1);
 
     // default lowercasing
     testOffsetForSingleSpanMatch(p, "Abcdefgh~3", 3, 0, 1);
-    p.setNormMultiTerms(NORM_MULTI_TERMS.NONE);
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, null);
     countSpansDocs(p, "Abcdefgh~3", 0, 0);
 
     countSpansDocs(p, "brwon~1", 3, 2);
     countSpansDocs(p, "brwon~>1", 0, 0);
+
+    countSpansDocs(p, "brwon~1,1", 3, 2);
+    countSpansDocs(p, "borwn~2,2", 0, 0);
+    countSpansDocs(p, "brwon~,1", 3, 2);
+
 
     countSpansDocs(p, "crown~1,1", 0, 0);
     countSpansDocs(p, "crown~2,1", 0, 0);
     countSpansDocs(p, "crown~3,1", 0, 0);
     countSpansDocs(p, "brwn~1,1", 3, 2);
 
-    p.setFuzzyMinSim(0.79f);
+    p.setFuzzyMaxEdits(2);;
 
     countSpansDocs(p, "brwon~2", 3, 2);
 
@@ -343,7 +366,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
   public void testStopWords() throws Exception {
     // Stop word handling has some room for improvement with SpanQuery
 
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, stopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, stopAnalyzer, lcMultiTermAnalyzer);
 
     countSpansDocs(p, "the", 0, 0);
 
@@ -353,8 +376,8 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     countSpansDocs(p, "(the brown)", 3, 2);
 
     countSpansDocs(p, "[brown the]!~5,5", 3, 2);
-
-
+ 
+    
     //this tests that slop is really converted to 2 because of stop word
     countSpansDocs(p, "[over the brown]~1", 1, 1);
 
@@ -368,7 +391,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     countSpansDocs(p, "(over the lazy)", 4, 2);
     countSpansDocs(p, "(over the)", 2, 2);
     countSpansDocs(p, "(the and and the)", 0, 0);
-
+    
     //this tests that slop is really converted to 3 because of stop words
     countSpansDocs(p, "[over the the dog]~1", 1, 1);
 
@@ -379,9 +402,9 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     //ditto
     countSpansDocs(p, "[the the the the jumped the cat the the the the]~1", 0, 0);
     countSpansDocs(p, "[the the the the over the brown the the the the]~1", 1, 1);
-
+    
     // add tests for surprise phrasal with stopword!!! chinese
-    SpanOnlyParser noStopsParser = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser noStopsParser = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
     noStopsParser.setAutoGeneratePhraseQueries(true);
     // won't match because stop word was dropped in index
     countSpansDocs(noStopsParser, "\u666E\u6797\u65AF\u987F\u5927\u5B66", 0, 0);
@@ -391,11 +414,11 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
 
     testOffsetForSingleSpanMatch(noStopsParser,
         "[\u666E \u6797 \u65AF \u987F \u5B66]~2", 6, 0, 6);
-
+        
   }
 
   public void testNonWhiteSpaceLanguage() throws Exception {
-    SpanOnlyParser noStopsParser = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser noStopsParser = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
 
     testOffsetForSingleSpanMatch(noStopsParser, "\u666E", 6, 0, 1);
 
@@ -410,9 +433,11 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     // this would have a hit if autogenerate phrase queries = false
     countSpansDocs(noStopsParser, "\u666E\u65AF", 0, 0);
 
+    noStopsParser.setAutoGeneratePhraseQueries(false);
     // treat as "or", this should have two spans
     countSpansDocs(noStopsParser, "\u666E \u65AF", 2, 1);
 
+    noStopsParser.setAutoGeneratePhraseQueries(true);
     // stop word removed at indexing time and non existent here,
     // this is treated as an exact phrase and should not match
     countSpansDocs(noStopsParser, "\u666E\u6797\u65AF\u987F\u5B66", 0, 0);
@@ -434,17 +459,12 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     testOffsetForSingleSpanMatch(noStopsParser,
         "[\u666E\u6797\u65AF\u5B66]~2", 6, 0, 6);
 
-    /*
-    Legacy behavior: (TODO: remember why we wanted this)
-    //If someone enters in a space delimited phrase within a phrase,
+/*    //If someone enters in a space delimited phrase within a phrase,
     //treat it literally. There should be no matches.
     countSpansDocs(noStopsParser, "[[lazy dog] ]~4", 0, 0);
-   */
-    //If someone enters in a space delimited phrase within a phrase,
-    //treat it literally. There should be no matches.
+*/
+    //changed behavior with 5.2.1
     countSpansDocs(noStopsParser, "[[lazy dog] ]~4", 1, 1);
-
-
     noStopsParser.setAutoGeneratePhraseQueries(false);
 
     // characters split into 2 tokens and treated as an "or" query
@@ -458,15 +478,17 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     testOffsetForSingleSpanMatch(noStopsParser,
         "[\u666E\u6797\u65AF\u987F\u5B66]~1", 6, 0, 6);
 
-    SpanOnlyParser stopsParser = new SpanOnlyParser(FIELD, stopAnalyzer);
+    SpanOnlyParser stopsParser = new SpanOnlyParser(FIELD, stopAnalyzer, lcMultiTermAnalyzer);
     stopsParser.setAutoGeneratePhraseQueries(true);
-    countSpansDocs(stopsParser, "\u666E\u6797\u65AF\u987F\u5927\u5B66", 0, 0);
+    //we expect one match because it has to be converted to a SpanNearQuery
+    //and we're adding 1 to the slop so that it will match (perhaps overgenerate!)
+    countSpansDocs(stopsParser, "\u666E\u6797\u65AF\u987F\u5927\u5B66", 1, 1);
   }
 
   public void testQuotedSingleTerm() throws Exception {
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
 
-    String[] quoteds = new String[]{
+    String[] quoteds = new String[] {
         "/regex/",
         "fuzzy~2",
         "wil*card",
@@ -475,11 +497,11 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     };
 
     for (String q : quoteds) {
-      countSpansDocs(p, "\"" + q + "\"", 1, 1);
+      countSpansDocs(p, "'"+q+"'", 1, 1);
     }
 
     for (String q : quoteds) {
-      countSpansDocs(p, "'" + q + "'", 1, 1);
+      countSpansDocs(p, "'"+q+"'", 1, 1);
     }
 
     countSpansDocs(p, "'single''quote'", 1, 1);
@@ -487,14 +509,12 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
 
   public void testRangeQueries() throws Exception {
     //TODO: add tests, now fairly well covered by TestSPanQPBasedonQPTestBase
-    SpanOnlyParser stopsParser = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser stopsParser = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
 
     countSpansDocs(stopsParser, "ponml [ * TO bird] edcba", 4, 3);
     countSpansDocs(stopsParser, "ponml [ '*' TO bird] edcba", 4, 3);
-    countSpansDocs(stopsParser, "ponml [ \"*\" TO bird] edcba", 4, 3);
     countSpansDocs(stopsParser, "ponml [ umbrella TO *] edcba", 7, 3);
     countSpansDocs(stopsParser, "ponml [ umbrella TO '*'] edcba", 0, 0);
-    countSpansDocs(stopsParser, "ponml [ umbrella TO \"*\"] edcba", 0, 0);
   }
 
   public void testRecursion() throws Exception {
@@ -505,7 +525,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
      * pietas 8: moram 9: rugis 10: et 11: instanti 12: senectae 13: adferet 14:
      * indomitaeque 15: morti
      */
-    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer);
+    SpanOnlyParser p = new SpanOnlyParser(FIELD, noStopAnalyzer, lcMultiTermAnalyzer);
 
     // String q = "[labunt* [pietas [rug?s senec*]!~2,0 ]~4 adferet]~5";
     // String q = "[pietas [rug?s senec*]!~2,0 ]~4";
@@ -556,7 +576,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     countSpansDocs(p, q, 0, 0);
   }
 
-  private void testException(SpanOnlyParser p, String q) throws Exception {
+  private void testException(SpanOnlyParser p, String q) throws Exception{
     boolean ex = false;
     try {
       countSpansDocs(p, q, 3, 2);
@@ -566,28 +586,30 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     assertTrue(q, ex);
   }
 
-  private void countSpansDocs(SpanOnlyParser p, String s, int spanCount,
-                              int docCount) throws Exception {
-    SpanQuery q = (SpanQuery) p.parse(s);
-    assertEquals("spanCount: " + s, spanCount, countSpans(q));
-    assertEquals("docCount: " + s, docCount, countDocs(q));
+  void countSpansDocs(AbstractSpanQueryParser p, String s, int spanCount,
+      int docCount) throws Exception {
+    SpanQuery q = (SpanQuery)p.parse(s);
+    assertEquals("spanCount: " + s, spanCount, countSpans(FIELD, q));
+    assertEquals("docCount: " + s, docCount, countDocs(FIELD, q));
   }
 
 
   private void testOffsetForSingleSpanMatch(SpanOnlyParser p, String s,
-                                            int trueDocID, int trueSpanStart, int trueSpanEnd) throws Exception {
-    SpanQuery q = (SpanQuery) p.parse(s);
+      int trueDocID, int trueSpanStart, int trueSpanEnd) throws Exception {
+    SpanQuery q = (SpanQuery)p.parse(s);
     List<LeafReaderContext> ctxs = reader.leaves();
     assert (ctxs.size() == 1);
     LeafReaderContext ctx = ctxs.get(0);
     q = (SpanQuery) q.rewrite(ctx.reader());
-    SpanWeight spanWeight = q.createWeight(searcher, true);
-    Spans spans = spanWeight.getSpans(ctx, null, SpanWeight.Postings.POSITIONS);
+    SpanWeight sw = q.createWeight(searcher, false);
+
+    final Spans spans = sw.getSpans(ctx, SpanWeight.Postings.POSITIONS);
 
     int i = 0;
     int spanStart = -1;
     int spanEnd = -1;
     int docID = -1;
+
     while (spans.nextDoc() != Spans.NO_MORE_DOCS) {
       while (spans.nextStartPosition() != Spans.NO_MORE_POSITIONS) {
         spanStart = spans.startPosition();
@@ -605,6 +627,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
   /**
    * Mocks StandardAnalyzer for tokenizing Chinese characters (at least for
    * these test cases into individual tokens).
+   * 
    */
   private final static class MockStandardTokenizerFilter extends TokenFilter {
     // Only designed to handle test cases. You may need to modify this
@@ -612,9 +635,10 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     // 1!!!
     private final Pattern hackCJKPattern = Pattern
         .compile("([\u5900-\u9899])|([\\p{InBasic_Latin}]+)");
+    private List<String> buffer = new LinkedList<String>();
+
     private final CharTermAttribute termAtt;
     private final PositionIncrementAttribute posIncrAtt;
-    private List<String> buffer = new LinkedList<String>();
 
     public MockStandardTokenizerFilter(TokenStream in) {
       super(in);

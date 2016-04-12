@@ -24,22 +24,23 @@ import java.util.Set;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.queries.ChainedFilter;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsets;
-import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsetsIterator;
+import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsetsVisitor;
 import org.apache.lucene.search.concordance.charoffsets.OffsetLengthStartComparator;
 import org.apache.lucene.search.concordance.charoffsets.OffsetUtil;
 import org.apache.lucene.search.concordance.charoffsets.RandomAccessCharOffsetContainer;
 import org.apache.lucene.search.concordance.charoffsets.ReanalyzingTokenCharOffsetsReader;
+import org.apache.lucene.search.concordance.charoffsets.SpansCrawler;
 import org.apache.lucene.search.concordance.charoffsets.TargetTokenNotFoundException;
 import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetRequests;
 import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetsReader;
 import org.apache.lucene.search.concordance.classic.DocIdBuilder;
-import org.apache.lucene.search.concordance.classic.impl.FieldBasedDocIdBuilder;
 import org.apache.lucene.search.concordance.util.ConcordanceSearcherUtil;
 import org.apache.lucene.search.spans.SimpleSpanQueryConverter;
 import org.apache.lucene.search.spans.SpanQuery;
@@ -56,7 +57,7 @@ public class ConcordanceArrayWindowSearcher {
   private boolean allowTargetOverlaps = false;
 
   /**
-   * @param reader       index reader to search
+   * @param searcher     indexSearcher to search
    * @param fieldName    field to search
    * @param query        query to use
    * @param filter       filter to apply, can be null
@@ -67,14 +68,14 @@ public class ConcordanceArrayWindowSearcher {
    * @throws TargetTokenNotFoundException
    * @throws java.io.IOException
    */
-  public void search(IndexReader reader, String fieldName,
+  public void search(IndexSearcher searcher, String fieldName,
                      Query query, Filter filter, Analyzer analyzer,
                      ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder) throws IllegalArgumentException,
       TargetTokenNotFoundException, IOException {
 
     if (query instanceof SpanQuery) {
       // pass through
-      searchSpan(reader, (SpanQuery) query, filter, analyzer,
+      searchSpan(searcher, (SpanQuery) query, filter, analyzer,
           visitor, docIdBuilder);
     } else {
       // convert regular query to a SpanQuery.
@@ -85,50 +86,91 @@ public class ConcordanceArrayWindowSearcher {
       Filter updatedFilter = origQueryFilter;
 
       if (filter != null) {
-        updatedFilter = new ChainedFilter(new Filter[]{origQueryFilter,
-            filter}, ChainedFilter.AND);
+        BooleanQuery bq = new BooleanQuery.Builder()
+            .add(query, BooleanClause.Occur.MUST)
+            .add(filter, BooleanClause.Occur.MUST).build();
+        updatedFilter = new QueryWrapperFilter(bq);
       }
-      searchSpan(reader, spanQuery, updatedFilter, analyzer,
+      searchSpan(searcher, spanQuery, updatedFilter, analyzer,
           visitor, docIdBuilder);
     }
 
   }
 
-  public void searchSpan(IndexReader reader,
+  public void searchSpan(IndexSearcher searcher,
                          SpanQuery query,
                          Filter filter, Analyzer analyzer,
                          ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder) throws IllegalArgumentException,
       TargetTokenNotFoundException, IOException {
-    query = (SpanQuery) query.rewrite(reader);
-    Set<String> fields = new HashSet<String>();
-    fields.add(query.getField());
-    if (docIdBuilder instanceof FieldBasedDocIdBuilder) {
-      fields.addAll(((FieldBasedDocIdBuilder) docIdBuilder).getFields());
-    }
+    String field = query.getField();
+    //if nothing is found for e.g. a prefix query, the returned query will
+    //be an empty spanquery with a null field.  We need to cache the field
+    //in case this is destroyed in the rewrite.
+    query = (SpanQuery) query.rewrite(searcher.getIndexReader());
 
-    TokenCharOffsetsReader tokenOffsetsReader = new ReanalyzingTokenCharOffsetsReader(
-        analyzer);
+    CAWDocTokenOffsetsVisitor docTokenOffsetsVisitor =
+        new CAWDocTokenOffsetsVisitor(field, analyzer,
+            docIdBuilder, visitor);
 
-    DocTokenOffsetsIterator itr = new DocTokenOffsetsIterator();
-    itr.reset(query, filter, reader, fields);
+    SpansCrawler.crawl(query, filter, searcher, docTokenOffsetsVisitor);
 
-    // reusable arrayWindow
-    ConcordanceArrayWindow arrayWindow = new ConcordanceArrayWindow(
-        analyzer.getPositionIncrementGap(query.getField()));
+
+  }
+
+
+  /**
+   * @param allowTargetOverlaps whether to allow targets to overlap or ignore overlapping
+   *                            targets
+   */
+  public void setAllowTargetOverlaps(boolean allowTargetOverlaps) {
+    this.allowTargetOverlaps = allowTargetOverlaps;
+  }
+
+  private class CAWDocTokenOffsetsVisitor implements DocTokenOffsetsVisitor {
+    final String fieldName;
+    final TokenCharOffsetsReader tokenOffsetsReader;
 
     // reusable requests and results
-    TokenCharOffsetRequests offsetRequests = new TokenCharOffsetRequests();
-    RandomAccessCharOffsetContainer offsetResults = new RandomAccessCharOffsetContainer();
+    final TokenCharOffsetRequests offsetRequests = new TokenCharOffsetRequests();
+    final RandomAccessCharOffsetContainer offsetResults = new RandomAccessCharOffsetContainer();
+    final DocTokenOffsets docTokenOffsets = new DocTokenOffsets();
+    final OffsetLengthStartComparator offsetLengthStartComparator = new OffsetLengthStartComparator();
+    // reusable arrayWindow
+    final ConcordanceArrayWindow arrayWindow;
+    final ArrayWindowVisitor visitor;
+    final Analyzer analyzer;
+    final DocIdBuilder docIdBuilder;
 
-    DocTokenOffsets docTokenOffsets = null;
-    OffsetLengthStartComparator offsetLengthStartComparator = new OffsetLengthStartComparator();
+    CAWDocTokenOffsetsVisitor(String fieldName, Analyzer analyzer, DocIdBuilder docIdBuilder,
+                              ArrayWindowVisitor visitor) {
+      this.fieldName = fieldName;
+      this.analyzer = analyzer;
+      this.docIdBuilder = docIdBuilder;
+      this.visitor = visitor;
+      tokenOffsetsReader = new ReanalyzingTokenCharOffsetsReader(analyzer);
+      arrayWindow = new ConcordanceArrayWindow(
+          analyzer.getPositionIncrementGap(fieldName));
+    }
 
-    // iterate through documents
-    while (itr.next()) {
-      docTokenOffsets = itr.getDocTokenOffsets();
+    @Override
+    public DocTokenOffsets getDocTokenOffsets() {
+      return docTokenOffsets;
+    }
+
+    @Override
+    public Set<String> getFields() {
+      Set<String> fields = new HashSet<>();
+      fields.add(fieldName);
+      fields.addAll(docIdBuilder.getFields());
+      return fields;
+    }
+
+    @Override
+    public boolean visit(DocTokenOffsets docTokenOffsets) throws IOException,
+        TargetTokenNotFoundException {
       Document document = docTokenOffsets.getDocument();
       String docId = docIdBuilder.build(document, docTokenOffsets.getUniqueDocId());
-      String[] fieldValues = document.getValues(query.getField());
+      String[] fieldValues = document.getValues(fieldName);
       if (fieldValues == null) {
         throw new IOException("Mismatched content field");
       }
@@ -154,45 +196,37 @@ public class ConcordanceArrayWindowSearcher {
 
       offsetResults.clear();
       tokenOffsetsReader.getTokenCharOffsetResults(document,
-          query.getField(), offsetRequests, offsetResults);
+          fieldName, offsetRequests, offsetResults);
 
-      visitWindowsInDoc(reader, offsetResults, fieldValues,
-          offsets, docId, arrayWindow, visitor, analyzer.getOffsetGap(query.getField()));
+      boolean keepGoing = visitWindowsInDoc(offsetResults, fieldValues,
+          offsets, docId, arrayWindow, visitor, analyzer.getOffsetGap(fieldName));
 
-      if (visitor.getHitMax() == true) {
-        return;
+      if (!keepGoing) {
+        return false;
       }
-    }
-    return;
-  }
 
-  private void visitWindowsInDoc(IndexReader reader,
-                                 RandomAccessCharOffsetContainer offsetResults, String[] fieldValues,
-                                 List<OffsetAttribute> offsets, String docId, ConcordanceArrayWindow window,
-                                 ArrayWindowVisitor visitor, int offsetGap) throws IOException,
-      TargetTokenNotFoundException {
-    System.out.println("VISITING: " + docId + ":" + offsets.size());
-    for (OffsetAttribute offset : offsets) {
-      // hit max, stop now
-      if (visitor.getHitMax() == true) {
-        return;
+      return true;
+    }
+
+    private boolean visitWindowsInDoc(RandomAccessCharOffsetContainer offsetResults, String[] fieldValues,
+                                      List<OffsetAttribute> offsets, String docId, ConcordanceArrayWindow window,
+                                      ArrayWindowVisitor visitor, int offsetGap) throws IOException,
+        TargetTokenNotFoundException {
+      for (OffsetAttribute offset : offsets) {
+        // hit max, stop now
+        if (visitor.getHitMax() == true) {
+          return false;
+        }
+        window.reset();
+        window = ArrayWindowBuilder.buildWindow(offset.startOffset(),
+            offset.endOffset() - 1, visitor.getTokensBefore(),
+            visitor.getTokensAfter(), offsetGap,
+            offsetResults, fieldValues, window, visitor.includeTarget(),
+            visitor.analyzeTarget());
+
+        visitor.visit(docId, window);
       }
-      window.reset();
-      window = ArrayWindowBuilder.buildWindow(offset.startOffset(),
-          offset.endOffset() - 1, visitor.getTokensBefore(),
-          visitor.getTokensAfter(), offsetGap,
-          offsetResults, fieldValues, window, visitor.includeTarget(),
-          visitor.analyzeTarget());
-
-      visitor.visit(docId, window);
+      return true;
     }
-  }
-
-  /**
-   * @param allowTargetOverlaps whether to allow targets to overlap or ignore overlapping
-   *                            targets
-   */
-  public void setAllowTargetOverlaps(boolean allowTargetOverlaps) {
-    this.allowTargetOverlaps = allowTargetOverlaps;
   }
 }

@@ -18,54 +18,34 @@ package org.apache.lucene.queryparser.spans;
  */
 
 class SQPNearClause extends SQPClause {
-
+  
   public static final Boolean UNSPECIFIED_IN_ORDER = null;
 
   private final TYPE type;
   private final Boolean inOrder;
-  private final boolean hasParams;
-  private final int slop;
-  //the offset at which the contents of this clause start
-  private final int charStartOffset;
-  //the character offset at which the contents of this clause end
-  private final int charEndOffset;
+  private final Integer slop;
 
   //a b "the quick" brown
   //charStartOffset=5
   //charEndOffset=13
-  public SQPNearClause(int tokenStartOffset, int tokenEndOffset,
-                       int charStartOffset, int charEndOffset, TYPE type,
-                       boolean hasParams, Boolean inOrder, int slop) {
+  public SQPNearClause(int tokenStartOffset, int tokenEndOffset, 
+      TYPE type, Boolean inOrder, Integer slop) {
     super(tokenStartOffset, tokenEndOffset);
     this.type = type;
-    this.hasParams = hasParams;
     this.inOrder = inOrder;
     this.slop = slop;
-    this.charStartOffset = charStartOffset;
-    this.charEndOffset = charEndOffset;
   }
 
   public TYPE getType() {
     return type;
   }
 
-  public int getCharStartOffset() {
-    return charStartOffset;
-  }
-
-  public int getCharEndOffset() {
-    return charEndOffset;
-  }
-
   public Boolean getInOrder() {
     return inOrder;
   }
 
-  public boolean hasParams() {
-    return hasParams;
-  }
 
-  public int getSlop() {
+  public Integer getSlop() {
     return slop;
   }
 
@@ -73,7 +53,6 @@ class SQPNearClause extends SQPClause {
   public int hashCode() {
     final int prime = 31;
     int result = super.hashCode();
-    result = prime * result + (hasParams ? 1231 : 1237);
     result = prime * result + ((inOrder == null) ? 0 : inOrder.hashCode());
     result = prime * result + slop;
     result = prime * result + ((type == null) ? 0 : type.hashCode());
@@ -92,9 +71,6 @@ class SQPNearClause extends SQPClause {
       return false;
     }
     SQPNearClause other = (SQPNearClause) obj;
-    if (hasParams != other.hasParams) {
-      return false;
-    }
     if (inOrder == null) {
       if (other.inOrder != null) {
         return false;
@@ -118,8 +94,6 @@ class SQPNearClause extends SQPClause {
     builder.append(type);
     builder.append(", inOrder=");
     builder.append(inOrder);
-    builder.append(", hasParams=");
-    builder.append(hasParams);
     builder.append(", slop=");
     builder.append(slop);
     builder.append("]");

@@ -17,9 +17,9 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.lucene.util.OpenBitSet;
 
 /**
  * Class to record results for looking up normalized terms (String) and
@@ -36,7 +36,7 @@ public class RandomAccessCharOffsetContainer {
   public final static String NULL_TERM = "";
   public final static int NULL_OFFSET = -1;
 
-  private OpenBitSet set = new OpenBitSet();
+  private BitSet set = new BitSet();
   private int last = -1;
   private Map<Integer, String> terms = new HashMap<Integer, String>();
   private Map<Integer, Integer> starts = new HashMap<>();
@@ -125,7 +125,7 @@ public class RandomAccessCharOffsetContainer {
     starts.clear();
     ends.clear();
     last = -1;
-    set = new OpenBitSet();
+    set = new BitSet();
   }
 
   protected boolean isEmpty() {
@@ -213,7 +213,7 @@ public class RandomAccessCharOffsetContainer {
     return sb.toString();
   }
 
-  protected OpenBitSet getSet() {
+  protected BitSet getSet() {
     return set;
   }
 

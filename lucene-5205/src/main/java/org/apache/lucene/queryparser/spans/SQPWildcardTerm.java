@@ -1,4 +1,5 @@
 package org.apache.lucene.queryparser.spans;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,18 +17,42 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-public class SpanQueryParserUtil {
+class SQPWildcardTerm extends SQPTerminal {
 
-  protected static boolean isCharEscaped(String s, int i) {
-    int j = i;
-    int esc = 0;
-    while (--j >= 0 && s.charAt(j) == '\\') {
-      esc++;
-    }
-    if (esc % 2 == 0) {
-      return false;
-    }
-    return true;
+  private String term;
+
+  SQPWildcardTerm(String term) {
+    this.term = term;
   }
 
+  @Override
+  public String getString() {
+    return term;
+  }
+
+  @Override
+  public String toString() {
+    return "SQPWildcardTerm{" +
+        "term='" + term + '\'' +
+        '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    if (!super.equals(o)) return false;
+
+    SQPWildcardTerm that = (SQPWildcardTerm) o;
+
+    return !(term != null ? !term.equals(that.term) : that.term != null);
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (term != null ? term.hashCode() : 0);
+    return result;
+  }
 }

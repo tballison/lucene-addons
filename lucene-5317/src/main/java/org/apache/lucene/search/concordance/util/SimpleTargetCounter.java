@@ -27,6 +27,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TotalHitCountCollector;
+import org.apache.lucene.search.Weight;
 
 public class SimpleTargetCounter {
 
@@ -41,29 +42,30 @@ public class SimpleTargetCounter {
    * see {@link org.apache.lucene.search.concordance.windowvisitor.TargetVisitor}
    *
    * @param query
-   * @param reader
+   * @param searcher
    * @return target term results
    * @throws java.io.IOException
    */
-  public SimpleTargetTermResults searchSingleTerms(Query query, IndexReader reader)
+  public SimpleTargetTermResults searchSingleTerms(Query query, IndexSearcher searcher)
       throws IOException {
-    Query tmpQ = query.rewrite(reader);
-    Set<Term> terms = new HashSet<Term>();
-    tmpQ.extractTerms(terms);
+    Query tmpQ = query.rewrite(searcher.getIndexReader());
+    Set<Term> terms = new HashSet<>();
+    Weight weight = tmpQ.createWeight(searcher, false);
+    weight.extractTerms(terms);
 
-    Map<String, Integer> dfs = new HashMap<String, Integer>();
-    Map<String, Integer> tfs = new HashMap<String, Integer>();
+    Map<String, Integer> dfs = new HashMap<>();
+    Map<String, Integer> tfs = new HashMap<>();
 
     for (Term t : terms) {
       String targ = t.text();
-      int docFreq = reader.docFreq(t);
+      int docFreq = searcher.getIndexReader().docFreq(t);
       if (docFreq == 0) {
         continue;
       }
       Integer i = new Integer(docFreq);
       dfs.put(targ, i);
 
-      long tf = reader.totalTermFreq(t);
+      long tf = searcher.getIndexReader().totalTermFreq(t);
       tfs.put(targ, (int) tf);
     }
 

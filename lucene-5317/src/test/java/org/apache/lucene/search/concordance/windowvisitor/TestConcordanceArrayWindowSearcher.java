@@ -23,11 +23,12 @@ import java.util.List;
 import java.util.Map;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
-import org.apache.lucene.corpus.stats.IDFCalc;
+import org.apache.lucene.corpus.stats.IDFIndexCalc;
 import org.apache.lucene.corpus.stats.TermIDF;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.concordance.ConcordanceTestBase;
 import org.apache.lucene.search.concordance.classic.impl.IndexIdDocIdBuilder;
 import org.apache.lucene.search.spans.SpanNearQuery;
@@ -57,9 +58,10 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
         MockTokenFilter.EMPTY_STOPSET, 50, 100);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
 
 
-    IDFCalc idfCalc = new IDFCalc(reader);
+    IDFIndexCalc idfCalc = new IDFIndexCalc(reader);
 
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfCalc, 100, true);
@@ -68,7 +70,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
 
-    searcher.search(reader, FIELD, q, null, analyzer, visitor,
+    searcher.search(indexSearcher, FIELD, q, null, analyzer, visitor,
         new IndexIdDocIdBuilder());
 
     List<TermIDF> results = ((CooccurVisitor) visitor).getResults();
@@ -93,7 +95,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     searcher = new ConcordanceArrayWindowSearcher();
     q = new SpanTermQuery(new Term(FIELD, "d"));
 
-    searcher.search(reader, FIELD, q, null, analyzer, visitor, new IndexIdDocIdBuilder());
+    searcher.search(indexSearcher, FIELD, q, null, analyzer, visitor, new IndexIdDocIdBuilder());
 
     results = ((CooccurVisitor) visitor).getResults();
     truth.clear();
@@ -117,8 +119,9 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
         MockTokenFilter.ENGLISH_STOPSET, 50, 100);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
 
-    IDFCalc idfer = new IDFCalc(reader);
+    IDFIndexCalc idfer = new IDFIndexCalc(reader);
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfer, 100, true);
 
@@ -126,7 +129,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
 
-    searcher.search(reader, FIELD, q, null, analyzer, visitor,
+    searcher.search(indexSearcher, FIELD, q, null, analyzer, visitor,
         new IndexIdDocIdBuilder());
 
     List<TermIDF> results = ((CooccurVisitor) visitor).getResults();
@@ -155,9 +158,10 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
         MockTokenFilter.EMPTY_STOPSET, 50, 100);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
 
 
-    IDFCalc idfer = new IDFCalc(reader);
+    IDFIndexCalc idfer = new IDFIndexCalc(reader);
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfer, 100, true);
 
@@ -165,7 +169,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
 
-    searcher.search(reader, FIELD, q, null, analyzer, visitor,
+    searcher.search(indexSearcher, FIELD, q, null, analyzer, visitor,
         new IndexIdDocIdBuilder());
 
     List<TermIDF> results = ((CooccurVisitor) visitor).getResults();
@@ -189,7 +193,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     searcher = new ConcordanceArrayWindowSearcher();
     q = new SpanTermQuery(new Term(FIELD, "d"));
 
-    searcher.search(reader, FIELD,
+    searcher.search(indexSearcher, FIELD,
         q, null, analyzer, visitor, new IndexIdDocIdBuilder());
 
     results = ((CooccurVisitor) visitor).getResults();
@@ -220,9 +224,9 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
         MockTokenFilter.EMPTY_STOPSET, 0, 0);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
 
-
-    IDFCalc idfer = new IDFCalc(reader);
+    IDFIndexCalc idfer = new IDFIndexCalc(reader);
     CooccurVisitor visitor = new CooccurVisitor(
         FIELD, 10, 10, new WGrammer(1, 1, false), idfer, 100, true);
 
@@ -238,7 +242,7 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
         "orange"));
     SpanQuery q = new SpanNearQuery(new SpanQuery[]{q1, q2, q3}, 3, true);
 
-    searcher.search(reader, FIELD, q, null, analyzer, visitor,
+    searcher.search(indexSearcher, FIELD, q, null, analyzer, visitor,
         new IndexIdDocIdBuilder());
 
     List<TermIDF> results = ((CooccurVisitor) visitor).getResults();

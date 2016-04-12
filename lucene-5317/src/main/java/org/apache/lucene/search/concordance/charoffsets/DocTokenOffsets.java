@@ -33,7 +33,7 @@ public class DocTokenOffsets {
   private int atomicDocId = -1;
   private long uniqueId = -1;
   private Document document = null;
-  private List<OffsetAttribute> offsets = new ArrayList<OffsetAttribute>();
+  private List<OffsetAttribute> offsets = new ArrayList<>();
 
   public void addOffset(int start, int end) {
     OffsetAttributeImpl offset = new OffsetAttributeImpl();
@@ -41,13 +41,11 @@ public class DocTokenOffsets {
     offsets.add(offset);
   }
 
-  public void reset(int base, int atomicDocId, Document d, int start,
-                    int end) {
+  public void reset(int base, int atomicDocId, Document d) {
     this.atomicDocId = atomicDocId;
     this.uniqueId = base + atomicDocId;
     setDocument(d);
     offsets.clear();
-    addOffset(start, end);
   }
 
   public List<OffsetAttribute> getOffsets() {

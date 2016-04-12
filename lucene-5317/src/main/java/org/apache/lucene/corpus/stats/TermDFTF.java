@@ -19,15 +19,15 @@ package org.apache.lucene.corpus.stats;
 
 public class TermDFTF extends TermDF {
 
-  public final int termFreq;
+  public final long termFreq;
 
-  public TermDFTF(String term, int docFreq, int termFreq) {
+  public TermDFTF(String term, int docFreq, long termFreq) {
     super(term, docFreq);
     this.termFreq = termFreq;
   }
 
 
-  public int getTermFreq() {
+  public long getTermFreq() {
     return termFreq;
   }
 
@@ -35,17 +35,22 @@ public class TermDFTF extends TermDF {
    * "natural order" is descending doc freq then descending term freq
    * then ascending term
    */
-  public int compareTo(TermDFTF other) {
+  @Override
+  public int compareTo(TermDF other) {
+
     if (docFreq < other.docFreq) {
       return 1;
     } else if (docFreq > other.docFreq) {
       return -1;
     }
 
-    if (termFreq < other.termFreq) {
-      return 1;
-    } else if (termFreq > other.termFreq) {
-      return -1;
+    if (other instanceof TermDFTF) {
+      long otf = ((TermDFTF)other).termFreq;
+      if (termFreq < otf) {
+        return 1;
+      } else if (termFreq > otf) {
+        return -1;
+      }
     }
     return term.compareTo(other.getTerm());
   }

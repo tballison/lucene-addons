@@ -17,14 +17,15 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
+import java.util.BitSet;
+
 /**
  * Util class used to specify the tokens for which character offsets are requested.
  */
 
-import org.apache.lucene.util.OpenBitSet;
 
 public class TokenCharOffsetRequests {
-  private OpenBitSet set = new OpenBitSet();
+  private BitSet set = new BitSet();
   private int last = -1;
 
   /**
@@ -63,8 +64,7 @@ public class TokenCharOffsetRequests {
    * clear the state of this request object for reuse
    */
   public void clear() {
-    // is there a faster way to clear an OpenBitSet?
-    set = new OpenBitSet();
+    set.clear();
     last = -1;
   }
 
@@ -78,7 +78,7 @@ public class TokenCharOffsetRequests {
   /**
    * @return the set of tokens whose character offsets are requested
    */
-  protected OpenBitSet getSet() {
+  protected BitSet getSet() {
     return set;
   }
 }

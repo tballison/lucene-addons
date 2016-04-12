@@ -18,7 +18,8 @@ package org.apache.lucene.corpus.stats;
 
 
 public class TermIDF extends TermDFTF {
-
+  private static double PRECISION_COMPARE = 0.000000001;
+  private static double NEG_PRECISION_COMPARE = -1.0f*PRECISION_COMPARE;
   private double idf;
   private double tfidf;
 
@@ -45,9 +46,11 @@ public class TermIDF extends TermDFTF {
   @Override
   public int compareTo(TermDF other) {
     if (other instanceof TermIDF) {
-      if (tfidf < ((TermIDF) other).tfidf) {
+      double diff = tfidf-((TermIDF)other).tfidf;
+
+      if (diff < NEG_PRECISION_COMPARE) {
         return 1;
-      } else if (tfidf > ((TermIDF) other).tfidf) {
+      } else if (tfidf > PRECISION_COMPARE) {
         return -1;
       }
     }

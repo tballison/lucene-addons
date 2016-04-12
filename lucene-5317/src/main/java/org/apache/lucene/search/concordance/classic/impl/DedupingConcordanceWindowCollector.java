@@ -65,6 +65,7 @@ public class DedupingConcordanceWindowCollector extends AbstractConcordanceWindo
     }
 
     map.put(key, oldWindow);
+    addDocId(w.getUniqueDocID());
   }
 
 
@@ -78,7 +79,7 @@ public class DedupingConcordanceWindowCollector extends AbstractConcordanceWindo
 
   @Override
   public List<ConcordanceWindow> getWindows() {
-    List<ConcordanceWindow> windows = new ArrayList<ConcordanceWindow>();
+    List<ConcordanceWindow> windows = new ArrayList<>();
     windows.addAll(map.values());
     return windows;
   }
@@ -88,6 +89,8 @@ public class DedupingConcordanceWindowCollector extends AbstractConcordanceWindo
    * whether two windows are the same.  Some implementations
    * might want to lowercase, some might want genuine case folding,
    * some might want to strip non-alphanumerics, etc.
+   * <p>
+   * If you are overriding this, make sure to call sb.setLength(0)!
    *
    * @param w  ConcordanceWindow
    * @param sb reuseable StringBuilder; sb.setLength(0) is called before use!

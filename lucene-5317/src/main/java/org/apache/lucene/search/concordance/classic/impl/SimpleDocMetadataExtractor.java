@@ -33,12 +33,16 @@ import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
  */
 public class SimpleDocMetadataExtractor implements DocMetadataExtractor {
 
-  private Set<String> fields = new HashSet<String>();
+  private Set<String> fields = new HashSet<>();
 
   public SimpleDocMetadataExtractor(String... fields) {
     for (String f : fields) {
       this.fields.add(f);
     }
+  }
+
+  public SimpleDocMetadataExtractor(Set<String> fields) {
+    this.fields.addAll(fields);
   }
 
   public void addField(String f) {
@@ -52,7 +56,7 @@ public class SimpleDocMetadataExtractor implements DocMetadataExtractor {
 
   @Override
   public Map<String, String> extract(Document d) {
-    Map<String, String> map = new HashMap<String, String>();
+    Map<String, String> map = new HashMap<>();
     // only takes the first value in a multi-valued field!!!
     for (String fieldName : getFieldSelector()) {
       String[] fieldValues = d.getValues(fieldName);

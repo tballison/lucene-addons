@@ -141,7 +141,7 @@ public class SimpleSpanQueryConverter {
     } else if (query instanceof ConstantScoreQuery) {
       return convert(field, ((ConstantScoreQuery) query).getQuery());
     } else if (query instanceof DisjunctionMaxQuery) {
-      List<SpanQuery> spanQs = new ArrayList<SpanQuery>();
+      List<SpanQuery> spanQs = new ArrayList<>();
       for (Iterator<Query> iterator = ((DisjunctionMaxQuery) query).iterator(); iterator
           .hasNext(); ) {
         tryToAdd(field, convert(field, iterator.next()), spanQs);
@@ -225,7 +225,11 @@ public class SimpleSpanQueryConverter {
       }
 
     } else if (query instanceof MultiTermQuery) {
-      return new SpanMultiTermQueryWrapper<MultiTermQuery>((MultiTermQuery) query);
+      MultiTermQuery tq = (MultiTermQuery) query;
+      if (! tq.getField().equals(field)) {
+        return getEmptySpanQuery();
+      }
+      return new SpanMultiTermQueryWrapper<>((MultiTermQuery) query);
     }
     return convertUnknownQuery(field, query);
   }

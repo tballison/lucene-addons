@@ -28,11 +28,11 @@ public class TestComplexPhraseSpanQuery extends TestComplexPhraseQuery {
 
   @Override
   public Query getQuery(String qString) throws Exception {
-    SpanQueryParser p = new SpanQueryParser(defaultFieldName, analyzer);
+    SpanQueryParser p = new SpanQueryParser(defaultFieldName, analyzer, analyzer);
     return p.parse(qString);
   }
-
-  @Override
+  
+  @Override  
   public void testParserSpecificSyntax() throws Exception {
     //can't have boolean operators within a SpanNear
     //must rewrite as SpanNot !~ or ( OR ) clauses without the "OR"
@@ -40,13 +40,13 @@ public class TestComplexPhraseSpanQuery extends TestComplexPhraseQuery {
     checkMatches("\"(john johathon)  smith\"", "1,2");
     checkMatches("\"[jo* john]!~ smyth~\"", "2");
     checkMatches("\"john percival\"!~2,2", "1");
-
+    
     //check multiterms with no hits
     checkMatches("\"john  nosuchword*\"", "");
     checkMatches("\"john  nosuchw?rd\"!~2,3", "1,3");
     checkMatches("\"nosuchw?rd john\"!~2,3", "");
     checkMatches("\"nosuchw?rd john\"", "");
-
+    
     //WAS:
     //checkBadQuery("\"jo* \"smith\" \"");
     //IS: ignore test.  SpanQueryParser will parse this as 

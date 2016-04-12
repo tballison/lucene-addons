@@ -17,6 +17,8 @@ package org.apache.lucene.search.concordance.classic.impl;
  * limitations under the License.
  */
 
+import java.util.Collections;
+import java.util.Set;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.concordance.classic.DocIdBuilder;
 
@@ -26,6 +28,12 @@ import org.apache.lucene.search.concordance.classic.DocIdBuilder;
  * Then, use only with great care.
  */
 public class IndexIdDocIdBuilder implements DocIdBuilder {
+
+
+  @Override
+  public Set<String> getFields() {
+    return Collections.EMPTY_SET;
+  }
 
   @Override
   public String build(Document d, long docId) {

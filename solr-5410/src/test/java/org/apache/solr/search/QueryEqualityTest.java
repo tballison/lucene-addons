@@ -412,7 +412,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
         "testfunc(sum(23,field(foo_i)))");
   }
   public void testFuncOrd() throws Exception {
-    assertFuncEquals("ord(foo_s)", "ord(foo_s    )");
+    assertFuncEquals("ord(foo_s)","ord(foo_s    )");
   }
 
   public void testFuncLiteral() throws Exception {
@@ -936,7 +936,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
   protected void assertFuncEquals(final SolrQueryRequest req,
                                   final String... inputs) throws Exception {
     // pull out the function name
-    final String funcName = (new QueryParsing.StrParser(inputs[0])).getId();
+    final String funcName = (new StrParser(inputs[0])).getId();
     valParsersTested.add(funcName);
 
     assertQueryEquals(FunctionQParserPlugin.NAME, req, inputs);
@@ -961,3 +961,4 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
   }
 
 }
+

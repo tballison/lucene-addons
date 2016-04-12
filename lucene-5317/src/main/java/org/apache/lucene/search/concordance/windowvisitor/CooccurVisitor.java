@@ -17,6 +17,12 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
+import org.apache.lucene.corpus.stats.IDFIndexCalc;
+import org.apache.lucene.corpus.stats.TFIDFPriorityQueue;
+import org.apache.lucene.corpus.stats.TermIDF;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.util.mutable.MutableValueInt;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,11 +30,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.lucene.corpus.stats.IDFCalc;
-import org.apache.lucene.corpus.stats.TFIDFPriorityQueue;
-import org.apache.lucene.corpus.stats.TermIDF;
-import org.apache.lucene.index.Term;
-import org.apache.lucene.util.mutable.MutableValueInt;
 
 /**
  * Class to count cooccurrences for targets
@@ -36,9 +37,9 @@ import org.apache.lucene.util.mutable.MutableValueInt;
 public class CooccurVisitor extends ArrayWindowVisitor<List<TermIDF>> {
 
 
-  private final Map<String, MutableValueInt> tfs = new HashMap<String, MutableValueInt>();
-  private final IDFCalc idfCalc;
-  private final Set<String> alreadySeen = new HashSet<String>();
+  private final Map<String, MutableValueInt> tfs = new HashMap<>();
+  private final IDFIndexCalc idfCalc;
+  private final Set<String> alreadySeen = new HashSet<>();
   private final boolean allowDuplicates;
   private Grammer grammer;
   /**
@@ -63,7 +64,7 @@ public class CooccurVisitor extends ArrayWindowVisitor<List<TermIDF>> {
    */
   public CooccurVisitor(String fieldName,
                         int tokensBefore, int tokensAfter, Grammer grammer,
-                        IDFCalc idfCalc, int maxWindows, boolean allowDuplicates) {
+                        IDFIndexCalc idfCalc, int maxWindows, boolean allowDuplicates) {
     super(fieldName, tokensBefore, tokensAfter, false, false, maxWindows);
     this.grammer = grammer;
     this.idfCalc = idfCalc;
@@ -154,4 +155,10 @@ public class CooccurVisitor extends ArrayWindowVisitor<List<TermIDF>> {
     this.minTermFreq = minTermFreq;
   }
 
+  public void setNumResults(int numResults) {
+    if (numResults < 0) {
+      throw new IllegalArgumentException("Number of results must be >= 0:" +numResults);
+    }
+    this.numResults = numResults;
+  }
 }

@@ -39,13 +39,13 @@ public class TargetVisitor extends ArrayWindowVisitor<List<TermDFTF>> {
 
   private final static String JOINER = " ";
   private final int numResults;
-  private Map<String, MutableValueInt> tf = new HashMap<String, MutableValueInt>();
-  private Map<String, MutableValueInt> df = new HashMap<String, MutableValueInt>();
+  private Map<String, MutableValueInt> tf = new HashMap<>();
+  private Map<String, MutableValueInt> df = new HashMap<>();
   private String lastDocId = null;
 
   //cache of terms seen in current doc
   //this is reset with each new doc
-  private Set<String> seenInThisDoc = new HashSet<String>();
+  private Set<String> seenInThisDoc = new HashSet<>();
 
   public TargetVisitor(String fieldName, int numResults,
                        boolean analyzeTarget, int maxWindows) {
@@ -107,7 +107,7 @@ public class TargetVisitor extends ArrayWindowVisitor<List<TermDFTF>> {
 
   @Override
   public List<TermDFTF> getResults() {
-    List<TermDFTF> list = new ArrayList<TermDFTF>();
+    List<TermDFTF> list = new ArrayList<>();
 
     for (Map.Entry<String, MutableValueInt> entry : df.entrySet()) {
 
@@ -124,7 +124,7 @@ public class TargetVisitor extends ArrayWindowVisitor<List<TermDFTF>> {
     }
 
     //copy over only the required results
-    List<TermDFTF> ret = new ArrayList<TermDFTF>();
+    List<TermDFTF> ret = new ArrayList<>();
     int i = 0;
     for (TermDFTF t : list) {
       if (i++ >= numResults) {

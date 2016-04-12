@@ -1,7 +1,4 @@
-package org.apache.lucene.search.concordance.classic;
-
-import java.util.Set;
-import org.apache.lucene.document.Document;
+package org.apache.lucene.queryparser.spans;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,15 +17,12 @@ import org.apache.lucene.document.Document;
  * limitations under the License.
  */
 
+public class SQPAllDocsTerm extends SQPTerminal {
 
-/**
- * Returns a unique string for each document.
- * Some implementations may be able to rely only
- * on the ephemeral Lucene docId.  Others, may
- * want to use a field within the document.
- */
-public interface DocIdBuilder {
+  @Override
+  public String getString() {
+    return "*";
+  }
 
-  public Set<String> getFields();
-  public String build(Document document, long docId);
+
 }

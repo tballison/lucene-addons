@@ -22,11 +22,11 @@ import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.AtomicReader;
-import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.DocsAndPositionsEnum;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.LeafReader;
+import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.concordance.charoffsets.SimpleAnalyzerUtil;
@@ -114,8 +114,13 @@ public class TestSimpleAnalyzerUtil extends ConcordanceTestBase {
   }
 
   public void testRandomWithNeedleOnGaps() throws Exception {
-    executeNeedleTests(defaultCharOffsetGapAnalyzer);
-    executeNeedleTests(customCharOffsetGapAnalyzer);
+    try {
+      executeNeedleTests(defaultCharOffsetGapAnalyzer);
+      executeNeedleTests(customCharOffsetGapAnalyzer);
+    } catch (Throwable e) {
+      e.printStackTrace();
+      throw e;
+    }
   }
 
   private void executeNeedleTests(Analyzer analyzer) throws Exception {
@@ -127,27 +132,29 @@ public class TestSimpleAnalyzerUtil extends ConcordanceTestBase {
 
     IndexReader reader = DirectoryReader.open(directory);
 
-    AtomicReaderContext ctx = reader.leaves().get(0);
-    AtomicReader r = ctx.reader();
-    DocsAndPositionsEnum dpe = r.termPositionsEnum(new Term(FIELD, needle));
-    int docId = dpe.nextDoc();
+    LeafReaderContext ctx = reader.leaves().get(0);
+    LeafReader r = ctx.reader();
+
+    PostingsEnum dpe = r.postings(new Term(FIELD, needle), PostingsEnum.ALL);
     int numTests = 0;
-    while (docId != DocIdSetIterator.NO_MORE_DOCS) {
-      int frq = dpe.freq();
-      int advanced = 1;
-      dpe.nextPosition();
-      String[] fieldValues = r.document(docId).getValues(FIELD);
-      while (advanced++ < frq) {
-        String rebuilt = SimpleAnalyzerUtil.substringFromMultiValuedFields(dpe.startOffset(),
-            dpe.endOffset(), fieldValues, analyzer.getOffsetGap(FIELD), " | ");
-        assertEquals(needle, rebuilt);
-        numTests++;
-        dpe.nextPosition();
+    try {
+      while (dpe.nextDoc() != DocIdSetIterator.NO_MORE_DOCS) {
+        int frq = dpe.freq();
+        int advanced = 0;
+
+        String[] fieldValues = r.document(dpe.docID()).getValues(FIELD);
+        while (++advanced < frq) {
+          dpe.nextPosition();
+          String rebuilt = SimpleAnalyzerUtil.substringFromMultiValuedFields(dpe.startOffset(),
+              dpe.endOffset(), fieldValues, analyzer.getOffsetGap(FIELD), " | ");
+          assertEquals(needle, rebuilt);
+          numTests++;
+        }
       }
-      docId = dpe.nextDoc();
+    } finally {
+      reader.close();
+      directory.close();
     }
-    reader.close();
-    directory.close();
     assertEquals("number of tests", numFieldValues - 1, numTests);
   }
 

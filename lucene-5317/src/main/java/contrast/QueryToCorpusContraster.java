@@ -13,7 +13,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.util.CharArrayMap;
 import org.apache.lucene.analysis.util.CharArraySet;
-import org.apache.lucene.corpus.stats.IDFCalc;
+import org.apache.lucene.corpus.stats.IDFIndexCalc;
 import org.apache.lucene.corpus.stats.TFIDFPriorityQueue;
 import org.apache.lucene.corpus.stats.TermIDF;
 import org.apache.lucene.document.Document;
@@ -50,7 +50,7 @@ public class QueryToCorpusContraster {
 
   public List<TermIDF> contrast(Query query, String fieldName, int numResults)
       throws IOException {
-    TopScoreDocCollector results = TopScoreDocCollector.create(maxDocs, false);
+    TopScoreDocCollector results = TopScoreDocCollector.create(maxDocs);
     searcher.search(query, results);
 
     ScoreDoc[] scoreDocs = results.topDocs().scoreDocs;
@@ -64,13 +64,12 @@ public class QueryToCorpusContraster {
     int initialSize = scoreDocs.length * 100;
     CharArrayMap<MutableValueInt> map = new CharArrayMap<MutableValueInt>(initialSize, ignoreCase);
     CharArraySet tmpSet = new CharArraySet(100, ignoreCase);
-    TermsEnum te = null;
     Set<String> selector = new HashSet<String>();
     selector.add(fieldName);
 
     for (ScoreDoc scoreDoc : scoreDocs) {
       //get terms from doc
-      processDoc(scoreDoc.doc, fieldName, selector, te, tmpSet);
+      processDoc(scoreDoc.doc, fieldName, selector, tmpSet);
       //now update global doc freqs
       Iterator<Object> it = tmpSet.iterator();
       while (it.hasNext()) {
@@ -94,7 +93,7 @@ public class QueryToCorpusContraster {
   private List<TermIDF> getResults(String fieldName,
                                    CharArrayMap<MutableValueInt> map, int numResults) {
     TFIDFPriorityQueue queue = new TFIDFPriorityQueue(numResults);
-    IDFCalc idfCalc = new IDFCalc(searcher.getIndexReader());
+    IDFIndexCalc idfCalc = new IDFIndexCalc(searcher.getIndexReader());
     int tf = -1;
     double idf = -1.0;
     int minTf = minTermFreq;
@@ -129,10 +128,10 @@ public class QueryToCorpusContraster {
   }
 
   private void processDoc(int docid, String fieldName, Set<String> selector,
-                          TermsEnum te, CharArraySet set) throws IOException {
+                          CharArraySet set) throws IOException {
     Terms terms = searcher.getIndexReader().getTermVector(docid, fieldName);
     if (terms != null) {
-      te = terms.iterator(te);
+      TermsEnum te = terms.iterator();
       BytesRef bytes = te.next();
       while (bytes != null) {
         set.add(bytes);

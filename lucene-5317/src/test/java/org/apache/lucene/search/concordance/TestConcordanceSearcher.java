@@ -31,6 +31,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Filter;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.TermQuery;
@@ -91,6 +92,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
 
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
     WindowBuilder wb = new WindowBuilder(10, 10,
         analyzer.getOffsetGap(FIELD),
         new DefaultSortKeyBuilder(ConcordanceSortOrder.PRE), metadataExtractor, docIdBuilder);
@@ -98,13 +100,13 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "a"));
 
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(3);
-    searcher.search(reader, FIELD,
+    searcher.search(indexSearcher, FIELD,
         q, null, analyzer, collector);
 
     assertEquals(3, collector.size());
 
     collector = new ConcordanceWindowCollector(ConcordanceWindowCollector.COLLECT_ALL);
-    searcher.search(reader, FIELD, q, null, analyzer, collector);
+    searcher.search(indexSearcher, FIELD, q, null, analyzer, collector);
 
     // test result size
     assertEquals(4, collector.size());
@@ -129,7 +131,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     searcher = new ConcordanceSearcher(wb);
 
     collector = new ConcordanceWindowCollector(ConcordanceWindowCollector.COLLECT_ALL);
-    searcher.search(reader, FIELD, q,
+    searcher.search(indexSearcher, FIELD, q,
         null, analyzer, collector);
 
     windows = collector.getSortedWindows();
@@ -151,13 +153,14 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Analyzer analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
     ConcordanceSearcher searcher = new ConcordanceSearcher(
         new WindowBuilder(10, 10, analyzer.getOffsetGap(FIELD)));
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "a"));
 
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(100);
 
-    searcher.search(reader, FIELD,
+    searcher.search(indexSearcher, FIELD,
         q, null, analyzer, collector);
 
     // test result size
@@ -185,7 +188,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
 
     collector = new ConcordanceWindowCollector(100);
 
-    searcher.search(reader, FIELD, q, null, analyzer, collector);
+    searcher.search(indexSearcher, FIELD, q, null, analyzer, collector);
 
     windows = collector.getSortedWindows();
 
@@ -206,6 +209,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Analyzer analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
 
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
 
@@ -218,7 +222,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
             analyzer.getOffsetGap(FIELD));
         ConcordanceSearcher searcher = new ConcordanceSearcher(wb);
         ConcordanceWindowCollector collector = new ConcordanceWindowCollector(100);
-        searcher.search(reader, FIELD, q, null, analyzer, collector);
+        searcher.search(indexSearcher, FIELD, q, null, analyzer, collector);
         ConcordanceWindow w = collector.getSortedWindows().get(0);
         assertEquals(tokensBefore + " : " + tokensAfter, pres[tokensBefore], w.getPre());
         assertEquals(tokensBefore + " : " + tokensAfter, posts[tokensAfter], w.getPost());
@@ -243,6 +247,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Analyzer analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET, 0, 10);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
     WindowBuilder wb = new WindowBuilder(3, 3, analyzer.getOffsetGap(FIELD));
 
 
@@ -256,7 +261,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     SpanQuery q = new SpanNearQuery(new SpanQuery[]{q1, q2, q3}, 3, true);
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(3);
 
-    searcher.search(reader, FIELD,
+    searcher.search(indexSearcher, FIELD,
         q, null, analyzer, collector);
     assertEquals(1, collector.size());
 
@@ -272,6 +277,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET, 20, 50);
     directory = getDirectory(analyzer, docs);
     reader = DirectoryReader.open(directory);
+    indexSearcher = new IndexSearcher(reader);
 
     wb = new WindowBuilder(3, 3, analyzer.getOffsetGap(FIELD));
 
@@ -279,7 +285,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     q = new SpanNearQuery(new SpanQuery[]{q1, q2, q3}, 120, true);
     collector = new ConcordanceWindowCollector(100);
 
-    searcher.search(reader, FIELD, q, null, analyzer, collector);
+    searcher.search(indexSearcher, FIELD, q, null, analyzer, collector);
 
     assertEquals(1, collector.size());
     w = collector.getSortedWindows().iterator().next();
@@ -293,13 +299,14 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET, 100, 100);
     directory = getDirectory(analyzer, docs);
     reader = DirectoryReader.open(directory);
+    indexSearcher = new IndexSearcher(reader);
 
     wb = new WindowBuilder();
     searcher = new ConcordanceSearcher(wb);
     q = new SpanNearQuery(new SpanQuery[]{q1, q2, q3}, 5, true);
     collector = new ConcordanceWindowCollector(100);
 
-    searcher.search(reader, FIELD, q, null, analyzer, collector);
+    searcher.search(indexSearcher, FIELD, q, null, analyzer, collector);
 
     assertEquals(0, collector.size());
 
@@ -313,14 +320,14 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Analyzer analyzer = getAnalyzer(MockTokenFilter.ENGLISH_STOPSET);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
-
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
     WindowBuilder wb = new WindowBuilder(2, 2, analyzer.getOffsetGap(FIELD));
 
     ConcordanceSearcher searcher = new ConcordanceSearcher(wb);
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(3);
 
-    searcher.search(reader, FIELD,
+    searcher.search(indexSearcher, FIELD,
         q, null, analyzer, collector);
     List<ConcordanceWindow> windows = collector.getSortedWindows();
     assertEquals(2, windows.size());
@@ -348,16 +355,17 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Analyzer analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
     ConcordanceSearcher searcher = new ConcordanceSearcher(
         new WindowBuilder(10, 10, analyzer.getOffsetGap(FIELD)));
-    BooleanQuery q = new BooleanQuery();
-    q.add(new TermQuery(new Term(FIELD, "a")), Occur.MUST);
-    q.add(new TermQuery(new Term(FIELD, "d")),
-        Occur.MUST_NOT);
+    BooleanQuery q = new BooleanQuery.Builder()
+      .add(new TermQuery(new Term(FIELD, "a")), Occur.MUST)
+      .add(new TermQuery(new Term(FIELD, "d")),
+        Occur.MUST_NOT).build();
 
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10);
-    searcher.search(reader,
-        FIELD, (Query) q, null,
+    searcher.search(indexSearcher,
+        FIELD, q, null,
         analyzer, collector);
     // shouldn't include document with "d"
     assertEquals(6, collector.size());
@@ -367,7 +375,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
         FIELD, "e")));
     collector = new ConcordanceWindowCollector(10);
 
-    searcher.search(reader, FIELD, (Query) q, filter, analyzer, collector);
+    searcher.search(indexSearcher, FIELD, (Query) q, filter, analyzer, collector);
     assertEquals(4, collector.size());
 
     reader.close();
@@ -383,6 +391,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Analyzer analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
 
     ConcordanceSearcher searcher = new ConcordanceSearcher(
         new WindowBuilder(10, 10, analyzer.getOffsetGap(FIELD)));
@@ -392,7 +401,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     int windowCount = -1;
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10);
 
-    searcher.search(reader, FIELD,
+    searcher.search(indexSearcher, FIELD,
         q, null, analyzer, collector);
     windowCount = collector.size();
     assertEquals(0, windowCount);
@@ -413,12 +422,13 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Analyzer analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
     ConcordanceSearcher searcher = new ConcordanceSearcher(
         new WindowBuilder(10, 10, analyzer.getOffsetGap(FIELD)));
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
 
     DedupingConcordanceWindowCollector collector = new DedupingConcordanceWindowCollector(2);
-    searcher.search(reader,
+    searcher.search(indexSearcher,
         FIELD, (Query) q, null,
         analyzer, collector);
     assertEquals(2, collector.size());
@@ -426,7 +436,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
 
     collector =
         new DedupingConcordanceWindowCollector(AbstractConcordanceWindowCollector.COLLECT_ALL);
-    searcher.search(reader,
+    searcher.search(indexSearcher,
         FIELD, (Query) q, null,
         analyzer, collector);
     assertEquals(3, collector.size());
@@ -451,13 +461,14 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Analyzer analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET);
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
     ConcordanceSearcher searcher = new ConcordanceSearcher(
         new WindowBuilder(10, 10, analyzer.getOffsetGap(FIELD)));
 
     SpanQuery q = new SpanTermQuery(new Term(FIELD, "d"));
 
     DedupingConcordanceWindowCollector collector = new DedupingConcordanceWindowCollector(3);
-    searcher.search(reader,
+    searcher.search(indexSearcher,
         FIELD, (Query) q, null,
         analyzer, collector);
     assertEquals(3, collector.size());
@@ -473,6 +484,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
 
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
     WindowBuilder wb = new WindowBuilder(10, 10,
         analyzer.getOffsetGap(FIELD),
         new DefaultSortKeyBuilder(ConcordanceSortOrder.PRE), metadataExtractor, docIdBuilder);
@@ -488,7 +500,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     q.addClause(phrase);
 
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10);
-    searcher.search(reader, FIELD,
+    searcher.search(indexSearcher, FIELD,
         q, null, analyzer, collector);
 
     //default should be: don't allow target overlaps
@@ -496,7 +508,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
 
     searcher.setAllowTargetOverlaps(true);
     collector = new ConcordanceWindowCollector(10);
-    searcher.search(reader, FIELD,
+    searcher.search(indexSearcher, FIELD,
         q, null, analyzer, collector);
 
     //now there should be two windows with allowTargetOverlaps = true
@@ -504,4 +516,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     reader.close();
     directory.close();
   }
+
+    //TODO: add tests with deleted documents
+
 }

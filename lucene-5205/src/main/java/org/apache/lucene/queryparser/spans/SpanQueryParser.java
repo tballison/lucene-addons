@@ -20,13 +20,16 @@ package org.apache.lucene.queryparser.spans;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.queryparser.classic.CharStream;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParserConstants;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.spans.SpanBoostQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 
 /**
@@ -36,27 +39,29 @@ import org.apache.lucene.search.spans.SpanQuery;
  * <ul>
  * <li> {@link org.apache.lucene.queryparser.classic.QueryParser classic QueryParser}: most of its syntax</li>
  * <li> {@link org.apache.lucene.queryparser.surround.parser.QueryParser SurroundQueryParser}: recursive parsing for "near" and "not" clauses.</li>
- * <li> {@link org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser}:
+ * <li> {@link org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser}: 
  * can handle "near" queries that include multiterms ({@link org.apache.lucene.search.WildcardQuery},
  * {@link org.apache.lucene.search.FuzzyQuery}, {@link org.apache.lucene.search.RegexpQuery}).</li>
  * <li> {@link org.apache.lucene.queryparser.analyzing.AnalyzingQueryParser}: has an option to analyze multiterms.</li>
  * </ul>
- * <p>
+ * 
+ * <p> 
  * <b>Background</b>
  * This parser is designed to expose as much of the sophistication as is available within the Query/SpanQuery components.
- * The basic approach of this parser is to build BooleanQueries comprised of SpanQueries.  The parser recursively works
+ * The basic approach of this parser is to build BooleanQueries comprised of SpanQueries.  The parser recursively works 
  * through boolean/fielded chunks and then recursively works through SpanQueries.
+ * 
  * <p>
  * Goals for this parser:
  * <ul>
  * <li>Expose as much of the underlying capabilities as possible.</li>
- * <li>Keep the syntax as close to Lucene's classic
+ * <li>Keep the syntax as close to Lucene's classic 
  * {@link org.apache.lucene.queryparser.classic.QueryParser} as possible.</li>
- * <li>Make analysis of multiterms a fundamental part of the parser
+ * <li>Make analysis of multiterms a fundamental part of the parser 
  * {@link AnalyzingQueryParserBase}.</li>
  * </ul>
  * <p><b>Similarities and Differences</b>
- * <p>
+ * 
  * <p> Same as classic syntax:
  * <ul>
  * <li> term: test </li>
@@ -74,15 +79,15 @@ import org.apache.lucene.search.spans.SpanQuery;
  * </ul>
  * <p> Main additions in SpanQueryParser syntax vs. classic:
  * <ul>
- * <li> Can require "in order" for phrases with slop with the ~&gt; operator: &quot;jakarta apache&quot;~&gt;3</li>
+ * <li> Can require "in order" for phrases with slop with the ~> defaultOperator: &quot;jakarta apache&quot;~>3</li>
  * <li> Can specify "not near" &quot;bieber fever&quot;!~3,10 ::
  * find &quot;bieber&quot; but not if &quot;fever&quot; appears within 3 words before or
  * 10 words after it.</li>
- * <li> Fully recursive phrasal queries with [ and ]; as in: [[jakarta apache]~3 lucene]~&gt;4 ::
+ * <li> Fully recursive phrasal queries with [ and ]; as in: [[jakarta apache]~3 lucene]~>4 :: 
  * find &quot;jakarta&quot; within 3 words of &quot;apache&quot;, and that hit has to be within four
  * words before &quot;lucene&quot;.</li>
  * <li> Can also use [] for single level phrasal queries instead of &quot;&quot; as in: [jakarta apache]</li>
- * <li> Can use &quot;or&quot; clauses in phrasal queries: &quot;apache (lucene solr)&quot;~3 ::
+ * <li> Can use &quot;or&quot; clauses in phrasal queries: &quot;apache (lucene solr)&quot;~3 :: 
  * find &quot;apache&quot; and then either &quot;lucene&quot; or &quot;solr&quot; within three words.
  * </li>
  * <li> Can use multiterms in phrasal queries: "jakarta~1 ap*che"~2</li>
@@ -98,28 +103,37 @@ import org.apache.lucene.search.spans.SpanQuery;
  * Trivial additions:
  * <ul>
  * <li> Can specify prefix length in fuzzy queries: jakarta~1,2 (edit distance=1, prefix=2)</li>
- * <li> Can specify prefix Optimal String Alignment (OSA) vs Levenshtein
- * in fuzzy queries: jakarta~1 (OSA) vs jakarta~&gt;1 (Levenshtein)</li>
+ * <li> Can specify prefix Optimal String Alignment (OSA) vs Levenshtein 
+ * in fuzzy queries: jakarta~1 (OSA) vs jakarta~>1 (Levenshtein)</li>
  * </ul>
- * <p>
+ * 
  * <p> <b>Analysis</b>
  * You can specify different analyzers
  * to handle whole term versus multiterm components.
+ * 
  * <p>
  * <b>Using quotes for a single term</b>
- * The default with SpanQueryParser is to use single quotes (Classic QueryParser uses double quotes):
+ * Unlike the Classic QueryParser which uses double quotes around a single term
+ * to effectively escape operators, the SpanQueryParser uses single quotes.
  * 'abc~2' will be treated as a single term 'abc~2' not as a fuzzy term.
- * Remember to use quotes or use escapes for anything with backslashes or hyphens:
+ * Remember to use quotes for anything with backslashes or hyphens:
  * 12/02/04 (is broken into a term "12", a regex "/02/" and a term "04")
  * '12/02/04' is treated a a single token.
  * <p>
+ * If a single term (according to whitespace) is found within double quotes or square brackets,
+ * and the Analyzer returns one term "cat", that will be treated as a single term.
+ * If a single term (according to whitespace) is found within double quotes or square brackets,
+ * and the Analyzer returns more than one term (e.g. non-whitespace language), that
+ * will be treated as a SpanNear query.
+ *
+ * 
  * <p> <b>Stop word handling</b>
  * <p>The parser tries to replicate the behavior of the Classic QueryParser.  Stop words
  * are generally ignored.
  * <p>  However, in a "near" query, extra slop is added for each stop word that
- * occurs after the first non-stop word and before the last non-stop word (or, initial and trailing stop words
+ * occurs after the first non-stop word and before the last non-stop word (or, initial and trailing stop words 
  * are ignored in the additions to slop).
- * For example, "walked the dog" is converted to "walked dog"~&gt;1 behind the scenes.  Like the Classic
+ * For example, "walked the dog" is converted to "walked dog"~>1 behind the scenes.  Like the Classic
  * QueryParser this will lead to false positives with any word between "walked" and "dog".  Unlike
  * Classic QueryParser, this will also lead to false positives of "walked dog".
  * <p>
@@ -127,43 +141,41 @@ import org.apache.lucene.search.spans.SpanQuery;
  * <p>
  * <ul>
  * <li>Term: "the" will return an empty SpanQuery (similar to classic queryparser)</li>
- * <li>BooleanOr: (the apache jakarta) will drop the stop word and return a
- * {@link org.apache.lucene.search.spans.SpanOrQuery} for &quot;apache&quot;
+ * <li>BooleanOr: (the apache jakarta) will drop the stop word and return a 
+ * {@link org.apache.lucene.search.spans.SpanOrQuery} for &quot;apache&quot; 
  * or &quot;jakarta&quot;
- * <li>SpanNear: "apache and jakarta" will drop the "and", add one to the slop and match on
- * any occurrence of "apache" followed by "jakarta" and zero or one words intervening.<li>
+ * <li>SpanNear: "apache and jakarta" will drop the "and", add one to the slop and match on 
+ * any occurrence of "apache" followed by "jakarta" with zero or one word intervening.<li>
  * </ul>
- * <p>
- * <p>A parse exception is currently always thrown if the parser analyzes a multiterm, and a subcomponent of the
- * multiterm has a stopword: the*tre
+
  * <p> Expert: Other subtle differences between SpanQueryParser and classic QueryParser.
  * <ul>
- * <li>Fuzzy queries with slop &gt; 2 are handled by SlowFuzzyQuery.  The developer can set the minFuzzySim to limit
+ * <li>Fuzzy queries with slop > 2 are handled by SlowFuzzyQuery.  The developer can set the minFuzzySim to limit
  * the maximum edit distance (i.e. turn off SlowFuzzyQuery by setting fuzzyMinSim = 2.0f.</li>
- * <li>Fuzzy queries with edit distance &ge; 1 are rounded so that an exception is not thrown.</li>
+ * <li>Fuzzy queries with edit distance >=1 are rounded so that an exception is not thrown.</li>
  * </ul>
  * <p> Truly Expert: there are a few other very subtle differences that are documented in comments
  * in the sourcecode in the header of SpanQueryParser.
  * <p>
- * <b>NOTE</b> You must add the sandbox jar to your class path to include
+ * <b>NOTE</b> You must add the sandbox jar to your class path to include 
  * the currently deprecated {@link org.apache.lucene.sandbox.queries.SlowFuzzyQuery}.
  * <p> Limitations of SpanQueryParser compared with classic QueryParser:
  * <ol>
  * <li> There is some learning curve to figure out the subtle differences in syntax between
  * when one is within a phrase and when not. Including:
  * <ol>
- * <li>Boolean operators are not allowed within phrases: &quot;solr (apache AND lucene)&quot;.
- * Consider rewriting:[solr [apache lucene]]</li>
+ * <li>Boolean operators are not allowed within phrases: &quot;solr (apache AND lucene)&quot;.  
+ *      Consider rewriting:[solr [apache lucene]]</li>
  * <li>Field information is not allowed within phrases.</li>
  * <li>Minimum hit counts for boolean "or" queries are not allowed within phrases: [apache (lucene solr tika)~2]</li>
  * </ol>
- * <li> This parser is not built with .jj or the antlr parser framework.
+ * <li> This parser is not built with .jj or the antlr parser framework.  
  * Regrettably, because it is generating a {@link org.apache.lucene.search.spans.SpanQuery},
  * it can't use all of the generalizable queryparser infrastructure that was added with Lucene 4.+.</li>
  * </ol>
  */
 
-public class SpanQueryParser extends AbstractSpanQueryParser {
+public class SpanQueryParser extends AbstractSpanQueryParser implements QueryParserConstants {
 
   /*
    *  Some subtle differences between classic QueryParser and SpanQueryParser
@@ -194,41 +206,14 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
    *  
    *  8) SpanQueryParser does not convert regexes to lowercase as a default.  There is a
    *  separate parameter for whether or not to do this.  
-   */
+   */  
+
 
   private String topLevelQueryString;
 
-  public SpanQueryParser(String f, Analyzer a) {
-    init(f, a);
-  }
 
   public SpanQueryParser(String f, Analyzer a, Analyzer multitermAnalyzer) {
-    init(f, a, multitermAnalyzer);
-  }
-
-  /**
-   * This is an artifact of extending QueryParserBase.
-   * Do not use this.  It will always assert(false) and fail to set the stream.
-   * Instead, set the default field in the initializer and
-   * use {@link #parse(String)}.
-   */
-  @Deprecated
-  @Override
-  public void ReInit(CharStream stream) {
-    assert (false);
-  }
-
-  /**
-   * This is an artifact of extending QueryParserBase.
-   * Do not use this.  It will always assert(false) and return null.
-   * Instead, set the default field in the initializer and
-   * use {@link #parse(String)}.
-   */
-  @Deprecated
-  @Override
-  public Query TopLevelQuery(String field) throws ParseException {
-    assert (false);
-    return null;
+    super(f, a, multitermAnalyzer);
   }
 
   @Override
@@ -250,23 +235,23 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
   }
 
   private Query parseRecursively(final List<SQPToken> tokens,
-                                 String field, SQPClause clause)
-      throws ParseException {
+      String field, SQPClause clause)
+          throws ParseException {
     int start = clause.getTokenOffsetStart();
     int end = clause.getTokenOffsetEnd();
     testStartEnd(tokens, start, end);
     List<BooleanClause> clauses = new ArrayList<>();
     int conj = CONJ_NONE;
     int mods = MOD_NONE;
-    String tmpField = field;
+    String currField = field;
     int i = start;
     while (i < end) {
       Query q = null;
       SQPToken token = tokens.get(i);
 
-      //if boolean operator or field, update local buffers and continue
+      //if boolean defaultOperator or field, update local buffers and continue
       if (token instanceof SQPBooleanOpToken) {
-        SQPBooleanOpToken t = (SQPBooleanOpToken) token;
+        SQPBooleanOpToken t = (SQPBooleanOpToken)token;
         if (t.isConj()) {
           conj = t.getType();
           mods = MOD_NONE;
@@ -276,55 +261,38 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
         i++;
         continue;
       } else if (token instanceof SQPField) {
-        tmpField = ((SQPField) token).getField();
+        currField = ((SQPField)token).getField();
         i++;
         continue;
       }
-      //if or clause, recur through tokens
+      //if or clause, recurse through tokens
       if (token instanceof SQPOrClause) {
-        //recur!
-        SQPOrClause tmpOr = (SQPOrClause) token;
-        q = parseRecursively(tokens, tmpField, tmpOr);
-
-        if (q.getBoost() == 1.0f
-            && tmpOr.getBoost() != SpanQueryParserBase.UNSPECIFIED_BOOST) {
-          q.setBoost(tmpOr.getBoost());
-        }
-        i = tmpOr.getTokenOffsetEnd();
-      } else if (token instanceof SQPNearClause) {
-        SQPNearClause tmpNear = (SQPNearClause) token;
-        if (getAnalyzer(tmpField) == null) {
-          q = parseNullAnalyzer(tmpField, tmpNear);
-        } else {
-          q = _parsePureSpanClause(tokens, tmpField, tmpNear);
-        }
-        i = tmpNear.getTokenOffsetEnd();
-      } else if (token instanceof SQPNotNearClause) {
-        SQPNotNearClause tmpNotNear = (SQPNotNearClause) token;
-        q = _parsePureSpanClause(tokens, tmpField, tmpNotNear);
-        i = tmpNotNear.getTokenOffsetEnd();
-      } else if (token instanceof SQPTerminal) {
-
-        SQPTerminal tmpTerm = (SQPTerminal) token;
-        q = testAllDocs(tmpField, tmpTerm);
-        if (q == null) {
-          if (getAnalyzer(tmpField) == null) {
-            if (tmpTerm instanceof SQPRangeTerm) {
-              SQPRangeTerm r = (SQPRangeTerm) tmpTerm;
-              q = handleNullAnalyzerRange(tmpField, r.getStart(), r.getEnd(),
-                  r.getStartInclusive(), r.getEndInclusive());
-            } else {
-              String t = tmpTerm.getString();
-              if (testWildCardOrPrefix(t) == SpanQueryParserBase.PREFIX && t.length() > 0) {
-                q = handleNullAnalyzerPrefix(tmpField, t.substring(0, t.length() - 1));
-              } else {
-                q = handleNullAnalyzer(tmpField, tmpTerm.getString());
-              }
-            }
+        //recurse!
+        SQPOrClause tmpOr = (SQPOrClause)token;
+        q = parseRecursively(tokens, currField, tmpOr);
+        //if it isn't already boosted, apply the boost from the token
+        if (!(q instanceof BoostQuery) && !(q instanceof SpanBoostQuery) &&
+            tmpOr.getBoost() != null) {
+          if (q instanceof SpanQuery) {
+            q = new SpanBoostQuery((SpanQuery)q, tmpOr.getBoost());
           } else {
-            q = buildSpanTerminal(tmpField, tmpTerm);
+            q = new BoostQuery(q, tmpOr.getBoost());
           }
         }
+
+
+        i = tmpOr.getTokenOffsetEnd();
+      } else if (token instanceof SQPNearClause) {
+        SQPNearClause tmpNear = (SQPNearClause)token;
+        q = _parsePureSpanClause(tokens, currField, tmpNear);
+        i = tmpNear.getTokenOffsetEnd();
+      } else if (token instanceof SQPNotNearClause) {
+        SQPNotNearClause tmpNotNear = (SQPNotNearClause)token;
+        q = _parsePureSpanClause(tokens, currField, tmpNotNear);
+        i = tmpNotNear.getTokenOffsetEnd();
+      } else if (token instanceof SQPTerminal) {
+        SQPTerminal tmpTerm = (SQPTerminal)token;
+        q = buildTerminal(currField, tmpTerm);
         i++;
       } else {
         //throw exception because this could lead to an infinite loop
@@ -337,66 +305,44 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
       //reset mods and conj and field
       mods = MOD_NONE;
       conj = CONJ_NONE;
-      tmpField = field;
+      currField = field;
     }
 
     if (clauses.size() == 0) {
       return getEmptySpanQuery();
     }
-    if (clauses.size() == 1 &&
+    if (clauses.size() == 1 && 
         clauses.get(0).getOccur() != Occur.MUST_NOT) {
       return clauses.get(0).getQuery();
     }
 
-    BooleanQuery.Builder bqBuilder = new BooleanQuery.Builder();
+    BooleanQuery.Builder bq = new BooleanQuery.Builder();
     try {
       for (BooleanClause bc : clauses) {
-        bqBuilder.add(bc);
+        bq.add(bc);
       }
     } catch (BooleanQuery.TooManyClauses e) {
       throw new ParseException(e.getMessage());
     }
-    /*TODO:
-      we used to have this
-    if (q instanceof BooleanQuery && tmpOr.getMinimumNumberShouldMatch() > 1) {
 
-      ((BooleanQuery) q).setMinimumNumberShouldMatch(tmpOr.getMinimumNumberShouldMatch());
-    }
-
-    after
-          if (token instanceof SQPOrClause) {
-        //recur!
-        SQPOrClause tmpOr = (SQPOrClause) token;
-        q = parseRecursively(tokens, tmpField, tmpOr);
-
-    do we need to alter whether we get minimumNumberShouldMatch from tmpClause or clause???
-    */
     if (clause instanceof SQPOrClause) {
-      SQPOrClause tmpClause = (SQPOrClause) clause;
-      if (tmpClause.getMinimumNumberShouldMatch() > SQPOrClause.DEFAULT_MINIMUM_NUMBER_SHOULD_MATCH) {
-        bqBuilder.setMinimumNumberShouldMatch(tmpClause.getMinimumNumberShouldMatch());
+      SQPOrClause orClause = (SQPOrClause)clause;
+      if (orClause.getMinimumNumberShouldMatch() != null) {
+        bq.setMinimumNumberShouldMatch(orClause.getMinimumNumberShouldMatch());
       }
     }
-    return bqBuilder.build();
+
+    return bq.build();
   }
 
-  //This is necessary for Solr-ization or anywhere that someone might override getAnalyer(field)
-  //and return a null Analyzer.  If the user enters something like: 
-  //part_no:"some kind of part"
-  // and part_no is a String field, we want to treat "some kind of part" as an unmodified literal string
-  private Query parseNullAnalyzer(String field, SQPNearClause tmpNear) {
-    String literalSpan = topLevelQueryString.substring(tmpNear.getCharStartOffset(), tmpNear.getCharEndOffset());
-    return handleNullAnalyzer(field, literalSpan);
-  }
 
   private Query testAllDocs(String tmpField, SQPTerminal tmpTerm) {
-    if (tmpField.equals("*") &&
+    if (tmpField.equals("*") && 
         tmpTerm instanceof SQPTerm &&
-        ((SQPTerm) tmpTerm).getString().equals("*")) {
+        ((SQPTerm)tmpTerm).getString().equals("*")) {
       Query q = new MatchAllDocsQuery();
-      float boost = ((SQPBoostableToken) tmpTerm).getBoost();
-      if (boost != SpanQueryParserBase.UNSPECIFIED_BOOST) {
-        q.setBoost(((SQPBoostableToken) tmpTerm).getBoost());
+      if (tmpTerm.getBoost() != null) {
+        q = new BoostQuery(q, tmpTerm.getBoost());
       }
       return q;
     }
@@ -408,95 +354,112 @@ public class SpanQueryParser extends AbstractSpanQueryParser {
 
     SQPToken s = tokens.get(start);
     if (s instanceof SQPBooleanOpToken) {
-      int type = ((SQPBooleanOpToken) s).getType();
-      if (type == CONJ_AND || type == CONJ_OR) {
+      int type = ((SQPBooleanOpToken)s).getType();
+      if ( type == CONJ_AND || type == CONJ_OR) {
         throw new ParseException("Can't start clause with AND or OR");
       }
     }
 
-    SQPToken e = tokens.get(end - 1);
+    SQPToken e = tokens.get(end-1);
 
     if (e instanceof SQPField) {
       throw new ParseException("Can't end clause with a field token");
     }
     if (e instanceof SQPBooleanOpToken) {
-      throw new ParseException("Can't end clause with a boolean operator");
-    }
-  }
-
-
-  /**
-   * Extracts the spans from the BooleanQueries that are not in Occur.NOT
-   * clauses for highlighting. This query should not be used for document retrieval
-   * and will likely return different documents than "parse."
-   *
-   * @return SpanQuery for highlighting
-   */
-  public SpanQuery getHighlightQuery(String field, String queryString) throws ParseException {
-    Query q = parse(queryString);
-    List<SpanQuery> sqs = new ArrayList<SpanQuery>();
-    extractSpanQueries(field, q, sqs);
-    return buildSpanOrQuery(sqs);
-  }
-
-  /**
-   * Takes a query generated by this parser and extracts all
-   * SpanQueries into sqs that are not in a Boolean.Occur.NOT clause
-   * and that match the given field.
-   * <p/>
-   * The Query must consist of only BooleanQuery and SpanQuery objects!!!
-   */
-  private void extractSpanQueries(String field, Query query, List<SpanQuery> sqs) {
-    if (query == null) {
-      return;
-    }
-    if (query instanceof SpanQuery) {
-      SpanQuery sq = (SpanQuery) query;
-      if (!isEmptyQuery(sq) &&
-          sq.getField().equals(field)) {
-        sqs.add((SpanQuery) query);
-      }
-    } else if (query instanceof BooleanQuery) {
-      BooleanQuery bq = (BooleanQuery) query;
-      for (BooleanClause clause : bq.clauses()) {
-        if (clause.getOccur() != Occur.MUST_NOT) {
-          extractSpanQueries(field, clause.getQuery(), sqs);
-        }
-      }
-    } else {
-      //ignore
+      throw new ParseException("Can't end clause with a boolean defaultOperator");
     }
   }
 
   /**
    * If the query contains only Occur.MUST_NOT clauses,
-   * this will copy to a new BooleanQuery add a MatchAllDocsQuery.
-   *
+   * this will add a MatchAllDocsQuery.
    * @return query
    */
   private Query rewriteAllNegative(Query q) {
-
+    
     if (q instanceof BooleanQuery) {
-      BooleanQuery bq = (BooleanQuery) q;
+      BooleanQuery bq = (BooleanQuery)q;
+
       List<BooleanClause> clauses = bq.clauses();
       if (clauses.size() == 0) {
         return q;
       }
       for (BooleanClause clause : clauses) {
-        if (!clause.getOccur().equals(Occur.MUST_NOT)) {
+        if (! clause.getOccur().equals(Occur.MUST_NOT)) {
           //something other than must_not exists, stop here and return q
           return q;
         }
       }
-      BooleanQuery.Builder builder = new BooleanQuery.Builder();
+      BooleanQuery.Builder b = new BooleanQuery.Builder();
       for (BooleanClause clause : bq.clauses()) {
-        builder.add(clause);
+        b.add(clause);
       }
-      builder.add(new MatchAllDocsQuery(), Occur.MUST);
-      builder.setMinimumNumberShouldMatch(bq.getMinimumNumberShouldMatch());
-      builder.setDisableCoord(bq.isCoordDisabled());
-      return builder.build();
+      b.add(new MatchAllDocsQuery(), Occur.MUST);
+      return b.build();
     }
     return q;
   }
+
+  /**
+   * Argh!  Copied directly from QueryParserBase.  Preferred to
+   * get rid of parts that don't belong with the SpanQueryParser
+   * in favor of this duplication of code.  Could we add this
+   * to QueryBuilder?
+   *
+   * @param clauses
+   * @param conj
+   * @param mods
+   * @param q
+   */
+  protected void addClause(List<BooleanClause> clauses, int conj, int mods, Query q) {
+    boolean required, prohibited;
+
+    // If this term is introduced by AND, make the preceding term required,
+    // unless it's already prohibited
+    if (clauses.size() > 0 && conj == CONJ_AND) {
+      BooleanClause c = clauses.get(clauses.size()-1);
+      if (!c.isProhibited())
+        clauses.set(clauses.size()-1, new BooleanClause(c.getQuery(), Occur.MUST));
+    }
+
+    if (clauses.size() > 0 && defaultOperator == QueryParser.Operator.AND && conj == CONJ_OR) {
+      // If this term is introduced by OR, make the preceding term optional,
+      // unless it's prohibited (that means we leave -a OR b but +a OR b-->a OR b)
+      // notice if the input is a OR b, first term is parsed as required; without
+      // this modification a OR b would parsed as +a OR b
+      BooleanClause c = clauses.get(clauses.size()-1);
+      if (!c.isProhibited())
+        clauses.set(clauses.size()-1, new BooleanClause(c.getQuery(), Occur.SHOULD));
+    }
+
+    // We might have been passed a null query; the term might have been
+    // filtered away by the analyzer.
+    if (q == null)
+      return;
+
+    if (defaultOperator == QueryParser.Operator.OR) {
+      // We set REQUIRED if we're introduced by AND or +; PROHIBITED if
+      // introduced by NOT or -; make sure not to set both.
+      prohibited = (mods == MOD_NOT);
+      required = (mods == MOD_REQ);
+      if (conj == CONJ_AND && !prohibited) {
+        required = true;
+      }
+    } else {
+      // We set PROHIBITED if we're introduced by NOT or -; We set REQUIRED
+      // if not PROHIBITED and not introduced by OR
+      prohibited = (mods == MOD_NOT);
+      required   = (!prohibited && conj != CONJ_OR);
+    }
+    if (required && !prohibited)
+      clauses.add(new BooleanClause(q, BooleanClause.Occur.MUST));
+    else if (!required && !prohibited)
+      clauses.add(new BooleanClause(q, BooleanClause.Occur.SHOULD));
+    else if (!required && prohibited)
+      clauses.add(new BooleanClause(q, BooleanClause.Occur.MUST_NOT));
+    else
+      throw new RuntimeException("Clause cannot be both required and prohibited");
+  }
+
+
 }

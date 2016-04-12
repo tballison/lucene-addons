@@ -17,13 +17,16 @@ package org.apache.lucene.search.queries;
  * limitations under the License.
  */
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queries.CommonTermsQuery;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.Weight;
 import org.apache.lucene.search.spans.SimpleSpanQueryConverter;
 import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
@@ -35,7 +38,11 @@ import org.apache.lucene.search.spans.SpanTermQuery;
  * clean compilation units (core vs. queries).
  */
 public class SpanQueryConverter extends SimpleSpanQueryConverter {
+  private final IndexSearcher searcher;
 
+  public SpanQueryConverter(IndexSearcher searcher) {
+    this.searcher = searcher;
+  }
   @Override
   protected SpanQuery convertUnknownQuery(String field, Query query) {
     if (query instanceof CommonTermsQuery) {
@@ -44,8 +51,13 @@ public class SpanQueryConverter extends SimpleSpanQueryConverter {
       // this query is TermContext sensitive.
       CommonTermsQuery ctq = (CommonTermsQuery) query;
 
-      Set<Term> terms = new HashSet<Term>();
-      ctq.extractTerms(terms);
+      Set<Term> terms = new HashSet<>();
+      try {
+        Weight w = ctq.createWeight(searcher, false);
+        w.extractTerms(terms);
+      } catch (IOException e) {
+        throw new RuntimeException("IOException on searcher!!!", e);
+      }
       List<SpanQuery> spanQs = new LinkedList<SpanQuery>();
 
       for (Term term : terms) {

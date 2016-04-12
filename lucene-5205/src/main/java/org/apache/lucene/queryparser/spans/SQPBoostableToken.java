@@ -19,45 +19,37 @@ package org.apache.lucene.queryparser.spans;
 
 
 class SQPBoostableToken implements SQPToken {
-  private float boost = SpanQueryParserBase.UNSPECIFIED_BOOST;
+  private Float boost = null;
 
-  public float getBoost() {
+  public void setBoost(Float boost) {
+    this.boost = boost;
+  }
+  
+  public Float getBoost() {
     return boost;
   }
 
-  public void setBoost(float boost) {
-    this.boost = boost;
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    SQPBoostableToken that = (SQPBoostableToken) o;
+
+    if (boost != null ? !boost.equals(that.boost) : that.boost != null) return false;
+
+    return true;
   }
 
   @Override
   public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + Float.floatToIntBits(boost);
-    return result;
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (this == obj) {
-      return true;
-    }
-    if (obj == null) {
-      return false;
-    }
-    if (!(obj instanceof SQPBoostableToken)) {
-      return false;
-    }
-    SQPBoostableToken other = (SQPBoostableToken) obj;
-    return Float.floatToIntBits(boost) == Float.floatToIntBits(other.boost);
+    return boost != null ? boost.hashCode() : 0;
   }
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SQPBoostableToken [boost=");
-    builder.append(boost);
-    builder.append("]");
-    return builder.toString();
+    return "SQPBoostableToken{" +
+        "boost=" + boost +
+        '}';
   }
 }
