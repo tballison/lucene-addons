@@ -44,7 +44,7 @@ public class MockRegexReplacementFilter extends TokenFilter {
 
   public MockRegexReplacementFilter(TokenStream in, Map<String, String> replacements) {
     super(in);
-    this.replacements = new LinkedHashMap<Pattern, String>();
+    this.replacements = new LinkedHashMap<Pattern,  String>();
     termAtt = addAttribute(CharTermAttribute.class);
     for (Map.Entry<String, String> entry : replacements.entrySet()) {
       Pattern p = Pattern.compile(entry.getKey());
