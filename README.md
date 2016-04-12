@@ -1,5 +1,5 @@
 lucene-addons
-======================
+============
 
 Standalone versions of LUCENE-5205 and other patches.
 
