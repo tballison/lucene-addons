@@ -27,9 +27,9 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BoostQuery;
 import org.apache.lucene.search.ConstantScoreQuery;
 import org.apache.lucene.search.DisjunctionMaxQuery;
-import org.apache.lucene.search.FilteredQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MultiPhraseQuery;
@@ -38,6 +38,7 @@ import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TotalHitCountCollector;
+import org.apache.lucene.search.spans.SpanBoostQuery;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
@@ -158,11 +159,11 @@ public class SQPTestBase extends LuceneTestCase {
         return getEmptySpanQuery();
       }
     } else if (query instanceof BooleanQuery) {
-      BooleanClause[] queryClauses = ((BooleanQuery) query).getClauses();
+      List<BooleanClause> queryClauses = ((BooleanQuery) query).clauses();
       List<SpanQuery> spanQs = new ArrayList<SpanQuery>();
-      for (int i = 0; i < queryClauses.length; i++) {
-        if (!queryClauses[i].isProhibited()) {
-          tryToAdd(field, convert(field, queryClauses[i].getQuery()), spanQs);
+      for (int i = 0; i < queryClauses.size(); i++) {
+        if (!queryClauses.get(i).isProhibited()) {
+          tryToAdd(field, convert(field, queryClauses.get(i).getQuery()), spanQs);
         }
       }
       if (spanQs.size() == 0) {
@@ -206,8 +207,11 @@ public class SQPTestBase extends LuceneTestCase {
       }
 
       SpanNearQuery sp = new SpanNearQuery(clauses, slop, inorder);
-      sp.setBoost(query.getBoost());
-      return sp;
+      if (query instanceof BoostQuery) {
+        return new SpanBoostQuery(sp, ((BoostQuery)query).getBoost());
+      } else {
+        return sp;
+      }
     } else if (query instanceof TermQuery) {
       TermQuery tq = (TermQuery) query;
       if (tq.getTerm().field().equals(field)) {
@@ -215,8 +219,6 @@ public class SQPTestBase extends LuceneTestCase {
       } else {
         return getEmptySpanQuery();
       }
-    } else if (query instanceof FilteredQuery) {
-      return convert(field, ((FilteredQuery) query).getQuery());
     } else if (query instanceof ConstantScoreQuery) {
       return convert(field, ((ConstantScoreQuery) query).getQuery());
     } else if (query instanceof DisjunctionMaxQuery) {
@@ -237,12 +239,12 @@ public class SQPTestBase extends LuceneTestCase {
     } else if (query instanceof MultiPhraseQuery) {
 
       final MultiPhraseQuery mpq = (MultiPhraseQuery) query;
-      final List<Term[]> termArrays = mpq.getTermArrays();
+      final Term[][] termArrays = mpq.getTermArrays();
       //test for empty or wrong field
-      if (termArrays.size() == 0) {
+      if (termArrays.length == 0) {
         return getEmptySpanQuery();
-      } else if (termArrays.size() > 1) {
-        Term[] ts = termArrays.get(0);
+      } else if (termArrays.length > 1) {
+        Term[] ts = termArrays[0];
         if (ts.length > 0) {
           Term t = ts[0];
           if (!t.field().equals(field)) {
@@ -264,8 +266,8 @@ public class SQPTestBase extends LuceneTestCase {
         final List<SpanQuery>[] disjunctLists = new List[maxPosition + 1];
         int distinctPositions = 0;
 
-        for (int i = 0; i < termArrays.size(); ++i) {
-          final Term[] termArray = termArrays.get(i);
+        for (int i = 0; i < termArrays.length; ++i) {
+          final Term[] termArray = termArrays[i];
           List<SpanQuery> disjuncts = disjunctLists[positions[i]];
           if (disjuncts == null) {
             disjuncts = (disjunctLists[positions[i]] = new ArrayList<SpanQuery>(
@@ -299,8 +301,11 @@ public class SQPTestBase extends LuceneTestCase {
 
         SpanNearQuery sp = new SpanNearQuery(clauses, slop + positionGaps,
             inorder);
-        sp.setBoost(query.getBoost());
-        return sp;
+        if (query instanceof BoostQuery) {
+          return new SpanBoostQuery(sp, ((BoostQuery)query).getBoost());
+        } else {
+          return sp;
+        }
       }
 
     } else if (query instanceof MultiTermQuery) {

@@ -143,7 +143,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     if (q instanceof SpanMultiTermQueryWrapper) {
       @SuppressWarnings("rawtypes")
       Query tmp = ((SpanMultiTermQueryWrapper)q).getWrappedQuery();
-      tmp.setBoost(q.getBoost());
+      //TODO: we used to set boost here
       q = tmp;
     }
     assertEquals(result, q.toString(field));
@@ -155,11 +155,11 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     if (q instanceof SpanMultiTermQueryWrapper) {
       @SuppressWarnings("rawtypes")
       Query tmp = ((SpanMultiTermQueryWrapper)q).getWrappedQuery();
-      tmp.setBoost(q.getBoost());
+      //TODO: we used to set boost here
       q = tmp;
     } else if (q instanceof SpanOrQuery){
       if (((SpanOrQuery)q).getClauses().length == 0){
-        q = new BooleanQuery();
+        q = new BooleanQuery.Builder().build();
       }
     }
     assertEquals(result, q.toString("field"));
@@ -170,11 +170,11 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     if (q instanceof SpanMultiTermQueryWrapper){
       @SuppressWarnings("rawtypes")
       Query tmp = ((SpanMultiTermQueryWrapper)q).getWrappedQuery();
-      tmp.setBoost(q.getBoost());
+      //TODO we used to set boost here
       q = tmp;
     } else if (q instanceof SpanOrQuery){
       if (((SpanOrQuery)q).getClauses().length == 0){
-        q = new BooleanQuery();
+        q = new BooleanQuery.Builder().build();
       }
     } 
     assertEquals(result, q.toString("field"));
@@ -182,26 +182,36 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   
   @Override
   public void assertQueryEquals(Query expected, Query test) {
-    assertEquals("boost", expected.getBoost(), test.getBoost(), 0.0001f);
+    if (expected instanceof BoostQuery) {
+      if (test instanceof BoostQuery) {
+        assertEquals("boost", ((BoostQuery)expected).getBoost(),
+            ((BoostQuery)test).getBoost(), 0.0001f);
+
+      } else {
+        fail("expected is boost, but test is not");
+      }
+    } else if (test instanceof BoostQuery) {
+      fail("expected not boost, but test is");
+    }
     if (test instanceof SpanMultiTermQueryWrapper){
       @SuppressWarnings("rawtypes")
       Query tmp = ((SpanMultiTermQueryWrapper)test).getWrappedQuery();
-      tmp.setBoost(test.getBoost());
+      //TODO we used to set boost
       test = tmp;
     } else if (test instanceof SpanOrQuery){
       if (((SpanOrQuery)test).getClauses().length == 0){
-        test = new BooleanQuery();
+        test = new BooleanQuery.Builder().build();
       }
     } else if (test instanceof BooleanQuery && expected instanceof BooleanQuery){
       //lots of reasons why this simple equivalence won't work
       //but it works well enough for current tests
-      BooleanClause[] exClause = ((BooleanQuery)expected).getClauses();
-      BooleanClause[] testClause = ((BooleanQuery)test).getClauses();
-      assertEquals("boolean clause length =", exClause.length, testClause.length);
-      for (int i = 0; i < exClause.length; i++){
-        assertTrue(exClause[i].getOccur().equals(testClause[i].getOccur()));
+      List<BooleanClause> exClause = ((BooleanQuery)expected).clauses();
+      List<BooleanClause> testClause = ((BooleanQuery)test).clauses();
+      assertEquals("boolean clause length =", exClause.size(), testClause.size());
+      for (int i = 0; i < exClause.size(); i++){
+        assertTrue(exClause.get(i).getOccur().equals(testClause.get(i).getOccur()));
         //recur
-        assertQueryEquals(exClause[i].getQuery(), testClause[i].getQuery());
+        assertQueryEquals(exClause.get(i).getQuery(), testClause.get(i).getQuery());
       }
       return;
     } else if (test instanceof SpanNearQuery && expected instanceof PhraseQuery){
@@ -550,7 +560,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   @Override
   public void assertEmpty(Query q) {
     boolean e = false;
-    if (q instanceof BooleanQuery && ((BooleanQuery)q).getClauses().length == 0) {
+    if (q instanceof BooleanQuery && ((BooleanQuery)q).clauses().size() == 0) {
       e = true;
     } else if (q instanceof SpanOrQuery && ((SpanOrQuery)q).getClauses().length == 0) {
       e = true;

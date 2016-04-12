@@ -77,7 +77,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   boolean allowLeadingWildcard = false;
   boolean autoGeneratePhraseQueries = false;
   int defaultPhraseSlop = 0;
-  MultiTermQuery.RewriteMethod multiTermRewriteMethod = MultiTermQuery.CONSTANT_SCORE_FILTER_REWRITE;
+  MultiTermQuery.RewriteMethod multiTermRewriteMethod = MultiTermQuery.CONSTANT_SCORE_REWRITE;
   BooleanClause.Occur singleTermBooleanOperator = BooleanClause.Occur.SHOULD;
   protected QueryParser.Operator defaultOperator = QueryParser.Operator.OR;
   private int spanNearMaxDistance = 100;
@@ -96,8 +96,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Returns new SpanNearQuery.  This is added as parallelism to newPhraseQuery.
    * Not sure it is of any use.
    */
-  protected SpanNearQuery newNearQuery(SpanQuery[] queries, int slop, boolean inOrder, boolean collectPayloads) {
-    return new SpanNearQuery(queries, slop, inOrder, collectPayloads);
+  protected SpanNearQuery newNearQuery(SpanQuery[] queries, int slop, boolean inOrder) {
+    return new SpanNearQuery(queries, slop, inOrder);
   }
 
   /**
@@ -239,7 +239,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
     } else if (q instanceof MultiPhraseQuery) {
       MultiPhraseQuery mpq = (MultiPhraseQuery)q;
       int[] positions = mpq.getPositions();
-      List<Term[]> terms = mpq.getTermArrays();
+      Term[][] terms = mpq.getTermArrays();
       List<SpanQuery> spanTerms = new LinkedList<>();
       for (Term[] tArr : terms) {
         List<SpanQuery> spans = new LinkedList<>();

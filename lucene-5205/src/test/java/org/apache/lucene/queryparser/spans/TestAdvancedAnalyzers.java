@@ -185,7 +185,7 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
 
     //take the boost from the phrase, ignore boost on term
     //not necessarily right choice, but this is how it works now
-    assertEquals(2.0f, q.getBoost(), 0.00001f);
+    assertEquals(2.0f, ((SpanBoostQuery)q).getBoost(), 0.00001f);
 
     s = "[zqx2_qrs3 lmnop]~3";
     p.setAutoGeneratePhraseQueries(true);

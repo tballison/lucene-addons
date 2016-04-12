@@ -5,8 +5,8 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.DocIdSet;
 import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanWeight;
 import org.apache.lucene.search.spans.Spans;
@@ -14,7 +14,7 @@ import org.apache.lucene.search.spans.Spans;
 
 public class SpansCrawler {
 
-  public static void crawl(SpanQuery query, Filter filter, IndexSearcher searcher,
+  public static void crawl(SpanQuery query, Query filter, IndexSearcher searcher,
                            DocTokenOffsetsVisitor visitor) throws IOException, TargetTokenNotFoundException {
     SpanWeight w = query.createWeight(searcher, false);
     if (filter == null) {
