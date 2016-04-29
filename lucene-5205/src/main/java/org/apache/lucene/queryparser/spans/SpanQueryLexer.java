@@ -65,6 +65,7 @@ class SpanQueryLexer {
   private static final int PIPE = '|';
   private static final int COMMA = (int) ',';
   private static final int GREATER_THAN = (int) '>';
+  private static final int LESS_THAN = (int) '<';
   private static final int DECIMAL_POINT = (int)'.';
   private static final int STAR = (int)'*';
   private static final int QMARK = (int)'?';
@@ -313,10 +314,7 @@ class SpanQueryLexer {
     } else {
       tryToUnread(c);
     }
-    Float boost = tryToReadBoost();
-    if (boost != null) {
-      term.setBoost(boost);
-    }
+    tryToReadBoostOrRange(term);
     tokens.add(term);
     resetTokenBuffer();
   }
@@ -418,10 +416,7 @@ class SpanQueryLexer {
         //}
       }
     }
-    Float boost = tryToReadBoost();
-    if (boost != null) {
-      newClause.setBoost(boost);
-    }
+    tryToReadBoostOrRange(newClause);
 
     if (testForRangeQuery(open, newClause, closeType)) {
       return;
@@ -472,6 +467,24 @@ class SpanQueryLexer {
     tryToUnread(n1);
     return response;
   }
+
+  private void tryToReadBoostOrRange(SQPBoostableOrRangeToken token)
+      throws ParseException, IOException {
+
+    //^1.2<10>20  or <10^1.2
+    //try to read boost, then firstn.
+    //if you have a firstN, try to read boost after it
+    //if you didn't find a first boost
+    Float boost = tryToReadBoost();
+    boolean foundRange = tryToReadRange(token);
+    if (foundRange && boost == null) {
+      boost = tryToReadBoost();
+    }
+    if (boost != null) {
+      token.setBoost(boost);
+    }
+  }
+
   //tries to read a boost if it is there
   //returns null if no parseable boost
   private Float tryToReadBoost() throws ParseException, IOException {
@@ -492,6 +505,46 @@ class SpanQueryLexer {
     }
     return null;
   }
+
+  /**
+   * tries to read >2<10 or <10>2
+   */
+  private boolean tryToReadRange(SQPBoostableOrRangeToken token) throws ParseException, IOException {
+    Integer start = tryToReadStartOrEnd(LESS_THAN);
+    Integer end = tryToReadStartOrEnd(GREATER_THAN);
+    if (start == null && end != null) {
+      start = tryToReadStartOrEnd(LESS_THAN);
+    }
+    if (start == null && end == null) {
+      return false;
+    }
+    token.setStart(start);
+    token.setEnd(end);
+    return true;
+  }
+
+  /*
+   tries to read >10 or <2 ; if it fails, it rewinds and returns
+   null
+   */
+  private Integer tryToReadStartOrEnd(int startOrEnd) throws ParseException, IOException {
+    if (startOrEnd != LESS_THAN && startOrEnd != GREATER_THAN) {
+      throw new IllegalArgumentException("Must be either '<' or '>'");
+    }
+    int c = reader.read();
+    if (c == startOrEnd) {
+      Integer intValue = tryToReadInteger();
+      if (intValue == null) {
+        tryToUnread(startOrEnd);
+      } else {
+        return intValue;
+      }
+    } else {
+      tryToUnread(c);
+    }
+    return null;
+  }
+
 
   //After a closeClause is built, this tests to see if it is
   //actually a range query.  If it is, then this replaces the clause
@@ -569,7 +622,7 @@ class SpanQueryLexer {
     tokens.add(range);
     Float boost = closeClause.getBoost();
     if (boost != null) {
-      ((SQPBoostableToken)range).setBoost(boost);
+      ((SQPBoostableOrRangeToken)range).setBoost(boost);
     }
     return true;
   }
@@ -674,10 +727,7 @@ class SpanQueryLexer {
     } else {
       throw new IllegalArgumentException("Don't know how to handle: "+targChar+" while building tokens");
     }
-    Float boost = tryToReadBoost();
-    if (boost != null) {
-      ((SQPBoostableToken)token).setBoost(boost);
-    }
+    tryToReadBoostOrRange((SQPBoostableOrRangeToken)token);
     tokens.add(token);
     resetTokenBuffer();
     return !hitEndOfString;
@@ -763,7 +813,7 @@ class SpanQueryLexer {
       token = new SQPTerm(term, false);
     }
     if (boost != null) {
-      ((SQPBoostableToken)token).setBoost(boost);
+      ((SQPBoostableOrRangeToken)token).setBoost(boost);
     }
     tokens.add(token);
     resetTokenBuffer();
