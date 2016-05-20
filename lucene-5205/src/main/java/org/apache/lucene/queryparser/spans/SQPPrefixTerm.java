@@ -36,4 +36,23 @@ class SQPPrefixTerm extends SQPTerminal {
         "prefix='" + prefix + '\'' +
         '}';
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof SQPPrefixTerm)) return false;
+    if (!super.equals(o)) return false;
+
+    SQPPrefixTerm that = (SQPPrefixTerm) o;
+
+    return prefix != null ? prefix.equals(that.prefix) : that.prefix == null;
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result = super.hashCode();
+    result = 31 * result + (prefix != null ? prefix.hashCode() : 0);
+    return result;
+  }
 }

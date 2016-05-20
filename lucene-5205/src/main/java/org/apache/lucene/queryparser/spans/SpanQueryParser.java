@@ -240,6 +240,13 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
     int start = clause.getTokenOffsetStart();
     int end = clause.getTokenOffsetEnd();
     testStartEnd(tokens, start, end);
+
+    //if this is a positionRange query, it needs to be handled
+    //by the span parser
+    if (clause.getStartPosition() != null || clause.getEndPosition() != null) {
+      return _parsePureSpanClause(tokens, field, clause);
+    }
+
     List<BooleanClause> clauses = new ArrayList<>();
     int conj = CONJ_NONE;
     int mods = MOD_NONE;
@@ -279,8 +286,6 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
             q = new BoostQuery(q, tmpOr.getBoost());
           }
         }
-
-
         i = tmpOr.getTokenOffsetEnd();
       } else if (token instanceof SQPNearClause) {
         SQPNearClause tmpNear = (SQPNearClause)token;
@@ -292,7 +297,11 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
         i = tmpNotNear.getTokenOffsetEnd();
       } else if (token instanceof SQPTerminal) {
         SQPTerminal tmpTerm = (SQPTerminal)token;
-        q = buildTerminal(currField, tmpTerm);
+        if (tmpTerm.getStartPosition() != null || tmpTerm.getEndPosition() != null) {
+          q = buildSpanTerminal(currField, tmpTerm);
+        } else {
+          q = buildTerminal(currField, tmpTerm);
+        }
         i++;
       } else {
         //throw exception because this could lead to an infinite loop
@@ -311,7 +320,7 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
     if (clauses.size() == 0) {
       return getEmptySpanQuery();
     }
-    if (clauses.size() == 1 && 
+    if (clauses.size() == 1 &&
         clauses.get(0).getOccur() != Occur.MUST_NOT) {
       return clauses.get(0).getQuery();
     }

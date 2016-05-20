@@ -25,6 +25,7 @@ import java.util.EmptyStackException;
 import java.util.List;
 import java.util.Stack;
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.util.IntBlockPool;
 
 class SpanQueryLexer {
 
@@ -100,7 +101,7 @@ class SpanQueryLexer {
     resetTokenBuffer();
     nearDepth = 0;
     inDQuote = false;
-    reader = new PushbackReader(new StringReader(s));
+    reader = new PushbackReader(new StringReader(s), 11);//need to be able to push back string representation of integer
     try {
       while (nextToken()) {
         //do nothing;
@@ -151,17 +152,22 @@ class SpanQueryLexer {
         case AT :
           if (tokenBuffer.length() > 0) {
             tryToUnread(AT); //unread so that we can tryToRead...
-            BoostPositionRange boostPositionRange = tryToReadBoostOrPositionRange();
-            flushBuffer(boostPositionRange);
-            return true;
+            BoostPositionRange boostPositionRange = tryToReadBoostOrPositionRange(false);
+            //if a position was found, great, if not continue on
+            if (boostPositionRange != null && boostPositionRange.hasPosition()) {
+              flushBuffer(boostPositionRange);
+              return true;
+            }
           }
           break;
         case CARET :                            // hit boost marker
           if (tokenBuffer.length() > 0) {
             tryToUnread(CARET); //unread so that we can tryToRead...
-            BoostPositionRange boostPositionRange = tryToReadBoostOrPositionRange();
-            flushBuffer(boostPositionRange);
-            return true;
+            BoostPositionRange boostPositionRange = tryToReadBoostOrPositionRange(false);
+            if (boostPositionRange != null) {
+              flushBuffer(boostPositionRange);
+              return true;
+            }
           }
           break;
 
@@ -427,7 +433,13 @@ class SpanQueryLexer {
       }
     }
     tryToReadBoostOrPositionRange(newClause);
-
+    if (newClause instanceof SQPOrClause) {
+      SQPOrClause sprOr = (SQPOrClause)newClause;
+      if (sprOr.getMinimumNumberShouldMatch() != null &&
+          (sprOr.getStartPosition() != null || sprOr.getEndPosition() != null)) {
+        throw new ParseException("Can't have both minShouldMatch and positionRange parameters on an 'or' clause");
+      }
+    }
     if (testForRangeQuery(open, newClause, closeType)) {
       return;
     }
@@ -484,7 +496,7 @@ class SpanQueryLexer {
   private SQPBoostableOrPositionRangeToken tryToReadBoostOrPositionRange(
       SQPBoostableOrPositionRangeToken term)
       throws ParseException, IOException {
-    BoostPositionRange bpr = tryToReadBoostOrPositionRange();
+    BoostPositionRange bpr = tryToReadBoostOrPositionRange(true);
     if (bpr == null) {
       return term;
     }
@@ -496,19 +508,27 @@ class SpanQueryLexer {
   }
 
 
-    private BoostPositionRange tryToReadBoostOrPositionRange()
+  private BoostPositionRange tryToReadBoostOrPositionRange(boolean throwExceptionOnPartialRead)
       throws ParseException, IOException {
 
     //^1.2@10..20  or @..10^1.2
     //try to read boost, then position range
     //if you have a position range, try to read boost after it
-    //if you didn't find a first boost
+    //if you didn't already find a first boost
     Float boost = tryToReadBoost();
-    BoostPositionRange positionRange = tryToReadPositionRange();
+    BoostPositionRange positionRange = tryToReadPositionRange(throwExceptionOnPartialRead);
     if (positionRange != null && boost == null) {
       boost = tryToReadBoost();
     }
-    positionRange.setBoost(boost);
+
+    if (boost != null) {
+      if (positionRange == null) {
+        positionRange = new BoostPositionRange(boost);
+      } else {
+        positionRange.setBoost(boost);
+      }
+    }
+
     return positionRange;
   }
 
@@ -535,55 +555,89 @@ class SpanQueryLexer {
 
   /**
    * tries to read @2..10 or @..10 or @2..
+   *
+   * returns null if no position range was found
    */
-  private BoostPositionRange tryToReadPositionRange()
+  private BoostPositionRange tryToReadPositionRange(boolean throwExceptionOnPartialRead)
       throws ParseException, IOException {
     int chr = reader.read();
     if (chr != AT) {
       tryToUnread(chr);
-      return new BoostPositionRange(null, null);
+      return null;
     }
     //we have @, look for period or integer
     chr = reader.read();
     Integer start = null;
     Integer end = null;
-    if (chr != PERIOD) {
+    if (chr != PERIOD) { //maybe it's an integer @20.. ?
       tryToUnread(chr);
       start = tryToReadInteger();
       if (start != null) {
-        end = tryToReadEndPositionRange();
+        end = tryToReadEndPositionRange(start);
+      } else {
+        return handlePartialRangeRead(throwExceptionOnPartialRead);
       }
     } else {//@. now try to read another period and maybe an integer
       tryToUnread(chr);//put the . back on and try to read endpositionrange
-      end = tryToReadEndPositionRange();
+      end = tryToReadEndPositionRange(start);
     }
+    //if there wasn't a ..
+    if (end != null && end == -1) {
+
+      if (start != null) {
+        tryToUnread(Integer.toString(start));
+      }
+      return handlePartialRangeRead(throwExceptionOnPartialRead);
+    }
+
+    if ((start != null || end != null) && ! isNextBreak()) {
+        throw new ParseException(
+            "Found the end of an apparent SpanPositionRangeQuery in the middle of a term." +
+                "  Need to escape it or add a space.");
+    }
+
     if (start == null && end == null) {
+      if (! isNextBreak()) { //couldn't find start or end and there's no break...must be middle of token
+        return handlePartialRangeRead(throwExceptionOnPartialRead);
+      }
       throw new ParseException("Must specify a start or end value for a position range query:" +
           "@2.. @..10 @2..10");
     }
     return new BoostPositionRange(start, end);
   }
 
-  //returns -1 if there wasn't a ".."
+  private BoostPositionRange handlePartialRangeRead(boolean throwExceptionOnPartialRead) throws ParseException{
+    if (throwExceptionOnPartialRead) {
+      throw new ParseException("Read partial range position after clause; needs to be of format @2..10 or @..10 or @2..");
+    }
+    return null;
+  }
+
+
+  //returns -1 if there wasn't a ".." or if start was null and there was no end
   //returns null if there was a "..\b" with no value
-  private Integer tryToReadEndPositionRange() throws IOException, ParseException {
+  private Integer tryToReadEndPositionRange(Integer start) throws IOException, ParseException {
     int chr = reader.read();
     if (chr != PERIOD) {
+      tryToUnread(chr);
       return -1;
     }
     int chr2 = reader.read();
     if (chr2 != PERIOD) {
         //@.x -- not a range
-        tryToUnread(chr2);
-        tryToUnread(chr);
-        return -1;
+      tryToUnread(chr2);
+      tryToUnread(chr);
+      return -1;
     }
+    //so far, we have ..
     Integer end = tryToReadInteger();
-    if (! isNextBreak()) {
-      throw new ParseException(
-          "Found the end of an apparent SpanPositionRangeQuery in the middle of a term." +
-          "  Need to escape it or add a space.");
+
+    if (start == null && end == null) {
+      tryToUnread(PERIOD);
+      tryToUnread(PERIOD);
+      return -1;
     }
+
     return end;
   }
 
@@ -949,6 +1003,19 @@ class SpanQueryLexer {
     }
   }
 
+  void tryToUnread(String s) throws IOException {
+    final int length = s.length();
+    List<Integer> ints = new ArrayList<>();
+    for (int offset = 0; offset < length; ) {
+      final int codepoint = s.codePointAt(offset);
+      ints.add(codepoint);
+      offset += Character.charCount(codepoint);
+    }
+    for (int i = ints.size()-1; i > -1; i--) {
+      tryToUnread(ints.get(i));
+    }
+  }
+
   void tryToUnread(int c) throws IOException {
     if (c != -1) {
       reader.unread(c);
@@ -1047,6 +1114,9 @@ class SpanQueryLexer {
     Integer start;
     Integer end;
 
+    BoostPositionRange(Float boost) {
+      this.boost = boost;
+    }
     BoostPositionRange(Integer start, Integer end) {
       setStartEnd(start, end);
     }
@@ -1068,6 +1138,10 @@ class SpanQueryLexer {
       return (boost == null &&
           start == null &&
           end == null);
+    }
+
+    public boolean hasPosition() {
+      return (start != null || end != null);
     }
   }
 }
