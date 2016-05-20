@@ -21,11 +21,11 @@ package org.apache.lucene.queryparser.spans;
  * A token that can be boosted and/or
  * be restricted to the first n terms (SpanFirstQuery)
  */
-class SQPBoostableOrRangeToken implements SQPToken {
+class SQPBoostableOrPositionRangeToken implements SQPToken {
 
   private Float boost = null;
-  private Integer start = null;
-  private Integer end = null;
+  private Integer startPosition = null;
+  private Integer endPosition = null;
 
   public void setBoost(Float boost) {
     this.boost = boost;
@@ -35,20 +35,20 @@ class SQPBoostableOrRangeToken implements SQPToken {
     return boost;
   }
 
-  public Integer getStart() {
-    return start;
+  public Integer getStartPosition() {
+    return startPosition;
   }
 
-  public void setStart(Integer start) {
-    this.start = start;
+  public void setStartPosition(Integer startPosition) {
+    this.startPosition = startPosition;
   }
 
-  public Integer getEnd() {
-    return end;
+  public Integer getEndPosition() {
+    return endPosition;
   }
 
-  public void setEnd(Integer end) {
-    this.end = end;
+  public void setEndPosition(Integer endPosition) {
+    this.endPosition = endPosition;
   }
 
   @Override
@@ -56,28 +56,28 @@ class SQPBoostableOrRangeToken implements SQPToken {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    SQPBoostableOrRangeToken that = (SQPBoostableOrRangeToken) o;
+    SQPBoostableOrPositionRangeToken that = (SQPBoostableOrPositionRangeToken) o;
 
     if (boost != null ? !boost.equals(that.boost) : that.boost != null) return false;
-    if (start != null ? !start.equals(that.start) : that.start != null) return false;
-    return end != null ? end.equals(that.end) : that.end == null;
+    if (startPosition != null ? !startPosition.equals(that.startPosition) : that.startPosition != null) return false;
+    return endPosition != null ? endPosition.equals(that.endPosition) : that.endPosition == null;
 
   }
 
   @Override
   public int hashCode() {
     int result = boost != null ? boost.hashCode() : 0;
-    result = 31 * result + (start != null ? start.hashCode() : 0);
-    result = 31 * result + (end != null ? end.hashCode() : 0);
+    result = 31 * result + (startPosition != null ? startPosition.hashCode() : 0);
+    result = 31 * result + (endPosition != null ? endPosition.hashCode() : 0);
     return result;
   }
 
   @Override
   public String toString() {
-    return "SQPBoostableOrRangeToken{" +
+    return "SQPBoostableOrPositionRangeToken{" +
         "boost=" + boost +
-        ", start=" + start +
-        ", end=" + end +
+        ", startPosition=" + startPosition +
+        ", endPosition=" + endPosition +
         '}';
   }
 }

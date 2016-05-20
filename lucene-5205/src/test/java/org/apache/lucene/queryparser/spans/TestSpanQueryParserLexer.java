@@ -20,6 +20,7 @@ package org.apache.lucene.queryparser.spans;
 import java.util.List;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.util.LuceneTestCase;
+import org.junit.Test;
 
 /**
  * Low level tests of the lexer.
@@ -543,7 +544,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
     //now try with boosts
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE, null, null);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"^2.5 jumped",
@@ -552,7 +553,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE, false, null);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"~^2.5 jumped",
@@ -561,7 +562,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE, true, null);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"~>^2.5 jumped",
@@ -573,7 +574,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE,
         false,
         3);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"~3^2.5 jumped",
@@ -583,7 +584,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE, true, 3);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"~>3^2.5 jumped",
@@ -634,7 +635,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
     //now brackets with boosts
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, null,null);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     SQPTerm fox = new SQPTerm("fox", false);
     executeSingleTokenTest(
@@ -656,7 +657,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         fox
     );
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, false, null);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick [brown fox]~^2.5 jumped",
@@ -665,7 +666,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, true, null);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick [brown fox]~>^2.5 jumped",
@@ -674,7 +675,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, false, 3);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick [brown fox]~3^2.5 jumped",
@@ -683,7 +684,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, true,3);
-    ((SQPBoostableOrRangeToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick [brown fox]~>3^2.5 jumped",
@@ -712,7 +713,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
   public void testBoosts() throws Exception {
     SQPToken truth = new SQPTerm("apache", false);
-    ((SQPBoostableOrRangeToken) truth).setBoost(4.0f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(4.0f);
 
     executeSingleTokenTest(
         "apache^4",
@@ -721,7 +722,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPRegexTerm("apache");
-    ((SQPBoostableOrRangeToken) truth).setBoost(4.0f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(4.0f);
 
     executeSingleTokenTest(
         "/apache/^4",
@@ -730,7 +731,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPRangeTerm("abc", "efg", true, true);
-    ((SQPBoostableOrRangeToken) truth).setBoost(4.0f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(4.0f);
 
     executeSingleTokenTest(
         "the [abc TO efg]^4 cat",
@@ -739,7 +740,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPTerm("apache", false);
-    ((SQPBoostableOrRangeToken) truth).setBoost(0.4f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(0.4f);
 
     executeSingleTokenTest(
         "apache^.4",
@@ -1061,9 +1062,20 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         1,
         new SQPTerm("OR", false)
     );
-
   }
-/*
+
+
+  public void testBasicSpanPositionRange() throws Exception {
+    SQPTerm expected = new SQPTerm("foo", false);
+    expected.setStartPosition(2);
+    expected.setEndPosition(10);
+    debug("foo^2");
+    executeSingleTokenTest("foo@2..10",
+        0,
+        expected
+    );
+  }
+  /*
   @Test(timeout = 1000)
   public void testNonMatchingSingleQuote() throws Exception {
     //test there isn't a permanent hang triggered by the non matching '
@@ -1098,14 +1110,23 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
       throws ParseException {
     List<SQPToken> tokens = lexer.getTokens(q);
     SQPToken target = tokens.get(targetOffset);
-    if (truth instanceof SQPBoostableOrRangeToken && target instanceof SQPBoostableOrRangeToken) {
-      Float truthBoost = ((SQPBoostableOrRangeToken) truth).getBoost();
-      Float targetBoost = ((SQPBoostableOrRangeToken)target).getBoost();
+    if (truth instanceof SQPBoostableOrPositionRangeToken && target instanceof SQPBoostableOrPositionRangeToken) {
+      Float truthBoost = ((SQPBoostableOrPositionRangeToken) truth).getBoost();
+      Float targetBoost = ((SQPBoostableOrPositionRangeToken)target).getBoost();
       if (truthBoost == null || targetBoost == null) {
         assertEquals(truthBoost, targetBoost);
       } else {
         assertEquals(truthBoost, targetBoost, 0.0001f);
       }
+
+      Integer truthStartPosition = ((SQPBoostableOrPositionRangeToken)truth).getStartPosition();
+      Integer targetStartPosition = ((SQPBoostableOrPositionRangeToken)target).getStartPosition();
+      assertEquals("start position range", truthStartPosition, targetStartPosition);
+
+      Integer truthEndPosition = ((SQPBoostableOrPositionRangeToken)truth).getEndPosition();
+      Integer targetEndPosition = ((SQPBoostableOrPositionRangeToken)target).getEndPosition();
+      assertEquals("end position range", truthEndPosition, targetEndPosition);
+
     }
     assertEquals(truth, target);
   }
@@ -1123,5 +1144,23 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     }
 
     assertTrue("ParseException: " + qString, ex);
+  }
+
+  @Test
+  public void isolateTest() throws Exception {
+    SQPTerm fox = new SQPTerm("fox", false);
+    fox.setBoost(10f);
+    executeSingleTokenTest(
+        "the quick [brown fox^10] jumped",
+        4,
+        fox
+    );
+  }
+  private void debug(String qString) throws ParseException {
+    List<SQPToken> tokens = lexer.getTokens(qString);
+    for (SQPToken t : tokens) {
+      System.out.println(t);
+    }
+
   }
 }

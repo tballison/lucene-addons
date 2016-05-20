@@ -74,12 +74,9 @@ final class SQPTerm extends SQPTerminal {
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SQPTerm [string=");
-    builder.append(string);
-    builder.append(", isQuoted=");
-    builder.append(isQuoted);
-    builder.append("]");
-    return builder.toString();
+    return "SQPTerm{" +
+        "string='" + string + '\'' +
+        ", isQuoted=" + isQuoted +
+        "} " + super.toString();
   }
 }

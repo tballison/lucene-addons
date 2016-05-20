@@ -69,6 +69,8 @@ class SpanQueryLexer {
   private static final int DECIMAL_POINT = (int)'.';
   private static final int STAR = (int)'*';
   private static final int QMARK = (int)'?';
+  private static final int AT = (int)'@';
+  private static final int PERIOD = (int)'.';
   private static final int CHAR_O = (int)'O';
   private static final int CHAR_T = (int)'T';
   private static final int CHAR_N = (int)'N';
@@ -146,11 +148,19 @@ class SpanQueryLexer {
             continue;
           }
           break;
-
-        case CARET :                            // hit boost marker...TODO: can you ever hit this?
+        case AT :
           if (tokenBuffer.length() > 0) {
-            Float boost = tryToReadUnsignedFloat();
-            flushBuffer(boost);
+            tryToUnread(AT); //unread so that we can tryToRead...
+            BoostPositionRange boostPositionRange = tryToReadBoostOrPositionRange();
+            flushBuffer(boostPositionRange);
+            return true;
+          }
+          break;
+        case CARET :                            // hit boost marker
+          if (tokenBuffer.length() > 0) {
+            tryToUnread(CARET); //unread so that we can tryToRead...
+            BoostPositionRange boostPositionRange = tryToReadBoostOrPositionRange();
+            flushBuffer(boostPositionRange);
             return true;
           }
           break;
@@ -314,7 +324,7 @@ class SpanQueryLexer {
     } else {
       tryToUnread(c);
     }
-    tryToReadBoostOrRange(term);
+    tryToReadBoostOrPositionRange(term);
     tokens.add(term);
     resetTokenBuffer();
   }
@@ -416,7 +426,7 @@ class SpanQueryLexer {
         //}
       }
     }
-    tryToReadBoostOrRange(newClause);
+    tryToReadBoostOrPositionRange(newClause);
 
     if (testForRangeQuery(open, newClause, closeType)) {
       return;
@@ -463,26 +473,43 @@ class SpanQueryLexer {
       case CLOSE_SQUARE :
         response = true;
         break;
+      case CARET :
+        response = true;
+        break;
     }
     tryToUnread(n1);
     return response;
   }
 
-  private void tryToReadBoostOrRange(SQPBoostableOrRangeToken token)
+  private SQPBoostableOrPositionRangeToken tryToReadBoostOrPositionRange(
+      SQPBoostableOrPositionRangeToken term)
+      throws ParseException, IOException {
+    BoostPositionRange bpr = tryToReadBoostOrPositionRange();
+    if (bpr == null) {
+      return term;
+    }
+    term.setBoost(bpr.boost);
+    term.setStartPosition(bpr.start);
+    term.setEndPosition(bpr.end);
+    return term;
+
+  }
+
+
+    private BoostPositionRange tryToReadBoostOrPositionRange()
       throws ParseException, IOException {
 
-    //^1.2<10>20  or <10^1.2
-    //try to read boost, then firstn.
-    //if you have a firstN, try to read boost after it
+    //^1.2@10..20  or @..10^1.2
+    //try to read boost, then position range
+    //if you have a position range, try to read boost after it
     //if you didn't find a first boost
     Float boost = tryToReadBoost();
-    boolean foundRange = tryToReadRange(token);
-    if (foundRange && boost == null) {
+    BoostPositionRange positionRange = tryToReadPositionRange();
+    if (positionRange != null && boost == null) {
       boost = tryToReadBoost();
     }
-    if (boost != null) {
-      token.setBoost(boost);
-    }
+    positionRange.setBoost(boost);
+    return positionRange;
   }
 
   //tries to read a boost if it is there
@@ -507,44 +534,58 @@ class SpanQueryLexer {
   }
 
   /**
-   * tries to read >2<10 or <10>2
+   * tries to read @2..10 or @..10 or @2..
    */
-  private boolean tryToReadRange(SQPBoostableOrRangeToken token) throws ParseException, IOException {
-    Integer start = tryToReadStartOrEnd(LESS_THAN);
-    Integer end = tryToReadStartOrEnd(GREATER_THAN);
-    if (start == null && end != null) {
-      start = tryToReadStartOrEnd(LESS_THAN);
+  private BoostPositionRange tryToReadPositionRange()
+      throws ParseException, IOException {
+    int chr = reader.read();
+    if (chr != AT) {
+      tryToUnread(chr);
+      return new BoostPositionRange(null, null);
+    }
+    //we have @, look for period or integer
+    chr = reader.read();
+    Integer start = null;
+    Integer end = null;
+    if (chr != PERIOD) {
+      tryToUnread(chr);
+      start = tryToReadInteger();
+      if (start != null) {
+        end = tryToReadEndPositionRange();
+      }
+    } else {//@. now try to read another period and maybe an integer
+      tryToUnread(chr);//put the . back on and try to read endpositionrange
+      end = tryToReadEndPositionRange();
     }
     if (start == null && end == null) {
-      return false;
+      throw new ParseException("Must specify a start or end value for a position range query:" +
+          "@2.. @..10 @2..10");
     }
-    token.setStart(start);
-    token.setEnd(end);
-    return true;
+    return new BoostPositionRange(start, end);
   }
 
-  /*
-   tries to read >10 or <2 ; if it fails, it rewinds and returns
-   null
-   */
-  private Integer tryToReadStartOrEnd(int startOrEnd) throws ParseException, IOException {
-    if (startOrEnd != LESS_THAN && startOrEnd != GREATER_THAN) {
-      throw new IllegalArgumentException("Must be either '<' or '>'");
+  //returns -1 if there wasn't a ".."
+  //returns null if there was a "..\b" with no value
+  private Integer tryToReadEndPositionRange() throws IOException, ParseException {
+    int chr = reader.read();
+    if (chr != PERIOD) {
+      return -1;
     }
-    int c = reader.read();
-    if (c == startOrEnd) {
-      Integer intValue = tryToReadInteger();
-      if (intValue == null) {
-        tryToUnread(startOrEnd);
-      } else {
-        return intValue;
-      }
-    } else {
-      tryToUnread(c);
+    int chr2 = reader.read();
+    if (chr2 != PERIOD) {
+        //@.x -- not a range
+        tryToUnread(chr2);
+        tryToUnread(chr);
+        return -1;
     }
-    return null;
+    Integer end = tryToReadInteger();
+    if (! isNextBreak()) {
+      throw new ParseException(
+          "Found the end of an apparent SpanPositionRangeQuery in the middle of a term." +
+          "  Need to escape it or add a space.");
+    }
+    return end;
   }
-
 
   //After a closeClause is built, this tests to see if it is
   //actually a range query.  If it is, then this replaces the clause
@@ -622,7 +663,7 @@ class SpanQueryLexer {
     tokens.add(range);
     Float boost = closeClause.getBoost();
     if (boost != null) {
-      ((SQPBoostableOrRangeToken)range).setBoost(boost);
+      ((SQPBoostableOrPositionRangeToken)range).setBoost(boost);
     }
     return true;
   }
@@ -727,7 +768,7 @@ class SpanQueryLexer {
     } else {
       throw new IllegalArgumentException("Don't know how to handle: "+targChar+" while building tokens");
     }
-    tryToReadBoostOrRange((SQPBoostableOrRangeToken)token);
+    tryToReadBoostOrPositionRange((SQPBoostableOrPositionRangeToken)token);
     tokens.add(token);
     resetTokenBuffer();
     return !hitEndOfString;
@@ -737,11 +778,12 @@ class SpanQueryLexer {
     flushBuffer(null);
   }
 
-  void flushBuffer(Float boost) throws ParseException, IOException {
+  void flushBuffer(BoostPositionRange bpr) throws ParseException, IOException {
 
     if (tokenBuffer.length() == 0) {
       return;
     }
+
     String term = tokenBuffer.toString();
     //test for AllDocs
     if (term.length() == 1 && term.codePointAt(0) == STAR) {
@@ -750,8 +792,8 @@ class SpanQueryLexer {
         if (t instanceof SQPField &&
             ((SQPField)t).getField().equals("*")){
           SQPAllDocsTerm allDocs = new SQPAllDocsTerm();
-          if (boost != null) {
-            allDocs.setBoost(boost);
+          if (bpr != null) {
+            allDocs.setBoost(bpr.boost);
           }
           tokens.set(tokens.size()-1, allDocs);
           resetTokenBuffer();
@@ -775,7 +817,7 @@ class SpanQueryLexer {
       }
 
       if (token != null) {
-        if (boost != null) {
+        if (bpr != null && bpr.hasAValue()) {
           throw new ParseException("Can't have boost on a boolean operator (AND|NOT|OR)");
         }
         testBooleanTokens(tokens, (SQPBooleanOpToken)token);
@@ -812,8 +854,10 @@ class SpanQueryLexer {
     } else {
       token = new SQPTerm(term, false);
     }
-    if (boost != null) {
-      ((SQPBoostableOrRangeToken)token).setBoost(boost);
+    if (bpr != null) {
+      ((SQPBoostableOrPositionRangeToken)token).setBoost(bpr.boost);
+      ((SQPBoostableOrPositionRangeToken)token).setStartPosition(bpr.start);
+      ((SQPBoostableOrPositionRangeToken)token).setEndPosition(bpr.end);
     }
     tokens.add(token);
     resetTokenBuffer();
@@ -911,6 +955,7 @@ class SpanQueryLexer {
     }
   }
 
+  //returns null if reading an integer fails
   Integer tryToReadInteger() throws IOException {
     StringBuilder sb = new StringBuilder();
     while (true) {
@@ -995,5 +1040,34 @@ class SpanQueryLexer {
       return true;
     }
     return false;
+  }
+
+  private class BoostPositionRange {
+    Float boost;
+    Integer start;
+    Integer end;
+
+    BoostPositionRange(Integer start, Integer end) {
+      setStartEnd(start, end);
+    }
+    void setBoost(Float boost) {
+      this.boost = boost;
+    }
+
+    void setStartEnd(Integer start, Integer end) {
+      if (start != null && end != null && start > end) {
+        this.start = end;
+        this.end = start;
+      } else {
+        this.start = start;
+        this.end = end;
+      }
+    }
+
+    boolean hasAValue() {
+      return (boost == null &&
+          start == null &&
+          end == null);
+    }
   }
 }

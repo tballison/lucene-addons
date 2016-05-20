@@ -17,7 +17,7 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
-abstract class SQPClause extends SQPBoostableOrRangeToken {
+abstract class SQPClause extends SQPBoostableOrPositionRangeToken {
 
   private final int tokenOffsetStart;
   private int tokenOffsetEnd;
