@@ -453,12 +453,13 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   //if parser is generating a SpanQuery
   @Override
   public void testParserSpecificSyntax() throws Exception {
+    assertQueryEquals("\"germ term\"^2.0", null, "spanNear([germ, term], 0, true)^2.0");
+
     //testSimple
     assertQueryEquals("term AND \"phrase phrase\"", null,
         "+term +spanNear([phrase, phrase], 0, true)");
     assertQueryEquals("\"hello there\"", null, "spanNear([hello, there], 0, true)");
 
-    assertQueryEquals("\"germ term\"^2.0", null, "spanNear([germ, term], 0, true)^2.0");
     assertQueryEquals("\"term germ\"^2", null, "spanNear([term, germ], 0, true)^2.0");
 
     assertQueryEquals("+(apple \"steve jobs\") -(foo bar baz)", null,

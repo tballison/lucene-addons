@@ -20,6 +20,7 @@ package org.apache.lucene.queryparser.spans;
 import java.util.List;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.util.LuceneTestCase;
+import org.junit.Test;
 
 /**
  * Low level tests of the lexer.
@@ -543,7 +544,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
     //now try with boosts
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE, null, null);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"^2.5 jumped",
@@ -552,7 +553,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE, false, null);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"~^2.5 jumped",
@@ -561,7 +562,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE, true, null);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"~>^2.5 jumped",
@@ -573,7 +574,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE,
         false,
         3);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"~3^2.5 jumped",
@@ -583,7 +584,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.QUOTE, true, 3);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick \"brown fox\"~>3^2.5 jumped",
@@ -634,7 +635,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
     //now brackets with boosts
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, null,null);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     SQPTerm fox = new SQPTerm("fox", false);
     executeSingleTokenTest(
@@ -656,7 +657,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         fox
     );
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, false, null);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick [brown fox]~^2.5 jumped",
@@ -665,7 +666,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, true, null);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick [brown fox]~>^2.5 jumped",
@@ -674,7 +675,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, false, 3);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick [brown fox]~3^2.5 jumped",
@@ -683,7 +684,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPNearClause(3, 5, SQPClause.TYPE.BRACKET, true,3);
-    ((SQPBoostableToken) truth).setBoost(2.5f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(2.5f);
 
     executeSingleTokenTest(
         "the quick [brown fox]~>3^2.5 jumped",
@@ -712,7 +713,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
   public void testBoosts() throws Exception {
     SQPToken truth = new SQPTerm("apache", false);
-    ((SQPBoostableToken) truth).setBoost(4.0f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(4.0f);
 
     executeSingleTokenTest(
         "apache^4",
@@ -721,7 +722,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPRegexTerm("apache");
-    ((SQPBoostableToken) truth).setBoost(4.0f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(4.0f);
 
     executeSingleTokenTest(
         "/apache/^4",
@@ -730,7 +731,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPRangeTerm("abc", "efg", true, true);
-    ((SQPBoostableToken) truth).setBoost(4.0f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(4.0f);
 
     executeSingleTokenTest(
         "the [abc TO efg]^4 cat",
@@ -739,7 +740,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     );
 
     truth = new SQPTerm("apache", false);
-    ((SQPBoostableToken) truth).setBoost(0.4f);
+    ((SQPBoostableOrPositionRangeToken) truth).setBoost(0.4f);
 
     executeSingleTokenTest(
         "apache^.4",
@@ -1061,9 +1062,156 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
         1,
         new SQPTerm("OR", false)
     );
+  }
+
+
+  public void testSpanPositionRangeOnTerms() throws Exception {
+    SQPTerm expected = new SQPTerm("foo", false);
+    expected.setStartPosition(2);
+    expected.setEndPosition(10);
+    executeSingleTokenTest("foo@2..10", 0, expected);
+
+    expected.setBoost(2.5f);
+    executeSingleTokenTest("foo@2..10^2.5", 0, expected);
+    executeSingleTokenTest("foo^2.5@2..10", 0, expected);
+
+    //allow flipped ranges
+    executeSingleTokenTest("foo@10..2^2.5", 0, expected);
+    executeSingleTokenTest("foo^2.5@10..2", 0, expected);
+
+    SQPPrefixTerm prefixTerm = new SQPPrefixTerm("foo");
+    prefixTerm.setStartPosition(2);
+    prefixTerm.setEndPosition(10);
+    executeSingleTokenTest("foo*@2..10", 0, prefixTerm);
+
+    prefixTerm.setBoost(2.5f);
+    executeSingleTokenTest("foo*^2.5@2..10", 0, prefixTerm);
+    executeSingleTokenTest("foo*@2..10^2.5", 0, prefixTerm);
+
+    SQPFuzzyTerm fuzzyTerm = new SQPFuzzyTerm("foo");
+    fuzzyTerm.setMaxEdits(2);
+    fuzzyTerm.setPrefixLength(1);
+    fuzzyTerm.setTranspositions(false);
+    fuzzyTerm.setStartPosition(2);
+    fuzzyTerm.setEndPosition(10);
+
+    executeSingleTokenTest("foo~>2,1@2..10", 0, fuzzyTerm);
+
+    fuzzyTerm.setBoost(2.5f);
+    executeSingleTokenTest("foo~>2,1@2..10^2.5", 0, fuzzyTerm);
+    executeSingleTokenTest("foo~>2,1^2.5@2..10", 0, fuzzyTerm);
+
+    SQPWildcardTerm wildcardTerm = new SQPWildcardTerm("fo?o");
+    wildcardTerm.setStartPosition(2);
+    wildcardTerm.setEndPosition(10);
+
+    executeSingleTokenTest("fo?o@2..10", 0, wildcardTerm);
+
+    //test @ not interpreted as range position elsewhere
+    expected = new SQPTerm("@yahoo", false);
+    executeSingleTokenTest("@yahoo", 0, expected);
+
+    expected = new SQPTerm("y@hoo", false);
+    executeSingleTokenTest("y@hoo", 0, expected);
+
+    expected = new SQPTerm("y@.hoo", false);
+    executeSingleTokenTest("y@.hoo", 0, expected);
+
+    expected = new SQPTerm("y@..hoo", false);
+    executeSingleTokenTest("y@..hoo", 0, expected);
+
+    expected = new SQPTerm("y@10.hoo", false);
+    executeSingleTokenTest("y@10.hoo", 0, expected);
+
+    //try single quotes
+    expected = new SQPTerm("yahoo@2..10", true);
+    executeSingleTokenTest("'yahoo@2..10'", 0, expected);
+
+
+    //need to escape ranges in middle of terms -- throw exception
+    //if a valid range is found in middle of term
+    testParseException("y@10..hoo");
+    testParseException("y@10..20hoo");
+    testParseException("y@..20hoo");
 
   }
-/*
+
+  public void testSpanPositionRangeOnNear() throws Exception {
+    SQPNearClause expected = new SQPNearClause(1, 3, SQPClause.TYPE.BRACKET, null, null);
+    expected.setStartPosition(2);
+    expected.setEndPosition(10);
+    executeSingleTokenTest("[foo bar]@2..10", 0, expected);
+
+    expected.setBoost(2.5f);
+    executeSingleTokenTest("[foo bar]@2..10^2.5", 0, expected);
+    executeSingleTokenTest("[foo bar]^2.5@2..10", 0, expected);
+
+    expected = new SQPNearClause(1, 3, SQPClause.TYPE.BRACKET, true, null);
+    expected.setStartPosition(2);
+    expected.setEndPosition(10);
+    executeSingleTokenTest("[foo bar]~>@2..10", 0, expected);
+
+    expected = new SQPNearClause(1, 3, SQPClause.TYPE.BRACKET, true, 3);
+    expected.setStartPosition(2);
+    expected.setEndPosition(10);
+    executeSingleTokenTest("[foo bar]~>3@2..10", 0, expected);
+
+    expected = new SQPNearClause(1, 3, SQPClause.TYPE.QUOTE, null, null);
+    expected.setStartPosition(2);
+    expected.setEndPosition(10);
+    executeSingleTokenTest("\"foo bar\"@2..10", 0, expected);
+
+    expected.setBoost(2.5f);
+    executeSingleTokenTest("\"foo bar\"@2..10^2.5", 0, expected);
+    executeSingleTokenTest("\"foo bar\"^2.5@2..10", 0, expected);
+
+    expected = new SQPNearClause(1, 3, SQPClause.TYPE.QUOTE, true, null);
+    expected.setStartPosition(2);
+    expected.setEndPosition(10);
+    executeSingleTokenTest("\"foo bar\"~>@2..10", 0, expected);
+
+    expected = new SQPNearClause(1, 3, SQPClause.TYPE.QUOTE, true, 3);
+    expected.setStartPosition(2);
+    expected.setEndPosition(10);
+    executeSingleTokenTest("\"foo bar\"~>3@2..10", 0, expected);
+
+    testParseException("[foo bar]@");
+    testParseException("[foo bar]@2");
+    testParseException("[foo bar]@2.");
+    testParseException("[foo bar]@..");
+    testParseException("\"foo bar\"@");
+    testParseException("\"foo bar\"@2");
+    testParseException("\"foo bar\"@2.");
+    testParseException("\"foo bar\"@..");
+  }
+
+  @Test
+  public void testOrSpanPositionRange() throws Exception {
+    SQPOrClause expected = new SQPOrClause(2, 5);
+    expected.setStartPosition(2);
+    expected.setEndPosition(10);
+    executeSingleTokenTest(
+        "the quick (brown fox)@2..10 jumped",
+        2,
+        expected
+    );
+
+    expected.setEndPosition(null);
+    executeSingleTokenTest(
+        "the quick (brown fox)@2.. jumped",
+        2,
+        expected
+    );
+
+    expected.setStartPosition(null);
+    expected.setEndPosition(10);
+    executeSingleTokenTest(
+        "the quick (brown fox)@..10 jumped",
+        2,
+        expected
+    );
+  }
+  /*
   @Test(timeout = 1000)
   public void testNonMatchingSingleQuote() throws Exception {
     //test there isn't a permanent hang triggered by the non matching '
@@ -1098,14 +1246,23 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
       throws ParseException {
     List<SQPToken> tokens = lexer.getTokens(q);
     SQPToken target = tokens.get(targetOffset);
-    if (truth instanceof SQPBoostableToken && target instanceof SQPBoostableToken) {
-      Float truthBoost = ((SQPBoostableToken) truth).getBoost();
-      Float targetBoost = ((SQPBoostableToken)target).getBoost();
+    if (truth instanceof SQPBoostableOrPositionRangeToken && target instanceof SQPBoostableOrPositionRangeToken) {
+      Float truthBoost = ((SQPBoostableOrPositionRangeToken) truth).getBoost();
+      Float targetBoost = ((SQPBoostableOrPositionRangeToken)target).getBoost();
       if (truthBoost == null || targetBoost == null) {
         assertEquals(truthBoost, targetBoost);
       } else {
         assertEquals(truthBoost, targetBoost, 0.0001f);
       }
+
+      Integer truthStartPosition = ((SQPBoostableOrPositionRangeToken)truth).getStartPosition();
+      Integer targetStartPosition = ((SQPBoostableOrPositionRangeToken)target).getStartPosition();
+      assertEquals("start position range", truthStartPosition, targetStartPosition);
+
+      Integer truthEndPosition = ((SQPBoostableOrPositionRangeToken)truth).getEndPosition();
+      Integer targetEndPosition = ((SQPBoostableOrPositionRangeToken)target).getEndPosition();
+      assertEquals("end position range", truthEndPosition, targetEndPosition);
+
     }
     assertEquals(truth, target);
   }
@@ -1123,5 +1280,24 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
     }
 
     assertTrue("ParseException: " + qString, ex);
+  }
+
+  @Test
+  public void isolateTest() throws Exception {
+    debug("y@.hoo");
+    SQPTerm fox = new SQPTerm("fox", false);
+    fox.setBoost(10f);
+    executeSingleTokenTest(
+        "the quick [brown fox^10] jumped",
+        4,
+        fox
+    );
+  }
+  private void debug(String qString) throws ParseException {
+    List<SQPToken> tokens = lexer.getTokens(qString);
+    for (SQPToken t : tokens) {
+      System.out.println(t);
+    }
+
   }
 }

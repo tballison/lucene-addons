@@ -1,5 +1,5 @@
 lucene-addons
-======================
+============
 
 Standalone versions of LUCENE-5205 and other patches.
 
@@ -26,7 +26,7 @@ within SpanNotQueries (LUCENE-6929).  Avoid 5.4.0!
 
 ACKNOWLEDGEMENTS
 
-Thank you to Todd Hay and David Smiley for encouraging me to start contributing to
+Thank you to Todd Hay and David Smiley for encouraging me to startPosition contributing to
 open source projects.  David has been extremely generous in helping with technical
 details of development generally and Lucene/Solr in particular.  Thank you, David!
 

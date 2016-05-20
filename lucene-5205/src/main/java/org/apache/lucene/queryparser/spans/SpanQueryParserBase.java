@@ -41,13 +41,7 @@ import org.apache.lucene.search.RegexpQuery;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TermRangeQuery;
 import org.apache.lucene.search.WildcardQuery;
-import org.apache.lucene.search.spans.SpanBoostQuery;
-import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
-import org.apache.lucene.search.spans.SpanNearQuery;
-import org.apache.lucene.search.spans.SpanNotQuery;
-import org.apache.lucene.search.spans.SpanOrQuery;
-import org.apache.lucene.search.spans.SpanQuery;
-import org.apache.lucene.search.spans.SpanTermQuery;
+import org.apache.lucene.search.spans.*;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
 
@@ -127,6 +121,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
   /**
    *
+   * Be careful: this assumes that the sqp terminal is NOT a SpanPositionRangeQuery!!!
+   *
    * @param fieldName field
    * @param terminal terminal
    * @return Query that was built or <code>null</code> if a stop word
@@ -179,19 +175,41 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @throws ParseException
    */
   protected SpanQuery buildSpanTerminal(String fieldName, SQPTerminal terminal) throws ParseException {
+    SpanQuery spanQuery = null;
     if (terminal instanceof SQPTerm) {
-      return newFieldSpanQuery(fieldName, terminal.getString(), ((SQPTerm) terminal).isQuoted());
+      spanQuery = newFieldSpanQuery(fieldName, terminal.getString(), ((SQPTerm) terminal).isQuoted());
+    } else {
+      Query q = buildTerminal(fieldName, terminal);
+      if (q instanceof MultiTermQuery) {
+        spanQuery = new SpanMultiTermQueryWrapper<>((MultiTermQuery) q);
+      } else if (q instanceof TermQuery) {
+        //this happens when fuzzy query has a fuzzy = 0, and a TermQuery is generated
+        //straight from the analyzed str
+        spanQuery = new SpanTermQuery(((TermQuery) q).getTerm());
+      } else {
+        spanQuery = (SpanQuery)q;
+      }
     }
-    Query q = buildTerminal(fieldName, terminal);
-    if (q instanceof MultiTermQuery) {
-      return new SpanMultiTermQueryWrapper<>((MultiTermQuery)q);
-    } else if (q instanceof TermQuery){
-      //this happens when fuzzy query has a fuzzy = 0, and a TermQuery is generated
-      //straight from the analyzed str
-      return new SpanTermQuery(((TermQuery)q).getTerm());
-    }
+    spanQuery = addBoostOrPositionRangeIfExists(spanQuery, terminal);
+    return spanQuery;
+  }
 
-    return (SpanQuery)q;
+  SpanQuery addBoostOrPositionRangeIfExists(SpanQuery spanQuery, SQPBoostableOrPositionRangeToken token) {
+    if (spanQuery == null) {
+      return spanQuery;
+    }
+    if (token.getStartPosition() != null || token.getEndPosition() != null) {
+      if (token.getStartPosition() == null) {
+        spanQuery = new SpanFirstQuery(spanQuery, token.getEndPosition());
+      } else {
+        int end = (token.getEndPosition() == null) ? Integer.MAX_VALUE : token.getEndPosition();
+        spanQuery = new SpanPositionRangeQuery(spanQuery, token.getStartPosition(), end);
+      }
+    }
+    if (token.getBoost() != null && ! (spanQuery instanceof SpanBoostQuery)) {
+      spanQuery = new SpanBoostQuery(spanQuery, token.getBoost());
+    }
+    return spanQuery;
   }
 
   /**

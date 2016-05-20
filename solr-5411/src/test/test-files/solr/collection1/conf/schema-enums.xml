@@ -33,7 +33,7 @@
             </analyzer>
         </fieldtype>
         <!-- note: you cannot change the order/existing values in enum without reindexing.
-             but you can always add new values to the end. -->
+             but you can always add new values to the endPosition. -->
         <fieldType name="severityType" class="solr.EnumField" enumsConfig="enumsConfig.xml" enumName="severity"/>
         <fieldType name="string" class="solr.StrField"/>
         <fieldType name="long" class="solr.TrieLongField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>

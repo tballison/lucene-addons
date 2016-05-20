@@ -400,7 +400,7 @@
         <!-- Dynamic field definitions.  If a field name is not found, dynamicFields
              will be used if the name matches any of the patterns.
              RESTRICTION: the glob-like pattern in the name attribute must have
-             a "*" only at the start or the end.
+             a "*" only at the startPosition or the endPosition.
              EXAMPLE:  name="*_i" will match any field ending in _i (like myid_i, z_i)
              Longer patterns will be matched first.  if equal size patterns
              both match, the first appearing in the schema will be used.

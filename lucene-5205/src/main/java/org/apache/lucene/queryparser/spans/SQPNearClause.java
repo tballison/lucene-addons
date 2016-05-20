@@ -89,14 +89,10 @@ class SQPNearClause extends SQPClause {
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append("SQPNearClause [type=");
-    builder.append(type);
-    builder.append(", inOrder=");
-    builder.append(inOrder);
-    builder.append(", slop=");
-    builder.append(slop);
-    builder.append("]");
-    return builder.toString();
+    return "SQPNearClause{" +
+        "type=" + type +
+        ", inOrder=" + inOrder +
+        ", slop=" + slop +
+        "} " + super.toString();
   }
 }

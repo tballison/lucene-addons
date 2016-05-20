@@ -60,19 +60,16 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
         SQPNearClause nc = (SQPNearClause)parentClause;
         SQPToken t = tokens.get(start);
         if (t instanceof SQPTerm) {
-
           SpanQuery ret = trySpecialHandlingForSpanNearWithOneComponent(field, (SQPTerm)t, nc);
           if (ret != null) {
-            if (parentClause.getBoost() != null) {
-              ret = new SpanBoostQuery(ret, parentClause.getBoost());
-            }
+            ret = addBoostOrPositionRangeIfExists(ret, parentClause);
             return ret;
           }
         }
       }
     }
 
-    List<SpanQuery> queries = new ArrayList<SpanQuery>();
+    List<SpanQuery> queries = new ArrayList<>();
     int i = start;
     while (i < end) {
       SQPToken t = tokens.get(i);
@@ -89,7 +86,9 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
       }
       queries.add(q);
     }
-    return buildSpanQueryClause(queries, parentClause);
+    SpanQuery ret = buildSpanQueryClause(queries, parentClause);
+    ret = addBoostOrPositionRangeIfExists(ret, parentClause);
+    return ret;
   }
 
   private SpanQuery trySpecialHandlingForSpanNearWithOneComponent(String field,

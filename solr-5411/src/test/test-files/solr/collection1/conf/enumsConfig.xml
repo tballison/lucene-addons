@@ -21,7 +21,7 @@
 -->
 <enumsConfig>
     <!-- note: you cannot change the order/existing values in enum without reindexing.
-     but you can always add new values to the end. -->
+     but you can always add new values to the endPosition. -->
     <enum name="severity">
         <value>Not Available</value>
         <value>Low</value>

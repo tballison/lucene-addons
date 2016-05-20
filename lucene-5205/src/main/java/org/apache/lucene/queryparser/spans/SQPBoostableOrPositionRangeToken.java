@@ -17,9 +17,15 @@ package org.apache.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+/**
+ * A token that can be boosted and/or
+ * be restricted to the first n terms (SpanFirstQuery)
+ */
+class SQPBoostableOrPositionRangeToken implements SQPToken {
 
-class SQPBoostableToken implements SQPToken {
   private Float boost = null;
+  private Integer startPosition = null;
+  private Integer endPosition = null;
 
   public void setBoost(Float boost) {
     this.boost = boost;
@@ -29,27 +35,49 @@ class SQPBoostableToken implements SQPToken {
     return boost;
   }
 
+  public Integer getStartPosition() {
+    return startPosition;
+  }
+
+  public void setStartPosition(Integer startPosition) {
+    this.startPosition = startPosition;
+  }
+
+  public Integer getEndPosition() {
+    return endPosition;
+  }
+
+  public void setEndPosition(Integer endPosition) {
+    this.endPosition = endPosition;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    SQPBoostableToken that = (SQPBoostableToken) o;
+    SQPBoostableOrPositionRangeToken that = (SQPBoostableOrPositionRangeToken) o;
 
     if (boost != null ? !boost.equals(that.boost) : that.boost != null) return false;
+    if (startPosition != null ? !startPosition.equals(that.startPosition) : that.startPosition != null) return false;
+    return endPosition != null ? endPosition.equals(that.endPosition) : that.endPosition == null;
 
-    return true;
   }
 
   @Override
   public int hashCode() {
-    return boost != null ? boost.hashCode() : 0;
+    int result = boost != null ? boost.hashCode() : 0;
+    result = 31 * result + (startPosition != null ? startPosition.hashCode() : 0);
+    result = 31 * result + (endPosition != null ? endPosition.hashCode() : 0);
+    return result;
   }
 
   @Override
   public String toString() {
-    return "SQPBoostableToken{" +
+    return "SQPBoostableOrPositionRangeToken{" +
         "boost=" + boost +
+        ", startPosition=" + startPosition +
+        ", endPosition=" + endPosition +
         '}';
   }
 }

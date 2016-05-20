@@ -46,28 +46,28 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
+import org.junit.Test;
 
 public class TestOverallSpanQueryParser extends LuceneTestCase {
   private final static String FIELD1 = "f1";
   private final static String FIELD2 = "f2";
-  private static Analyzer analyzer = null;
-  private static Analyzer multiTermAnalyzer = null;
-  private static Directory directory = null;
-  private static IndexReader reader = null;
-  private static IndexSearcher searcher = null;
-  private static SpanQueryParser parser;
+  private static Analyzer ANALYZER = null;
+  private static Analyzer MULTITERM_ANALYZER = null;
+  private static Directory DIRECTORY = null;
+  private static IndexReader READER = null;
+  private static IndexSearcher SEARCHER = null;
+  private static SpanQueryParser PARSER;
 
   @BeforeClass
   public static void beforeClass() throws Exception {
 
-    analyzer = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, true);
-    analyzer = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, true);
+    ANALYZER = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, true);
+    ANALYZER = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, true);
 
-    directory = newDirectory();
+    DIRECTORY = newDirectory();
 
-    RandomIndexWriter writer = new RandomIndexWriter(random(), directory,
-        newIndexWriterConfig(analyzer)
+    RandomIndexWriter writer = new RandomIndexWriter(random(), DIRECTORY,
+        newIndexWriterConfig(ANALYZER)
         .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
         .setMergePolicy(newLogMergePolicy()));
 
@@ -88,7 +88,8 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
         "blah saturday night fever with john travolta", //13
         "understanding (span query)", //14
         "understanding (sp'an query)",//15
-        "understanding something about (span query)"//16
+        "understanding something about (span query)",//16
+        "0 1 fox 3 4 5 fox 7 8 9 10 fox"//17
 
     };
     String [] f2Docs = new String[] {
@@ -108,7 +109,8 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
         "thirteen",
         "fourteen",
         "fifteen",
-        "sixteen"
+        "sixteen",
+        "seventeen"
     };
     for (int i = 0; i < f1Docs.length; i++) {
       Document doc = new Document();
@@ -116,21 +118,21 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
       doc.add(newTextField(FIELD2, f2Docs[i], Field.Store.YES));
       writer.addDocument(doc);
     }
-    reader = writer.getReader();
-    searcher = newSearcher(reader);
+    READER = writer.getReader();
+    SEARCHER = newSearcher(READER);
     writer.close();
 
-    parser = new SpanQueryParser(FIELD1, analyzer, multiTermAnalyzer);
+    PARSER = new SpanQueryParser(FIELD1, ANALYZER, MULTITERM_ANALYZER);
   }
 
   @AfterClass
   public static void afterClass() throws Exception {
-    reader.close();
-    directory.close();
-    reader = null;
-    searcher = null;
-    directory = null;
-    analyzer = null;
+    READER.close();
+    DIRECTORY.close();
+    READER = null;
+    SEARCHER = null;
+    DIRECTORY = null;
+    ANALYZER = null;
   }
 
   public void testEscaping() throws Exception {
@@ -142,7 +144,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     compareHits("\"understanding \\(sp\\'an query\\)\"", 15);
 
   }
-  @Ignore("this doesn't work in 5.4.0. See LUCENE-6929")
+
   public void testComplexQueries() throws Exception {
     //complex span not 
     compareHits("+f1:[fever (bieber [jo*n travlota~1] disc*)]!~2,5 +f2:(ten eleven twelve thirteen)", 12);
@@ -154,23 +156,23 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
   public void testNegativeOnly() throws Exception {
     //negative only queries
-    compareHits("-fever", 0,1,2,3,4,5,6,7,8,9,14,15,16);
-    compareHits("-f1:fever", 0,1,2,3,4,5,6,7,8,9,14,15,16);
-    compareHits("-fever -brown", 3,4,5,6,7,8,9,14,15,16);
+    compareHits("-fever", 0,1,2,3,4,5,6,7,8,9,14,15,16,17);
+    compareHits("-f1:fever", 0,1,2,3,4,5,6,7,8,9,14,15,16,17);
+    compareHits("-fever -brown", 3,4,5,6,7,8,9,14,15,16,17);
   }
 
   public void testUnlimitedRange() throws Exception {
     //just make sure that -1 is interpreted as infinity
-    parser.setSpanNearMaxDistance(-1);
-    parser.setPhraseSlop(0);
+    PARSER.setSpanNearMaxDistance(-1);
+    PARSER.setPhraseSlop(0);
     compareHits("[quick dog]~10", 1, 2);
-    parser.setSpanNearMaxDistance(100);
+    PARSER.setSpanNearMaxDistance(100);
 
   }
 
   public void testBooleanQueryConstruction() throws Exception {
     String s = "cat dog AND elephant aardvark";
-    Query q = parser.parse(s);
+    Query q = PARSER.parse(s);
     assertTrue(q instanceof BooleanQuery);
     BooleanQuery bq = (BooleanQuery)q;
     List<BooleanClause> clauses = bq.clauses();
@@ -181,7 +183,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     testForClause(clauses, "aardvark", Occur.SHOULD);
 
     s = "cat dog NOT elephant aardvark";
-    q = parser.parse(s);
+    q = PARSER.parse(s);
     assertTrue(q instanceof BooleanQuery);
     bq = (BooleanQuery)q;
     clauses = bq.clauses();
@@ -192,7 +194,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     testForClause(clauses, "aardvark", Occur.SHOULD);
 
     s = "cat +dog -elephant +aardvark";
-    q = parser.parse(s);
+    q = PARSER.parse(s);
     assertTrue(q instanceof BooleanQuery);
     bq = (BooleanQuery)q;
     clauses = bq.clauses();
@@ -213,7 +215,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     compareHits("f1:brown f2:(three four) f2:five", 0, 1, 2, 3, 4, 5);
     compareHits("f1:brown f2:(f1:three four) f2:five", 0, 1, 2, 4, 5);
 
-    SpanQueryParser p = new SpanQueryParser(FIELD2, analyzer, multiTermAnalyzer);
+    SpanQueryParser p = new SpanQueryParser(FIELD2, ANALYZER, MULTITERM_ANALYZER);
     compareHits(p, "f1:brown three four", 0, 1, 2, 3, 4);
     compareHits(p, "f1:brown (three four)", 0, 1, 2, 3, 4);
     compareHits(p, "f1:brown (three four) five", 0, 1, 2, 3, 4, 5);
@@ -245,10 +247,14 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
   }
   
   private void compareHits(String s, int ... docids ) throws Exception{
-    compareHits(new SpanQueryParser(FIELD1, analyzer, multiTermAnalyzer), s, docids);
+    compareHits(new SpanQueryParser(FIELD1, ANALYZER, MULTITERM_ANALYZER), s, docids);
   }
 
-  private void compareHits(SpanQueryParser p, String s, int ... docids ) throws Exception{
+  private void compareHits(SpanQueryParser p, String s, int ... docids) throws Exception {
+    compareHits(p, s, SEARCHER, docids);
+  }
+
+  private void compareHits(SpanQueryParser p, String s, IndexSearcher searcher, int ... docids) throws Exception{
     Query q = p.parse(s);
     TopScoreDocCollector results = TopScoreDocCollector.create(1000);
     searcher.search(q, results);
@@ -284,7 +290,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     };
 
     for (String s : strings) {
-      testException(s, parser);
+      testException(s, PARSER);
     }
   }
 
@@ -311,20 +317,20 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
       assertTrue(s, isCharEscaped(s, 3));
     }
 
-    Query q = parser.parse("abc\\~2.0");
+    Query q = PARSER.parse("abc\\~2.0");
     assertTrue(q.toString(), q instanceof TermQuery);
-    q = parser.parse("abc\\\\\\~2.0");
+    q = PARSER.parse("abc\\\\\\~2.0");
     assertTrue(q.toString(), q instanceof TermQuery);
-    q = parser.parse("abc\\\\~2.0");
+    q = PARSER.parse("abc\\\\~2.0");
     assertTrue(q.toString(), q instanceof FuzzyQuery);
 
-    q = parser.parse("abc\\*d");
+    q = PARSER.parse("abc\\*d");
     assertTrue(q.toString(), q instanceof TermQuery);
 
-    q = parser.parse("abc\\\\\\*d");
+    q = PARSER.parse("abc\\\\\\*d");
     assertTrue(q.toString(), q instanceof TermQuery);
 
-    q = parser.parse("abc\\\\*d");
+    q = PARSER.parse("abc\\\\*d");
     assertTrue(q.toString(), q instanceof WildcardQuery);
   }
 
@@ -350,7 +356,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     IndexReader r = w.getReader();
     IndexSearcher s = newSearcher(r);
     w.close();
-    SpanQueryParser p = new SpanQueryParser(FIELD1, stopsAnalyzer, multiTermAnalyzer);
+    SpanQueryParser p = new SpanQueryParser(FIELD1, stopsAnalyzer, MULTITERM_ANALYZER);
     assertHits( "-ab +the +cd", p, s, 0);
     assertHits( "+ab +the +cd", p, s, 2);
     assertHits( "+the", p, s, 0);
@@ -376,7 +382,85 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     r.close();
     dir.close();
   }
-  
+
+  @Test
+  public void testSpanPositionRangeQueries() throws Exception {
+    Directory dir = newDirectory();
+    RandomIndexWriter w = new RandomIndexWriter(random(), dir,
+        newIndexWriterConfig(ANALYZER)
+            .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
+            .setMergePolicy(newLogMergePolicy()));
+    String[] docs = new String[] {
+        "zebra 1 2 3 4 5 6 7 8 9 10",
+        "0 1 2 3 zebra 5 6 7 8 9 10",
+        "0 1 2 3 4 5 6 7 zebra 9 10",
+        "a foo bar a b a b a b a b a b a b a b a b",
+        "a b a b a b a b a foo bar a b a b a b a b",
+        "a b a b a b a b a b a b a b a b a foo bar",
+    };
+    for (int i = 0; i < docs.length; i++) {
+      Document doc = new Document();
+      doc.add(newTextField(FIELD1, docs[i], Field.Store.YES));
+      w.addDocument(doc);
+    }
+    IndexReader r = w.getReader();
+    IndexSearcher s = newSearcher(r);
+    w.close();
+
+//    compareHits(PARSER, "(foo@13.. bar@13..)", s, 5);
+    testException("(foo bar)~2@..13", PARSER);
+
+    //basic
+    for (String term : new String[]{
+        "zebra",
+        "zeabra~1",
+        "z?bra",
+        "zebr*",
+        "ze*ra",
+        "zebar~1"
+    }) {
+      compareHits(PARSER, term, s, 0, 1, 2);
+      compareHits(PARSER, term+"@2..", s, 1, 2);
+      compareHits(PARSER, term+"@2..5", s, 1);
+      compareHits(PARSER, term+"@..6", s, 0, 1);
+      compareHits(PARSER, term+"@2..", s, 1, 2);
+    }
+
+    //this should have no hits
+    compareHits(PARSER, "zebar~>1@2..", s);
+
+    //test spanOr
+    compareHits(PARSER, "(foo bar)", s, 3, 4, 5);
+    compareHits(PARSER, "[a (foo bar)]~@5..", s, 4, 5);
+    compareHits(PARSER, "[a (foo bar)]~@13..", s, 5);
+    compareHits(PARSER, "[a (foo bar)]~@5..13", s, 4);
+    compareHits(PARSER, "[a (foo bar)]~@..5", s, 3);
+    compareHits(PARSER, "[a (foo bar)]~@..13", s, 3, 4);
+
+    //parser doesn't test for child ranges inconsistent with parent range
+    compareHits(PARSER, "[a@100.. (foo bar)]~@..13", s);
+
+
+    compareHits(PARSER, "(foo@13.. bar)", s, 3, 4, 5);
+    compareHits(PARSER, "(foo@13.. bar@13..)", s, 5);
+    compareHits(PARSER, "(foo@3..13 bar@3..13)", s, 4 );
+    compareHits(PARSER, "(foo@..13 bar@..13)", s, 3, 4);
+
+
+    //Boolean needs to be SpanOr
+    compareHits(PARSER, "(foo bar)@13..", s, 5);
+    compareHits(PARSER, "(foo bar)@3..13", s, 4 );
+    compareHits(PARSER, "(foo bar)@..13", s, 3, 4);
+
+    //minimum number can only apply to BooleanQuery
+    //positionRange forces this to SpanOr.  Do not allow!
+    testException("(foo bar)~2@..13", PARSER);
+
+
+    r.close();
+    dir.close();
+  }
+
   private void assertHits(String qString, SpanQueryParser p, IndexSearcher s, int expected) throws Exception {
     Query q = p.parse(qString);
     TopScoreDocCollector results = TopScoreDocCollector.create(1000);
