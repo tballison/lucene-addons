@@ -26,6 +26,8 @@ import org.junit.Test;
  */
 //Thank you, TestSimpleQParserPlugin, for the the model for this!
 
+//need to suppress for now: https://mail-archives.apache.org/mod_mbox/lucene-solr-user/201604.mbox/%3Calpine.DEB.2.11.1604111744560.10181@tray%3E
+@SolrTestCaseJ4.SuppressSSL
 public class TestSpanQParserPlugin extends SolrTestCaseJ4 {
   @BeforeClass
   public static void beforeClass() throws Exception {

@@ -352,7 +352,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
   
   public void assertEmpty(Query q) {
     boolean e = false;
-    if (q instanceof BooleanQuery && ((BooleanQuery)q).getClauses().length == 0) {
+    if (q instanceof BooleanQuery && ((BooleanQuery)q).clauses().size() == 0) {
       e = true;
     }
     assertTrue("Empty: "+q.toString(), e);

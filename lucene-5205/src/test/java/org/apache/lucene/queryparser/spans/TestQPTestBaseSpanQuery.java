@@ -17,14 +17,7 @@ import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.queryparser.flexible.standard.CommonQueryParserConfiguration;
 import org.apache.lucene.queryparser.tmpspans.util.QueryParserTestBase;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.BoostQuery;
-import org.apache.lucene.search.PhraseQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.RegexpQuery;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TermRangeQuery;
+import org.apache.lucene.search.*;
 import org.apache.lucene.search.spans.SpanBoostQuery;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
@@ -388,16 +381,18 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   public void testSynonyms() throws Exception {
     SpanQuery expectedSpan = new SpanOrQuery(
         new SpanQuery[]{
-            new SpanTermQuery(new Term("field", "dogs")),
-            new SpanTermQuery(new Term("field", "dog"))
+            new SpanTermQuery(new Term("field", "dog")),
+            new SpanTermQuery(new Term("field", "dogs"))
         });
 
     BooleanQuery.Builder expectedB = new BooleanQuery.Builder();
     expectedB.setDisableCoord(true);
     expectedB.add(new TermQuery(new Term("field", "dogs")), BooleanClause.Occur.SHOULD);
     expectedB.add(new TermQuery(new Term("field", "dog")), BooleanClause.Occur.SHOULD);
-    Query expected = expectedB.build();
-
+    Query expected = new SynonymQuery(
+        new Term("field", "dog"),
+        new Term("field", "dogs")
+    );
     SpanQueryParser qp = new SpanQueryParser("field", new MockSynonymAnalyzer(), null);
     assertEquals(expected, qp.parse("dogs"));
     assertEquals(expectedSpan, qp.parse("\"dogs\""));
@@ -416,8 +411,8 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
         new SpanQuery[]{
             new SpanTermQuery(new Term("field", "old")),
             new SpanOrQuery(
-                new SpanTermQuery(new Term("field", "dogs")),
-                new SpanTermQuery(new Term("field", "dog")))
+                new SpanTermQuery(new Term("field", "dog")),
+                new SpanTermQuery(new Term("field", "dogs")))
         }, 0, true
     );
 
@@ -433,8 +428,8 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
         new SpanQuery[]{
             new SpanTermQuery(new Term("field", "old")),
             new SpanOrQuery(
-                new SpanTermQuery(new Term("field", "dogs")),
-                new SpanTermQuery(new Term("field", "dog")))
+                new SpanTermQuery(new Term("field", "dog")),
+                new SpanTermQuery(new Term("field", "dogs")))
         }, 3, false
     );
     expected = new SpanBoostQuery(expected, 2.0f);
@@ -453,14 +448,14 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
   //if parser is generating a SpanQuery
   @Override
   public void testParserSpecificSyntax() throws Exception {
-    assertQueryEquals("\"germ term\"^2.0", null, "spanNear([germ, term], 0, true)^2.0");
+    assertQueryEquals("\"germ term\"^2.0", null, "(spanNear([germ, term], 0, true))^2.0");
 
     //testSimple
     assertQueryEquals("term AND \"phrase phrase\"", null,
         "+term +spanNear([phrase, phrase], 0, true)");
     assertQueryEquals("\"hello there\"", null, "spanNear([hello, there], 0, true)");
 
-    assertQueryEquals("\"term germ\"^2", null, "spanNear([term, germ], 0, true)^2.0");
+    assertQueryEquals("\"term germ\"^2", null, "(spanNear([term, germ], 0, true))^2.0");
 
     assertQueryEquals("+(apple \"steve jobs\") -(foo bar baz)", null,
         "+(apple spanNear([steve, jobs], 0, true)) -(foo bar baz)");
@@ -518,7 +513,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
 
     //testSlop
     assertQueryEquals("\"term germ\"~2 flork", null, "spanNear([term, germ], 2, false) flork");
-    assertQueryEquals("\"term germ\"~2^2", null, "spanNear([term, germ], 2, false)^2.0");
+    assertQueryEquals("\"term germ\"~2^2", null, "(spanNear([term, germ], 2, false))^2.0");
 
 
   }

@@ -25,19 +25,7 @@ import java.util.List;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.BoostQuery;
-import org.apache.lucene.search.ConstantScoreQuery;
-import org.apache.lucene.search.DisjunctionMaxQuery;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.MultiPhraseQuery;
-import org.apache.lucene.search.MultiTermQuery;
-import org.apache.lucene.search.PhraseQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TotalHitCountCollector;
+import org.apache.lucene.search.*;
 import org.apache.lucene.search.spans.SpanBoostQuery;
 import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
@@ -309,7 +297,13 @@ public class SQPTestBase extends LuceneTestCase {
       }
 
     } else if (query instanceof MultiTermQuery) {
-      return new SpanMultiTermQueryWrapper<MultiTermQuery>((MultiTermQuery)query);
+      return new SpanMultiTermQueryWrapper<>((MultiTermQuery)query);
+    } else if (query instanceof SynonymQuery) {
+      List<SpanQuery> clauses = new ArrayList<>();
+      for (Term term : ((SynonymQuery)query).getTerms()) {
+        clauses.add(new SpanTermQuery(term));
+      }
+      return new SpanOrQuery(clauses.toArray(new SpanQuery[clauses.size()]));
     }
     throw new IllegalArgumentException("Can't convert query of type: "+query.getClass());
   }

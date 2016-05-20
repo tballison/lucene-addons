@@ -41,6 +41,8 @@ import java.util.Set;
  * @see QParserPlugin#standardPlugins
  * @see QueryUtils
  **/
+//need to suppress for now: https://mail-archives.apache.org/mod_mbox/lucene-solr-user/201604.mbox/%3Calpine.DEB.2.11.1604111744560.10181@tray%3E
+@SolrTestCaseJ4.SuppressSSL
 public class QueryEqualityTest extends SolrTestCaseJ4 {
 
   @BeforeClass
@@ -164,6 +166,43 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
       req.close();
     }
   }
+
+  public void testGraphQuery() throws Exception {
+    SolrQueryRequest req = req("from", "node_s",
+        "to","edge_s",
+        "traversalFilter","foo",
+        "returnOnlyLeaf","true",
+        "returnRoot","false",
+        "maxDepth","2",
+        "useAutn","false"
+    );
+    // make sure all param subsitution works for all args to graph query.
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s}*:*",
+        "{!graph from=$from to=$to}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true returnRoot=false}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf returnRoot=$returnRoot}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true returnRoot=false maxDepth=2}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf returnRoot=$returnRoot maxDepth=$maxDepth}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true returnRoot=false maxDepth=2 useAutn=false}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf returnRoot=$returnRoot maxDepth=$maxDepth useAutn=$useAutn}*:*");
+
+  }
+
 
   public void testQuerySwitch() throws Exception {
     SolrQueryRequest req = req("myXXX", "XXX",

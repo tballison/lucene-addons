@@ -26,21 +26,8 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.sandbox.queries.SlowFuzzyQuery;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.BoostQuery;
-import org.apache.lucene.search.FuzzyQuery;
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.MultiPhraseQuery;
-import org.apache.lucene.search.MultiTermQuery;
+import org.apache.lucene.search.*;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
-import org.apache.lucene.search.PhraseQuery;
-import org.apache.lucene.search.PrefixQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.RegexpQuery;
-import org.apache.lucene.search.TermQuery;
-import org.apache.lucene.search.TermRangeQuery;
-import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.spans.*;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
@@ -269,6 +256,19 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       }
       int slop = positions[positions.length-1]-positions.length;
       return buildSpanNearQuery(spanTerms, slop, true);
+    } else if (q instanceof SynonymQuery) {
+      SynonymQuery synonymQuery =  (SynonymQuery)q;
+      if (synonymQuery.getTerms().size() == 0) {
+        return new SpanOrQuery();
+      } else if (synonymQuery.getTerms().size() == 1) {
+        return new SpanTermQuery(synonymQuery.getTerms().get(0));
+      }
+      SpanQuery[] clauses = new SpanQuery[((SynonymQuery)q).getTerms().size()];
+      int i = 0;
+      for (Term t : ((SynonymQuery)q).getTerms()) {
+        clauses[i++] = new SpanTermQuery(t);
+      }
+      return new SpanOrQuery(clauses);
     }
     throw new IllegalArgumentException("Can't convert class >" + q.getClass() + "< to a SpanQuery");
   }
