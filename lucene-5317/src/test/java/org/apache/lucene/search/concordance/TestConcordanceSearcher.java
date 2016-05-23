@@ -30,10 +30,8 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
 import org.apache.lucene.search.concordance.classic.ConcordanceSearcher;
@@ -371,8 +369,8 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     assertEquals(6, collector.size());
 
     // should only include document with "e" and not "d"
-    Filter filter = new QueryWrapperFilter(new TermQuery(new Term(
-        FIELD, "e")));
+    Query filter = new TermQuery(new Term(
+        FIELD, "e"));
     collector = new ConcordanceWindowCollector(10);
 
     searcher.search(indexSearcher, FIELD, (Query) q, filter, analyzer, collector);
@@ -495,9 +493,12 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
             new SpanTermQuery(new Term(FIELD, "a")),
             new SpanTermQuery(new Term(FIELD, "b"))
         }, 0, true);
-    SpanOrQuery q = new SpanOrQuery();
-    q.addClause(term);
-    q.addClause(phrase);
+    SpanOrQuery q = new SpanOrQuery(
+        new SpanQuery[]{
+            term,
+            phrase
+        }
+    );
 
     ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10);
     searcher.search(indexSearcher, FIELD,

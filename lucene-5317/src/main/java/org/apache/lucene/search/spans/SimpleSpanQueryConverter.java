@@ -22,17 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.ConstantScoreQuery;
-import org.apache.lucene.search.DisjunctionMaxQuery;
-import org.apache.lucene.search.FilteredQuery;
-import org.apache.lucene.search.MatchAllDocsQuery;
-import org.apache.lucene.search.MultiPhraseQuery;
-import org.apache.lucene.search.MultiTermQuery;
-import org.apache.lucene.search.PhraseQuery;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.*;
 
 public class SimpleSpanQueryConverter {
   /**
@@ -60,11 +50,18 @@ public class SimpleSpanQueryConverter {
    * differences.
    *
    * @param field single field to extract SpanQueries for
-   * @param query query to convert
+   * @param queryToConvert query to convert
    * @return SpanQuery for use in highlighting; can return empty SpanQuery
    * @throws java.io.IOException, IllegalArgumentException
    */
-  public SpanQuery convert(String field, Query query) throws IOException {
+  public SpanQuery convert(String field, Query queryToConvert) throws IOException {
+
+    Float boost = null;
+    Query query = queryToConvert;
+    if (queryToConvert instanceof BoostQuery) {
+      query = ((BoostQuery)query).getQuery();
+      boost = ((BoostQuery)query).getBoost();
+    }
     /*
      * copied nearly verbatim from
      * org.apache.lucene.search.highlight.WeightedSpanTermExtractor 
@@ -79,20 +76,14 @@ public class SimpleSpanQueryConverter {
         return getEmptySpanQuery();
       }
     } else if (query instanceof BooleanQuery) {
-      BooleanClause[] queryClauses = ((BooleanQuery) query).getClauses();
+      List<BooleanClause> queryClauses = ((BooleanQuery) query).clauses();
       List<SpanQuery> spanQs = new ArrayList<SpanQuery>();
-      for (int i = 0; i < queryClauses.length; i++) {
-        if (!queryClauses[i].isProhibited()) {
-          tryToAdd(field, convert(field, queryClauses[i].getQuery()), spanQs);
+      for (int i = 0; i < queryClauses.size(); i++) {
+        if (!queryClauses.get(i).isProhibited()) {
+          tryToAdd(field, convert(field, queryClauses.get(i).getQuery()), spanQs);
         }
       }
-      if (spanQs.size() == 0) {
-        return getEmptySpanQuery();
-      } else if (spanQs.size() == 1) {
-        return spanQs.get(0);
-      } else {
-        return new SpanOrQuery(spanQs.toArray(new SpanQuery[spanQs.size()]));
-      }
+      return addBoost(buildSpanOr(spanQs), boost);
     } else if (query instanceof PhraseQuery) {
       PhraseQuery phraseQuery = ((PhraseQuery) query);
 
@@ -126,18 +117,18 @@ public class SimpleSpanQueryConverter {
         inorder = true;
       }
 
-      SpanNearQuery sp = new SpanNearQuery(clauses, slop, inorder);
-      sp.setBoost(query.getBoost());
-      return sp;
+      SpanQuery sp = new SpanNearQuery(clauses, slop, inorder);
+      if (query instanceof BoostQuery) {
+        sp = new SpanBoostQuery(sp, ((BoostQuery)query).getBoost());
+      }
+      return addBoost(sp, boost);
     } else if (query instanceof TermQuery) {
       TermQuery tq = (TermQuery) query;
       if (tq.getTerm().field().equals(field)) {
-        return new SpanTermQuery(tq.getTerm());
+        return addBoost(new SpanTermQuery(tq.getTerm()), boost);
       } else {
         return getEmptySpanQuery();
       }
-    } else if (query instanceof FilteredQuery) {
-      return convert(field, ((FilteredQuery) query).getQuery());
     } else if (query instanceof ConstantScoreQuery) {
       return convert(field, ((ConstantScoreQuery) query).getQuery());
     } else if (query instanceof DisjunctionMaxQuery) {
@@ -149,21 +140,22 @@ public class SimpleSpanQueryConverter {
       if (spanQs.size() == 0) {
         return getEmptySpanQuery();
       } else if (spanQs.size() == 1) {
-        return spanQs.get(0);
+        return addBoost(spanQs.get(0), boost);
       } else {
-        return new SpanOrQuery(spanQs.toArray(new SpanQuery[spanQs.size()]));
+        return addBoost(new SpanOrQuery(spanQs.toArray(new SpanQuery[spanQs.size()])), boost);
       }
     } else if (query instanceof MatchAllDocsQuery) {
       return getEmptySpanQuery();
     } else if (query instanceof MultiPhraseQuery) {
 
       final MultiPhraseQuery mpq = (MultiPhraseQuery) query;
-      final List<Term[]> termArrays = mpq.getTermArrays();
+
+      final Term[][] termArrays = mpq.getTermArrays();
       //test for empty or wrong field
-      if (termArrays.size() == 0) {
+      if (termArrays.length == 0) {
         return getEmptySpanQuery();
-      } else if (termArrays.size() > 1) {
-        Term[] ts = termArrays.get(0);
+      } else if (termArrays.length > 1) {
+        Term[] ts = termArrays[0];
         if (ts.length > 0) {
           Term t = ts[0];
           if (!t.field().equals(field)) {
@@ -185,8 +177,8 @@ public class SimpleSpanQueryConverter {
         final List<SpanQuery>[] disjunctLists = new List[maxPosition + 1];
         int distinctPositions = 0;
 
-        for (int i = 0; i < termArrays.size(); ++i) {
-          final Term[] termArray = termArrays.get(i);
+        for (int i = 0; i < termArrays.length; ++i) {
+          final Term[] termArray = termArrays[i];
           List<SpanQuery> disjuncts = disjunctLists[positions[i]];
           if (disjuncts == null) {
             disjuncts = (disjunctLists[positions[i]] = new ArrayList<SpanQuery>(
@@ -220,18 +212,42 @@ public class SimpleSpanQueryConverter {
 
         SpanNearQuery sp = new SpanNearQuery(clauses, slop + positionGaps,
             inorder);
-        sp.setBoost(query.getBoost());
-        return sp;
+        return addBoost(sp, boost);
       }
-
     } else if (query instanceof MultiTermQuery) {
       MultiTermQuery tq = (MultiTermQuery) query;
       if (! tq.getField().equals(field)) {
         return getEmptySpanQuery();
       }
-      return new SpanMultiTermQueryWrapper<>((MultiTermQuery) query);
+      return addBoost(
+          new SpanMultiTermQueryWrapper<>((MultiTermQuery) query), boost);
+    } else if (query instanceof SynonymQuery) {
+      SynonymQuery sq = (SynonymQuery)query;
+      List<SpanQuery> spanQs = new ArrayList<>();
+      for (Term t : sq.getTerms()) {
+        spanQs.add(new SpanTermQuery(t));
+      }
+      return addBoost(buildSpanOr(spanQs), boost);
     }
-    return convertUnknownQuery(field, query);
+    return convertUnknownQuery(field, queryToConvert);
+  }
+
+  private SpanQuery buildSpanOr(List<SpanQuery> spanQs) {
+    if (spanQs.size() == 0) {
+      return getEmptySpanQuery();
+    } else if (spanQs.size() == 1) {
+      return spanQs.get(0);
+    } else {
+      return new SpanOrQuery(spanQs.toArray(new SpanQuery[spanQs.size()]));
+    }
+
+  }
+
+  private SpanQuery addBoost(SpanQuery sq, Float boost) {
+    if (boost == null) {
+      return sq;
+    }
+    return new SpanBoostQuery(sq, boost);
   }
 
   private void tryToAdd(String field, SpanQuery q, List<SpanQuery> qs) {

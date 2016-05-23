@@ -28,10 +28,8 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsets;
 import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsetsVisitor;
 import org.apache.lucene.search.concordance.charoffsets.OffsetLengthStartComparator;
@@ -93,39 +91,37 @@ public class ConcordanceSearcher {
   /**
    * @param searcher   searcher to search
    * @param fieldName field to build the windows on
-   * @param query     if SpanQuery, this gets passed through as is. If a regular Query, the
-   *                  Query is first converted to a SpanQuery and the filter is modified
+   * @param mainQuery     if SpanQuery, this gets passed through as is. If a regular Query, the
+   *                  Query is first converted to a SpanQuery and the filterQuery is modified
    *                  to include the original Query.
-   * @param filter    include a filter query. Value can be null
+   * @param filterQuery    include a filterQuery mainQuery. Value can be null
    * @param analyzer  analyzer to use for (re)calculating character offsets and for normalizing
    *                  the sort keys
-   * @return ConcordanceResults; empty ConcordanceResults if query == null
+   * @return ConcordanceResults; empty ConcordanceResults if mainQuery == null
    * @throws TargetTokenNotFoundException
    * @throws IllegalArgumentException
    * @throws java.io.IOException
    */
-  public void search(IndexSearcher searcher, String fieldName, Query query,
-                     Filter filter, Analyzer analyzer, AbstractConcordanceWindowCollector collector)
+  public void search(IndexSearcher searcher, String fieldName, Query mainQuery,
+                     Query filterQuery, Analyzer analyzer, AbstractConcordanceWindowCollector collector)
       throws TargetTokenNotFoundException, IllegalArgumentException,
       IOException {
-    if (query == null) {
+    if (mainQuery == null) {
       return;
     }
-    if (query instanceof SpanQuery) {
+    if (mainQuery instanceof SpanQuery) {
       // pass through
-      searchSpan(searcher, (SpanQuery) query, filter, analyzer, collector);
+      searchSpan(searcher, (SpanQuery) mainQuery, filterQuery, analyzer, collector);
     } else {
-      // convert regular query to a SpanQuery.
-      SpanQuery spanQuery = spanQueryConverter.convert(fieldName, query);
+      // convert regular mainQuery to a SpanQuery.
+      SpanQuery spanQuery = spanQueryConverter.convert(fieldName, mainQuery);
 
-      Filter origQueryFilter = new QueryWrapperFilter(query);
-      Filter updatedFilter = origQueryFilter;
+      Query updatedFilter = mainQuery;
 
-      if (filter != null) {
-        BooleanQuery bq = new BooleanQuery.Builder()
-          .add(query, BooleanClause.Occur.MUST)
-          .add(filter, BooleanClause.Occur.MUST).build();
-        updatedFilter = new QueryWrapperFilter(bq);
+      if (filterQuery != null) {
+        updatedFilter = new BooleanQuery.Builder()
+          .add(mainQuery, BooleanClause.Occur.MUST)
+          .add(filterQuery, BooleanClause.Occur.FILTER).build();
       }
       searchSpan(searcher, spanQuery, updatedFilter, analyzer, collector);
     }
@@ -133,7 +129,7 @@ public class ConcordanceSearcher {
 
   /**
    * Like
-   * {@link #search(IndexSearcher, String, Query, Filter, Analyzer, AbstractConcordanceWindowCollector)}
+   * {@link #search(IndexSearcher, String, Query, Query, Analyzer, AbstractConcordanceWindowCollector)}
    * but this takes a SpanQuery
    *
    * @param searcher    searcher
@@ -148,7 +144,7 @@ public class ConcordanceSearcher {
    */
   public void searchSpan(IndexSearcher searcher,
                          SpanQuery spanQuery,
-                         Filter filter, Analyzer analyzer, AbstractConcordanceWindowCollector collector)
+                         Query filter, Analyzer analyzer, AbstractConcordanceWindowCollector collector)
       throws TargetTokenNotFoundException, IllegalArgumentException,
       IOException {
 

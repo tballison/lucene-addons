@@ -26,10 +26,8 @@ import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsets;
 import org.apache.lucene.search.concordance.charoffsets.DocTokenOffsetsVisitor;
 import org.apache.lucene.search.concordance.charoffsets.OffsetLengthStartComparator;
@@ -59,8 +57,8 @@ public class ConcordanceArrayWindowSearcher {
   /**
    * @param searcher     indexSearcher to search
    * @param fieldName    field to search
-   * @param query        query to use
-   * @param filter       filter to apply, can be null
+   * @param mainQuery        mainQuery to use
+   * @param filterQuery       filterQuery to apply, can be null
    * @param analyzer     analyzer re-analysis text
    * @param visitor      handler for visiting windows
    * @param docIdBuilder builder for constructing unique document ids
@@ -69,27 +67,25 @@ public class ConcordanceArrayWindowSearcher {
    * @throws java.io.IOException
    */
   public void search(IndexSearcher searcher, String fieldName,
-                     Query query, Filter filter, Analyzer analyzer,
+                     Query mainQuery, Query filterQuery, Analyzer analyzer,
                      ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder) throws IllegalArgumentException,
       TargetTokenNotFoundException, IOException {
 
-    if (query instanceof SpanQuery) {
+    if (mainQuery instanceof SpanQuery) {
       // pass through
-      searchSpan(searcher, (SpanQuery) query, filter, analyzer,
+      searchSpan(searcher, (SpanQuery) mainQuery, filterQuery, analyzer,
           visitor, docIdBuilder);
     } else {
-      // convert regular query to a SpanQuery.
+      // convert regular mainQuery to a SpanQuery.
       SimpleSpanQueryConverter converter = new SimpleSpanQueryConverter();
-      SpanQuery spanQuery = converter.convert(fieldName, query);
+      SpanQuery spanQuery = converter.convert(fieldName, mainQuery);
 
-      Filter origQueryFilter = new QueryWrapperFilter(query);
-      Filter updatedFilter = origQueryFilter;
+      Query updatedFilter = mainQuery;
 
-      if (filter != null) {
-        BooleanQuery bq = new BooleanQuery.Builder()
-            .add(query, BooleanClause.Occur.MUST)
-            .add(filter, BooleanClause.Occur.MUST).build();
-        updatedFilter = new QueryWrapperFilter(bq);
+      if (filterQuery != null) {
+        updatedFilter = new BooleanQuery.Builder()
+            .add(mainQuery, BooleanClause.Occur.MUST)
+            .add(filterQuery, BooleanClause.Occur.FILTER).build();
       }
       searchSpan(searcher, spanQuery, updatedFilter, analyzer,
           visitor, docIdBuilder);
@@ -99,7 +95,7 @@ public class ConcordanceArrayWindowSearcher {
 
   public void searchSpan(IndexSearcher searcher,
                          SpanQuery query,
-                         Filter filter, Analyzer analyzer,
+                         Query filterQuery, Analyzer analyzer,
                          ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder) throws IllegalArgumentException,
       TargetTokenNotFoundException, IOException {
     String field = query.getField();
@@ -112,7 +108,7 @@ public class ConcordanceArrayWindowSearcher {
         new CAWDocTokenOffsetsVisitor(field, analyzer,
             docIdBuilder, visitor);
 
-    SpansCrawler.crawl(query, filter, searcher, docTokenOffsetsVisitor);
+    SpansCrawler.crawl(query, filterQuery, searcher, docTokenOffsetsVisitor);
 
 
   }

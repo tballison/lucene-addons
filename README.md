@@ -9,9 +9,8 @@ lucene5.5-0.2 is the more recent working branch tagged to Lucene 5.5.x.
 
 I haven't had a chance yet to get LUCENE-5317 working with Solr 6.
 
-As of this writing (5/20/2016), LUCENE-5205 and SOLR-5410 are working on all branches.
-LUCENE-5317 works in all 5.x branches; but I haven't had a chance
-to update it for Lucene 6.0 yet.
+As of this writing (5/23/2016), LUCENE-5205, SOLR-5410 and LUCENE-5317 are 
+working on all branches.  Still need to update/refactor SOLR-5411.
 
 The overall goal is to transition these components into the living
 Lucene/Solr codebase.  However, until a committer has the interest and time

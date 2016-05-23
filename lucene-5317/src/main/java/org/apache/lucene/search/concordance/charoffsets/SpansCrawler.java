@@ -3,10 +3,7 @@ package org.apache.lucene.search.concordance.charoffsets;
 import java.io.IOException;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.LeafReaderContext;
-import org.apache.lucene.search.DocIdSet;
-import org.apache.lucene.search.DocIdSetIterator;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
+import org.apache.lucene.search.*;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanWeight;
 import org.apache.lucene.search.spans.Spans;
@@ -30,18 +27,19 @@ public class SpansCrawler {
         }
       }
     } else {
+      Weight searcherWeight = searcher.createWeight(filter, false);
       for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
-        DocIdSet filterSet = filter.getDocIdSet(ctx, ctx.reader().getLiveDocs());
-        if (filterSet == null) {
-          return;
-        }
+        Scorer leafReaderContextScorer = searcherWeight.scorer(ctx);
+        //Can we tell from the scorer that there were no hits?
+        //in <= 5.x we could stop here if the filter query had no hits.
 
         Spans spans = w.getSpans(ctx, SpanWeight.Postings.POSITIONS);
         if (spans == null) {
           continue;
         }
-        DocIdSetIterator filterItr = filterSet.iterator();
-        if (filterItr == null) {
+        DocIdSetIterator filterItr = leafReaderContextScorer.iterator();
+
+        if (filterItr == null || filterItr.equals(DocIdSetIterator.empty())) {
           continue;
         }
         boolean cont = visitLeafReader(ctx, spans, filterItr, visitor);
