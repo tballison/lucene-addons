@@ -68,10 +68,6 @@ public class SimpleAnalyzerUtil {
     CharTermAttribute termAtt = stream
         .getAttribute(org.apache.lucene.analysis.tokenattributes.CharTermAttribute.class);
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-
     while (stream.incrementToken()) {
       terms.add(termAtt.toString());
     }
