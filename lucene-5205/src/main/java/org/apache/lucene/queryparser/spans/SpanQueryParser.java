@@ -406,10 +406,10 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
    * in favor of this duplication of code.  Could we add this
    * to QueryBuilder?
    *
-   * @param clauses
-   * @param conj
-   * @param mods
-   * @param q
+   * @param clauses clauses
+   * @param conj conjunction flag
+   * @param mods mods flag
+   * @param q query
    */
   protected void addClause(List<BooleanClause> clauses, int conj, int mods, Query q) {
     boolean required, prohibited;

@@ -92,7 +92,7 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   /**
    * Returns analyzer to be used on full terms within a field.
    *
-   * @param fieldName
+   * @param fieldName field name
    * @return analyzer to use on a requested field for whole terms.  Returns getAnalyzer() if
    * field is not found in wholeTermAnalyzers.
    */
@@ -113,7 +113,7 @@ public class SolrSpanQueryParser extends SpanQueryParser {
    * Returns the multiterm analyzer to be used on a specific field.
    * Override to modify behavior.
    *
-   * @param fieldName
+   * @param fieldName field name
    * @return analyzer to use on a requested field for multiTerm terms.  Returns getMultiTermAnalyzer()
    * if field is not found in multiTermAnalyzers
    */
@@ -132,7 +132,7 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   }
 
   /**
-   * @param fieldName
+   * @param fieldName field name
    * @return RewriteMethod for a given field
    */
   @Override

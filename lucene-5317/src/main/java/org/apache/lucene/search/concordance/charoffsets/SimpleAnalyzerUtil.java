@@ -17,13 +17,13 @@ package org.apache.lucene.search.concordance.charoffsets;
  * limitations under the License.
  */
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 
 /**
@@ -37,7 +37,7 @@ public class SimpleAnalyzerUtil {
    * @param s string to analyze
    * @param field field to analyze
    * @param analyzer analyzer to use
-   * @return
+   * @return list of analyzed terms
    * @throws IOException
    */
   public static List<String> getTermStrings(String s, String field, Analyzer analyzer)

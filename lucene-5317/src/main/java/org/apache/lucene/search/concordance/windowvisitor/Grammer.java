@@ -32,8 +32,8 @@ public abstract class Grammer {
   /**
    * Initialize with the minimum gram and the maximum gram
    *
-   * @param minGram
-   * @param maxGram
+   * @param minGram minimum gram
+   * @param maxGram maximum gram
    */
   public Grammer(int minGram, int maxGram) {
     if (minGram < 0 || maxGram < 0) {

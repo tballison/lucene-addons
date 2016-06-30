@@ -36,7 +36,7 @@ public class IDFIndexCalc extends IDFCalc {
 
 
   /**
-   * @param t
+   * @param t term
    * @return idf for a single term or {@link #UNSEEN_IDF} if term is not found in
    * index
    * @throws java.io.IOException
@@ -57,9 +57,9 @@ public class IDFIndexCalc extends IDFCalc {
    * A stop word will have an actual DF of 0, which will
    * be converted to {@value #DEFAULT_UNSEEN_COUNT}.
    *
-   * @param s
-   * @param t
-   * @return
+   * @param s string
+   * @param t term
+   * @return sum of idf for individual terms
    * @throws java.io.IOException
    */
   public double multiTermIDFSum(String s, Term t) throws IOException {
@@ -73,8 +73,8 @@ public class IDFIndexCalc extends IDFCalc {
   }
 
   /**
-   * @param s
-   * @param t
+   * @param s string
+   * @param t term from which to use field
    * @return double[] of length 2, stats[0] is the sum of the individual term idfs
    * and stats[1] is the minimum idf for the phrase
    * @throws java.io.IOException

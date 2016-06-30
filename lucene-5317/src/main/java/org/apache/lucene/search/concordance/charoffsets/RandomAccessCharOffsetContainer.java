@@ -136,9 +136,9 @@ public class RandomAccessCharOffsetContainer {
    * Find the closest non-null token starting from startToken
    * and ending with stopToken (inclusive).
    *
-   * @param startToken
-   * @param stopToken
-   * @param map
+   * @param startToken start token
+   * @param stopToken end token
+   * @param map map to use
    * @return closest non-null token offset to the startToken; can return
    * {@link #NULL_OFFSET} if no non-null offset was found
    */

@@ -17,12 +17,12 @@ package org.apache.lucene.search.concordance.classic.impl;
  * limitations under the License.
  */
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.search.concordance.classic.DocIdBuilder;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Simple class that grabs the stringValue() of a specified
@@ -61,7 +61,7 @@ public class FieldBasedDocIdBuilder implements DocIdBuilder {
   /**
    * Instead of getField(String fieldName), this allows for extension
    *
-   * @return
+   * @return fields to use
    */
   public Set<String> getFields() {
     Set<String> fields = new HashSet<String>();

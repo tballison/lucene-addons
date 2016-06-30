@@ -17,14 +17,14 @@ package org.apache.lucene.search.concordance.windowvisitor;
  * limitations under the License.
  */
 
-import org.apache.lucene.util.mutable.MutableValueInt;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.lucene.util.mutable.MutableValueInt;
 
 /**
  * Reusable object that records arrays of terms in the words before a target, in
@@ -70,9 +70,6 @@ class ConcordanceArrayWindow {
   /**
    * escape a string that might be made up entirely
    * of stop word sentinels or field separator sentinels
-   *
-   * @param s
-   * @return
    */
   private static String escape(String s) {
     if (s == null) {
@@ -91,8 +88,6 @@ class ConcordanceArrayWindow {
   /**
    * assumes that this is not called on a true stop word/field separator marker!
    *
-   * @param s
-   * @return unescaped string
    */
   private static String unescape(String s) {
     if (s == null) {
@@ -143,8 +138,9 @@ class ConcordanceArrayWindow {
   }
 
   /**
-   * @param token
-   * @return
+   * Convert token to string
+   * @param token token to convert
+   * @return string
    */
   protected static String tokenToString(String token) {
     if (token.equals(STOP_WORD)) {
@@ -157,7 +153,7 @@ class ConcordanceArrayWindow {
   }
 
   /**
-   * @param string
+   * @param string token is stop or field separator
    * @return whether the string is a sentinel for a stop word or field separator
    */
   protected static boolean isStopOrFieldSeparator(String string) {
@@ -171,7 +167,7 @@ class ConcordanceArrayWindow {
   }
 
   /**
-   * @param string
+   * @param string token to test
    * @return whether the string is a stop word sentinel
    */
   protected static boolean isStop(String string) {
@@ -185,7 +181,7 @@ class ConcordanceArrayWindow {
   }
 
   /**
-   * @param string
+   * @param string token to test
    * @return whether the string is a field separator sentinel
    */
   protected static boolean isFieldSeparator(String string) {

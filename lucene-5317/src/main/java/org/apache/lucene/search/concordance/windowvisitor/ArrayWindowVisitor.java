@@ -54,8 +54,8 @@ public abstract class ArrayWindowVisitor<T> {
    * Implement this to do the calculations on a context window.
    * Make sure to handle maxWindows appropriately.
    *
-   * @param docId
-   * @param window
+   * @param docId document id
+   * @param window window to visit
    * @throws java.io.IOException
    */
   abstract public void visit(String docId, ConcordanceArrayWindow window)

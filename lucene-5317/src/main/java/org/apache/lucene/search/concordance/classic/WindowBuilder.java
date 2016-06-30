@@ -17,6 +17,10 @@ package org.apache.lucene.search.concordance.classic;
  * limitations under the License.
  */
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
 import org.apache.lucene.document.Document;
@@ -27,10 +31,6 @@ import org.apache.lucene.search.concordance.classic.impl.DefaultSortKeyBuilder;
 import org.apache.lucene.search.concordance.classic.impl.FieldBasedDocIdBuilder;
 import org.apache.lucene.search.concordance.classic.impl.IndexIdDocIdBuilder;
 import org.apache.lucene.search.concordance.classic.impl.SimpleDocMetadataExtractor;
-
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 
 /**
@@ -218,8 +218,8 @@ public class WindowBuilder {
   /**
    * Simple wrapper around metadataExtractor
    *
-   * @param document
-   * @return
+   * @param document document from which to extract metadata
+   * @return map
    */
   public Map<String, String> extractMetadata(Document document) {
     return metadataExtractor.extract(document);
