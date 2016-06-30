@@ -217,8 +217,8 @@ public class WindowBuilder {
   /**
    * Simple wrapper around metadataExtractor
    *
-   * @param document
-   * @return
+   * @param document document from which to extract metadata
+   * @return map
    */
   public Map<String, String> extractMetadata(Document document) {
     return metadataExtractor.extract(document);

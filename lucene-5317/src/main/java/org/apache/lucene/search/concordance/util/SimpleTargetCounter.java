@@ -41,8 +41,8 @@ public class SimpleTargetCounter {
    * If you want to visit more than basic terms (e.g. SpanNear),
    * see {@link org.apache.lucene.search.concordance.windowvisitor.TargetVisitor}
    *
-   * @param query
-   * @param searcher
+   * @param query query
+   * @param searcher searcher
    * @return target term results
    * @throws java.io.IOException
    */
