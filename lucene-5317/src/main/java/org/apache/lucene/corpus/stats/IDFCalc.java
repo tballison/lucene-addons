@@ -40,7 +40,7 @@ public class IDFCalc {
   }
 
   /**
-   * @param df
+   * @param df document freq
    * @return inverse document frequency for @param df.
    * If df <= 0, returns {@link #UNSEEN_IDF}
    */
@@ -62,8 +62,8 @@ public class IDFCalc {
   /**
    * calculate the document frequency from an IDF
    *
-   * @param idf
-   * @return
+   * @param idf idf
+   * @return estimated frequency based on idf
    */
   public double unIDF(double idf) {
     return unIDF(D_PLUS_ONE, idf);
@@ -73,8 +73,8 @@ public class IDFCalc {
    * calculate the document frequency from D and an idf
    *
    * @param totalDocs total number of documents
-   * @param idf
-   * @return
+   * @param idf idf
+   * @return estimated document frequency
    */
   public double unIDF(int totalDocs, double idf) {
     return (double) (totalDocs) / (Math.pow(Math.E, idf)); // make sure the base
