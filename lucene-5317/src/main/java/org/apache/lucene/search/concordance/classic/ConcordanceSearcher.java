@@ -71,7 +71,7 @@ public class ConcordanceSearcher {
   /**
    * Constructor for windowbuilder and SimpleSpanQueryConverter
    *
-   * @param windowBuilder
+   * @param windowBuilder window builder
    */
   public ConcordanceSearcher(WindowBuilder windowBuilder) {
     this(windowBuilder, new SimpleSpanQueryConverter());
@@ -99,7 +99,6 @@ public class ConcordanceSearcher {
    * @param filter    include a filter query. Value can be null
    * @param analyzer  analyzer to use for (re)calculating character offsets and for normalizing
    *                  the sort keys
-   * @return ConcordanceResults; empty ConcordanceResults if query == null
    * @throws TargetTokenNotFoundException
    * @throws IllegalArgumentException
    * @throws java.io.IOException
@@ -141,7 +140,6 @@ public class ConcordanceSearcher {
    * @param filter    filter for document retrieval
    * @param analyzer  to re-analyze terms for window calculations and sort key building
    * @param collector to process (and store) the results
-   * @return nothing, all the action is performed by the collector
    * @throws TargetTokenNotFoundException
    * @throws IllegalArgumentException
    * @throws java.io.IOException
@@ -191,7 +189,7 @@ public class ConcordanceSearcher {
    * Set the converter to use to convert a Query to a SpanQuery.
    * The need for this will go away when LUCENE-2878 is completed.
    *
-   * @param converter
+   * @param converter converter to use to convert queries to spanqueries
    */
   public void setSpanQueryConverter(SimpleSpanQueryConverter converter) {
     this.spanQueryConverter = converter;

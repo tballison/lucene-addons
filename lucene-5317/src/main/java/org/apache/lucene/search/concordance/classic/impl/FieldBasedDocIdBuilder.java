@@ -60,7 +60,7 @@ public class FieldBasedDocIdBuilder implements DocIdBuilder {
   /**
    * Instead of getField(String fieldName), this allows for extension
    *
-   * @return
+   * @return fields to use
    */
   public Set<String> getFields() {
     Set<String> fields = new HashSet<String>();

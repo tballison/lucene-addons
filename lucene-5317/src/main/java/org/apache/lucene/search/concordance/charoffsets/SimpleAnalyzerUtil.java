@@ -25,6 +25,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 
+
 /**
  * Simple util class for Analyzers
  */
@@ -36,7 +37,7 @@ public class SimpleAnalyzerUtil {
    * @param s string to analyze
    * @param field field to analyze
    * @param analyzer analyzer to use
-   * @return
+   * @return list of analyzed terms
    * @throws IOException
    */
   public static List<String> getTermStrings(String s, String field, Analyzer analyzer)
@@ -67,6 +68,9 @@ public class SimpleAnalyzerUtil {
     CharTermAttribute termAtt = stream
         .getAttribute(org.apache.lucene.analysis.tokenattributes.CharTermAttribute.class);
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
     while (stream.incrementToken()) {
       terms.add(termAtt.toString());
