@@ -52,7 +52,7 @@ public class SimpleSpanQueryConverter {
    * @param field single field to extract SpanQueries for
    * @param queryToConvert query to convert
    * @return SpanQuery for use in highlighting; can return empty SpanQuery
-   * @throws java.io.IOException, IllegalArgumentException
+   * @throws java.io.IOException
    */
   public SpanQuery convert(String field, Query queryToConvert) throws IOException {
 
