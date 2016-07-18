@@ -15,6 +15,10 @@
  * limitations under the License.
  */
 package org.apache.solr.search;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryUtils;
 import org.apache.solr.SolrTestCaseJ4;
@@ -23,10 +27,6 @@ import org.apache.solr.request.SolrRequestInfo;
 import org.apache.solr.response.SolrQueryResponse;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 
 
@@ -942,7 +942,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
         "+apache +solr");
   }
 
-  /**
+  /*
    * this test does not assert anything itself, it simply toggles a static
    * boolean informing an @AfterClass method to assert that every default
    * qparser and valuesource parser configured was recorded by
@@ -977,7 +977,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
   }
 
 
-  /**
+  /*
    * NOTE: defType is not only used to pick the parser, but also to record
    * the parser being tested for coverage sanity checking
    * @see #testParserCoverage
@@ -993,7 +993,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     }
   }
 
-  /**
+  /*
    * NOTE: defType is not only used to pick the parser, but, if non-null it is
    * also to record the parser being tested for coverage sanity checking
    *
@@ -1029,7 +1029,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     }
   }
 
-  /**
+  /*
    * the function name for val parser coverage checking is extracted from
    * the first input
    * @see #assertQueryEquals
@@ -1044,7 +1044,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     }
   }
 
-  /**
+  /*
    * the function name for val parser coverage checking is extracted from
    * the first input
    * @see #assertQueryEquals

@@ -31,9 +31,9 @@ import org.apache.lucene.util.mutable.MutableValueInt;
  * Reusable object that records arrays of terms in the words before a target, in
  * the target and after a target. It includes information about overall tokens
  * as well.
- * <p/>
+ * <p>
  * Current implementation chooses reuse vs. security...no defensive copying of arrays.
- * <p/>
+ * <p>
  * See also the classic ConcordanceWindow that records strings for the context before, the
  * target and the context after the target.
  */

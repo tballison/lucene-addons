@@ -43,7 +43,7 @@ import org.apache.lucene.util.LuceneTestCase;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-/** Utilities and so on for testing queryparsers */
+/* Utilities and so on for testing queryparsers */
 public abstract class QueryParserTestCase extends LuceneTestCase {
   public static Analyzer qpAnalyzer;
   public static Analyzer lcMultiTermAnalyzer;
@@ -61,7 +61,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
     lcMultiTermAnalyzer = null;
   }
 
-  /**
+  /*
    * Filter which discards the token 'stop' and which expands the
    * token 'phrase' into 'phrase1 phrase2'
    */
@@ -102,7 +102,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
     }
   }
 
-  /** Filters MockTokenizer with StopFilter. */
+  /* Filters MockTokenizer with StopFilter. */
   public static final class QPTestAnalyzer extends Analyzer {
     @Override
     public TokenStreamComponents createComponents(String fieldName) {
@@ -111,7 +111,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
     }
   }
   
-  /**
+  /*
    * Mock collation analyzer: indexes terms as "collated" + term
    */
   public final class MockCollationFilter extends TokenFilter {
@@ -133,7 +133,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
     }
   }
   
-  /** Filters whitespace with MockCollationFilter */
+  /* Filters whitespace with MockCollationFilter */
   public final class MockCollationAnalyzer extends Analyzer {
     @Override
     public TokenStreamComponents createComponents(String fieldName) {
@@ -142,7 +142,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
     }
   }
   
-  /**
+  /*
    * adds synonym of "dog" for "dogs".
    */
   protected static class MockSynonymFilter extends TokenFilter {
@@ -173,7 +173,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
     } 
   }
   
-  /** whitespace+lowercase analyzer with synonyms */
+  /* whitespace+lowercase analyzer with synonyms */
   public final class Analyzer1 extends Analyzer {
     @Override
     public TokenStreamComponents createComponents(String fieldName) {
@@ -182,7 +182,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
     }
   }
   
-  /** whitespace+lowercase analyzer without synonyms */
+  /* whitespace+lowercase analyzer without synonyms */
   public final class Analyzer2 extends Analyzer {
     @Override
     public TokenStreamComponents createComponents(String fieldName) {
@@ -244,14 +244,14 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
     }
   }
   
-  /** for testing DateTools support */
+  /* for testing DateTools support */
   protected String getDate(String s, DateTools.Resolution resolution) throws Exception {
     // we use the default Locale since LuceneTestCase randomizes it
     DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());
     return getDate(df.parse(s), resolution);      
   }
   
-  /** for testing DateTools support */
+  /* for testing DateTools support */
   protected String getDate(Date d, DateTools.Resolution resolution) {
      return DateTools.dateToString(d, resolution);
   }
@@ -264,7 +264,7 @@ public abstract class QueryParserTestCase extends LuceneTestCase {
                "{" + getDate(startDate, resolution) + " TO " + getDate(endDate, resolution) + "}");
   }
   
-  /** formats the given year+month+day as a localized date in the gregorian calendar */
+  /* formats the given year+month+day as a localized date in the gregorian calendar */
   protected String getLocalizedDate(int year, int month, int day) {
     // we use the default Locale/TZ since LuceneTestCase randomizes it
     DateFormat df = DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault());

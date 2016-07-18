@@ -405,7 +405,11 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     assertEquals(expectedSpan, qp.parse("\"dogs\"^2"));
   }
 
-  /** forms multiphrase query */
+  /**
+   * forms multiphrase query
+   *
+   * @throws Exception if something goes wrong
+   */
   public void testSynonymsPhrase() throws Exception {
     SpanQuery expected = new SpanNearQuery(
         new SpanQuery[]{

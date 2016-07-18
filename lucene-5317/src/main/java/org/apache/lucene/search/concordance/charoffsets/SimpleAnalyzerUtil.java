@@ -38,7 +38,7 @@ public class SimpleAnalyzerUtil {
    * @param field field to analyze
    * @param analyzer analyzer to use
    * @return list of analyzed terms
-   * @throws IOException
+   * @throws IOException if there's an IOException during analysis
    */
   public static List<String> getTermStrings(String s, String field, Analyzer analyzer)
       throws IOException {
@@ -55,7 +55,7 @@ public class SimpleAnalyzerUtil {
    * @param analyzer analyzer
    * @param terms    list for reuse
    * @return list of strings
-   * @throws java.io.IOException
+   * @throws java.io.IOException if there's an IOException during analysis
    */
   public static List<String> getTermStrings(String s, String field, Analyzer analyzer,
                                             List<String> terms) throws IOException {
@@ -79,7 +79,7 @@ public class SimpleAnalyzerUtil {
 
   /**
    * This calculates a substring from an array of StorableFields.
-   * <p/>
+   * <p>
    * This attempts to do the best job possible, and at worst will
    * return an empty string.  If the start or end is within a gap,
    * or before 0 or after the total number of characters, this will

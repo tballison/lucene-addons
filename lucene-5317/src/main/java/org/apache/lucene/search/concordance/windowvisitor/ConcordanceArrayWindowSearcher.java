@@ -46,7 +46,7 @@ import org.apache.lucene.search.spans.SpanQuery;
 /**
  * Calculates term statistics for the tokens before and after a given query
  * term.
- * <p/>
+ * <p>
  * This can be very useful to help users identify synonyms or find patterns in
  * their data.
  */
@@ -62,9 +62,9 @@ public class ConcordanceArrayWindowSearcher {
    * @param analyzer     analyzer re-analysis text
    * @param visitor      handler for visiting windows
    * @param docIdBuilder builder for constructing unique document ids
-   * @throws IllegalArgumentException
-   * @throws TargetTokenNotFoundException
-   * @throws java.io.IOException
+   * @throws IllegalArgumentException if field not found in query, e.g.
+   * @throws TargetTokenNotFoundException if target token is not found
+   * @throws java.io.IOException if there's an underlying IOException with the reader
    */
   public void search(IndexSearcher searcher, String fieldName,
                      Query mainQuery, Query filterQuery, Analyzer analyzer,

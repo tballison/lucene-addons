@@ -25,11 +25,11 @@ import java.util.Map;
  * before a target term (pre), the target term and then the words after the
  * target term (post). A window also has a sort key to allow for various methods
  * of sorting.
- * <p/>
+ * <p>
  * For various applications, it has also been useful to store a unique document key,
  * character offset (start and end) of the full
  * window as well as metadata from the document for the given window.
- * <p/>
+ * <p>
  * This class is experimental and may change in incompatible ways in the future.
  */
 public class ConcordanceWindow {

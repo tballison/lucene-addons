@@ -28,7 +28,7 @@ import org.apache.lucene.search.concordance.classic.DocMetadataExtractor;
 /**
  * Simple class that returns a map of key value pairs
  * for the fields specified during initialization.
- * <p/>
+ * <p>
  * Beware! For multi-valued fields, this will take only the first value.
  */
 public class SimpleDocMetadataExtractor implements DocMetadataExtractor {

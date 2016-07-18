@@ -22,7 +22,7 @@ import org.apache.solr.request.SolrQueryRequest;
 
 /**
  * Solr's variant on the Lucene SpanQueryParser syntax.
- * <p/>
+ * <p>
  * <br>
  * Other parameters:
  * <ul>

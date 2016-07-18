@@ -111,18 +111,18 @@ public class SQPTestBase extends LuceneTestCase {
    * clauses of type BooleanClause.Occur.MUST_NOT. Also, the
    * {@link org.apache.lucene.search.spans.SpanQuery} will only cover a single field, whereas the {@link org.apache.lucene.search.Query}
    * might contain multiple fields.
-   * <p/>
+   * <p>
    * Returns an empty SpanQuery if the {@link org.apache.lucene.search.Query} is a class that
    * is handled, but for some reason can't be converted from a {@link org.apache.lucene.search.Query} to a
    * {@link org.apache.lucene.search.spans.SpanQuery}. This can happen for many reasons: e.g. if the Query
    * contains no terms in the requested "field" or the Query is a MatchAllDocsQuery.
-   * <p/>
+   * <p>
    * Throws IllegalArgumentException if the Query is a class that is
    * is not yet handled.
-   * <p/>
+   * <p>
    * This class does not rewrite the SpanQuery before returning it.
    * Clients are required to rewrite if necessary.
-   * <p/>
+   * <p>
    * Much of this code is copied directly from
    * oal.search.highlight.WeightedSpanTermExtractor. There are some subtle
    * differences.
@@ -130,7 +130,8 @@ public class SQPTestBase extends LuceneTestCase {
    * @param field single field to extract SpanQueries for
    * @param query query to convert
    * @return SpanQuery for use in highlighting; can return empty SpanQuery
-   * @throws java.io.IOException, IllegalArgumentException
+   * @throws java.io.IOException for an underlying
+   * IOException in the IndexReader or an IllegalArgumentException if the query type is not recognized
    */
   public SpanQuery convert(String field, Query query) throws IOException {
     /*

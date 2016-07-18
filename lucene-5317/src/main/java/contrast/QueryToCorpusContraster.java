@@ -172,7 +172,7 @@ public class QueryToCorpusContraster {
    * Sets the analyzer to be used if term vectors are not stored.
    *
    * @param analyzer  analyzer to be used if term vectors are not stored
-   * @param maxTokens maximum number of tokens to analyze. If < 0,
+   * @param maxTokens maximum number of tokens to analyze. If &lt; 0,
    *                  all tokens will be analyzed.
    */
   public void setAnalyzer(Analyzer analyzer, int maxTokens) {

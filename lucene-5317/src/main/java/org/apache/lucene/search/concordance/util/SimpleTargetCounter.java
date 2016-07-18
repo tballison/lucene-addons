@@ -36,15 +36,14 @@ public class SimpleTargetCounter {
    * counts on the individual terms within a query.  This relies on
    * IndexReader and does not perform any concordance search/retrieval;
    * it is, therefore, very fast.
-   * <p/>
-   * <p/>
+   * <p>
    * If you want to visit more than basic terms (e.g. SpanNear),
    * see {@link org.apache.lucene.search.concordance.windowvisitor.TargetVisitor}
    *
    * @param query query
    * @param searcher searcher
    * @return target term results
-   * @throws java.io.IOException
+   * @throws java.io.IOException if there is an IOException from the searcher
    */
   public SimpleTargetTermResults searchSingleTerms(Query query, IndexSearcher searcher)
       throws IOException {
@@ -81,7 +80,7 @@ public class SimpleTargetCounter {
    * @param query  query
    * @param reader reader
    * @return number of docs with a hit
-   * @throws java.io.IOException
+   * @throws java.io.IOException if there is an exception from teh searcher
    */
   public int simpleDocCount(Query query, IndexReader reader) throws IOException {
     IndexSearcher searcher = new IndexSearcher(reader);

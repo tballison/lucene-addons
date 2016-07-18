@@ -28,20 +28,20 @@ import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
  * A wgram may contain stop words inside it.
  * Stopwords inside of a wgram do not count towards the w-
  * so a "bigram" may contain one or more stopwords inside it.
- * <p/>
+ * <p>
  * For example, the string "the department of state and" would have the following
  * ngrams (n=2) (no stopword removal):
- * <p/>
+ * <p>
  * "the department"
  * "department of"
  * "of state"
- * <p/>
+ * <p>
  * The same string would only have one wgram (w=2)
  * "department of state"
- * <p/>
+ * <p>
  * The w stands for Wilson, as in George V. Wilson, my colleague who shared
  * this idea with me.
- * <p/>
+ * <p>
  * This is a fairly useful language-agnostic hack which in combination
  * with corpus statistics works fairly well in practice for "chunking" tasks.
  */

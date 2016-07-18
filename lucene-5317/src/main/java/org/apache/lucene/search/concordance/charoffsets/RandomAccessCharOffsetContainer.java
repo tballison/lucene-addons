@@ -25,7 +25,7 @@ import java.util.Map;
  * Class to record results for looking up normalized terms (String) and
  * character offsets for specified tokens. Will return NULL_TERM/NULL_OFFSET if
  * a token offset was not found.
- * <p/>
+ * <p>
  * Has utility methods for safely getting the closest found token. This is
  * useful for when a concordance window ends in a stop word (no term/offset
  * info).

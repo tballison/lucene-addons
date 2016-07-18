@@ -68,7 +68,7 @@ import org.apache.solr.search.SolrIndexSearcher;
  * <str name="maxNGram">2</str>
  * <str name="minTF">3</str>
  * <str name="numResults">50</str>
- * <p/>
+ * <p>
  * <!--  More fields
  * <str name="maxWindows">500</str>
  * <str name="debug">false</str>

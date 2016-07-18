@@ -31,10 +31,10 @@ import org.apache.solr.schema.TextField;
  * Overrides features of Lucene's SpanQueryParser to enable
  * pulling the correct analyzer for each field and for
  * handling non-analyzed fields.
- * <p/>
+ * <p>
  * This also allows Solr non-text fields to parse the
  * appropriate components of the query string.
- * <p/>
+ * <p>
  * The process could be simpler, but this returns a null analyzer
  * if the field is not text and/or has a null analyzer.  The SpanQueryParser
  * then calls the "handleNullAnalyzer..." functions when it gets a null analyzer.

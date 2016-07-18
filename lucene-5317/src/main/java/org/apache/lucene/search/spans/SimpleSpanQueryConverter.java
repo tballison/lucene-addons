@@ -33,28 +33,28 @@ public class SimpleSpanQueryConverter {
    * clauses of type BooleanClause.Occur.MUST_NOT. Also, the
    * {@link org.apache.lucene.search.spans.SpanQuery} will only cover a single field, whereas the {@link org.apache.lucene.search.Query}
    * might contain multiple fields.
-   * <p/>
+   * <p>
    * Returns an empty SpanQuery if the {@link org.apache.lucene.search.Query} is a class that
    * is handled, but for some reason can't be converted from a {@link org.apache.lucene.search.Query} to a
    * {@link org.apache.lucene.search.spans.SpanQuery}. This can happen for many reasons: e.g. if the Query
    * contains no terms in the requested "field" or the Query is a MatchAllDocsQuery.
-   * <p/>
+   * <p>
    * Throws IllegalArgumentException if the Query is a class that is
    * is not yet handled.
-   * <p/>
+   * <p>
    * This class does not rewrite the SpanQuery before returning it.
    * Clients are required to rewrite if necessary.
-   * <p/>
+   * <p>
    * Much of this code is copied directly from
    * oal.search.highlight.WeightedSpanTermExtractor. There are some subtle
    * differences.
-   * <p/>
+   * <p>
    * Throws IllegalArgumentException for unknown query types.
    *
    * @param field single field to extract SpanQueries for
    * @param queryToConvert query to convert
    * @return SpanQuery for use in highlighting; can return empty SpanQuery
-   * @throws java.io.IOException
+   * @throws java.io.IOException if encountered during parse
    */
   public SpanQuery convert(String field, Query queryToConvert) throws IOException {
 
@@ -263,7 +263,7 @@ public class SimpleSpanQueryConverter {
    * Extend this to handle queries that are not currently handled.
    * Might consider extending SpanQueryConverter in the queries compilation unit;
    * that includes CommonTermsQuery.
-   * <p/>
+   * <p>
    * In this class, this always throws an IllegalArgumentException
    *
    * @param field field to convert
