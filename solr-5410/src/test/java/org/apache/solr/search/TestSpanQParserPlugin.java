@@ -70,7 +70,7 @@ public class TestSpanQParserPlugin extends SolrTestCaseJ4 {
     assertJQ(req("defType", "span", "q", "t1 t2"), "/response/numFound==2");
   }
 
-  /**
+  /*
    * Test that multiterm analysis chain is used for prefix, wildcard and fuzzy
    */
   public void testMultitermAnalysis() throws Exception {
@@ -80,7 +80,7 @@ public class TestSpanQParserPlugin extends SolrTestCaseJ4 {
     assertJQ(req("defType", "span", "q", "f\u00F6\u00F6bat~1"), "/response/numFound==1");
   }
 
-  /**
+  /*
    * Test negative query
    */
   public void testNegativeQuery() throws Exception {

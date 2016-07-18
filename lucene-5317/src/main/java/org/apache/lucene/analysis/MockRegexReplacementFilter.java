@@ -27,13 +27,13 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 /**
  * This allows for easy mocking of normalization filters
  * like ascii or icu normalization.
- * <p/>
+ * <p>
  * If a token is reduced to zero-length through this process,
  * the token will not be returned.
- * <p/>
+ * <p>
  * Under the hood, a LinkedHashMap is used to maintain the insertion order
  * of replacements.entrySet() that is passed in via initialization.
- * <p/>
+ * <p>
  * Regexes are case sensitive.  Make sure to add (?i) if you want
  * case insensitivity.
  */

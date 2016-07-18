@@ -1,5 +1,3 @@
-package org.apache.lucene.queryparser.spans;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,9 @@ package org.apache.lucene.queryparser.spans;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.lucene.queryparser.spans;
+
+
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,11 +80,11 @@ import org.apache.lucene.search.spans.SpanQuery;
  * </ul>
  * <p> Main additions in SpanQueryParser syntax vs. classic:
  * <ul>
- * <li> Can require "in order" for phrases with slop with the ~> defaultOperator: &quot;jakarta apache&quot;~>3</li>
+ * <li> Can require "in order" for phrases with slop with the ~&gt; defaultOperator: &quot;jakarta apache&quot;~&gt;3</li>
  * <li> Can specify "not near" &quot;bieber fever&quot;!~3,10 ::
  * find &quot;bieber&quot; but not if &quot;fever&quot; appears within 3 words before or
  * 10 words after it.</li>
- * <li> Fully recursive phrasal queries with [ and ]; as in: [[jakarta apache]~3 lucene]~>4 :: 
+ * <li> Fully recursive phrasal queries with [ and ]; as in: [[jakarta apache]~3 lucene]~&gt;4 ::
  * find &quot;jakarta&quot; within 3 words of &quot;apache&quot;, and that hit has to be within four
  * words before &quot;lucene&quot;.</li>
  * <li> Can also use [] for single level phrasal queries instead of &quot;&quot; as in: [jakarta apache]</li>
@@ -104,7 +105,7 @@ import org.apache.lucene.search.spans.SpanQuery;
  * <ul>
  * <li> Can specify prefix length in fuzzy queries: jakarta~1,2 (edit distance=1, prefix=2)</li>
  * <li> Can specify prefix Optimal String Alignment (OSA) vs Levenshtein 
- * in fuzzy queries: jakarta~1 (OSA) vs jakarta~>1 (Levenshtein)</li>
+ * in fuzzy queries: jakarta~1 (OSA) vs jakarta~&gt;1 (Levenshtein)</li>
  * </ul>
  * 
  * <p> <b>Analysis</b>
@@ -131,14 +132,13 @@ import org.apache.lucene.search.spans.SpanQuery;
  * <p>The parser tries to replicate the behavior of the Classic QueryParser.  Stop words
  * are generally ignored.
  * <p>  However, in a "near" query, extra slop is added for each stop word that
- * occurs after the first non-stop word and before the last non-stop word (or, initial and trailing stop words 
- * are ignored in the additions to slop).
- * For example, "walked the dog" is converted to "walked dog"~>1 behind the scenes.  Like the Classic
+ * occurs after the first non-stop word and before the last non-stop word
+ * (or, initial and trailing stop words are ignored in the additions to slop).
+ * For example, "walked the dog" is converted to "walked dog"~&gt;1 behind the scenes.  Like the Classic
  * QueryParser this will lead to false positives with any word between "walked" and "dog".  Unlike
  * Classic QueryParser, this will also lead to false positives of "walked dog".
  * <p>
  * Examples
- * <p>
  * <ul>
  * <li>Term: "the" will return an empty SpanQuery (similar to classic queryparser)</li>
  * <li>BooleanOr: (the apache jakarta) will drop the stop word and return a 
@@ -150,9 +150,9 @@ import org.apache.lucene.search.spans.SpanQuery;
 
  * <p> Expert: Other subtle differences between SpanQueryParser and classic QueryParser.
  * <ul>
- * <li>Fuzzy queries with slop > 2 are handled by SlowFuzzyQuery.  The developer can set the minFuzzySim to limit
+ * <li>Fuzzy queries with slop &gt; 2 are handled by SlowFuzzyQuery.  The developer can set the minFuzzySim to limit
  * the maximum edit distance (i.e. turn off SlowFuzzyQuery by setting fuzzyMinSim = 2.0f.</li>
- * <li>Fuzzy queries with edit distance >=1 are rounded so that an exception is not thrown.</li>
+ * <li>Fuzzy queries with edit distance &gt;=1 are rounded so that an exception is not thrown.</li>
  * </ul>
  * <p> Truly Expert: there are a few other very subtle differences that are documented in comments
  * in the sourcecode in the header of SpanQueryParser.

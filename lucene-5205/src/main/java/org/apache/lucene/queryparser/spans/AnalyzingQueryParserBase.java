@@ -42,19 +42,24 @@ public abstract class AnalyzingQueryParserBase extends QueryBuilder {
   
   /**
    * Default initialization. The analyzer is used for both whole terms and multiTerms.
-   */
-  public AnalyzingQueryParserBase(Analyzer a) {
-    super(a);
-    this.multiTermAnalyzer = a;
+   *
+   * @param analyzer to use for both full terms and multiterms
+     */
+  public AnalyzingQueryParserBase(Analyzer analyzer) {
+    super(analyzer);
+    this.multiTermAnalyzer = analyzer;
   }
 
   /**
    * Expert.  Set a different analyzer for whole terms vs. multiTerm subcomponents.
-   * <p> 
+   * <p>
    * Warning: this initializer has a side effect of setting normMultiTerms = NORM_MULTI_TERMS.ANALYZE
-   */
-  public AnalyzingQueryParserBase(Analyzer a, Analyzer multiTermAnalyzer) {
-    super(a);
+   *
+   * @param analyzer analyzer for full terms
+   * @param multiTermAnalyzer analyzer for multiterms
+     */
+  public AnalyzingQueryParserBase(Analyzer analyzer, Analyzer multiTermAnalyzer) {
+    super(analyzer);
     this.multiTermAnalyzer = multiTermAnalyzer;
   }
 
@@ -62,17 +67,22 @@ public abstract class AnalyzingQueryParserBase extends QueryBuilder {
   //modify to throw only parse exception
 
   /**
-   * Notionally overrides functionality from analyzeMultitermTerm.  Differences 
+   * Notionally overrides functionality from analyzeMultitermTerm.  Differences
    * are that this consumes the full tokenstream, and it throws ParseException
    * if it encounters no content terms or more than one.
    * <p>
    * Need to consume full tokenstream even if on exception because otherwise
    * analyzer could be left in bad state!!!
-   * 
-   * If getMultitermAnalyzer(String fieldName) returns null, 
+   *
+   * If getMultitermAnalyzer(String fieldName) returns null,
    * this returns "part" unaltered.
+   *
+   * @param multiTermAnalyzer analyzer for multiterms
+   * @param field default field
+   * @param part term part to analyze
    * @return bytesRef to term part
-   */
+   * @throws ParseException if there is a failure while parsing
+     */
   protected BytesRef analyzeMultitermTermParseEx(Analyzer multiTermAnalyzer, String field, String part) throws ParseException {
     //TODO: Modify QueryParserBase, analyzeMultiTerm doesn't currently consume all tokens, and it 
     //throws RuntimeExceptions and IllegalArgumentExceptions instead of parse.

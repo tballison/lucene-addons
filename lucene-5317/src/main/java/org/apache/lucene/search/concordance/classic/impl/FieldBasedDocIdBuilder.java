@@ -27,13 +27,13 @@ import org.apache.lucene.search.concordance.classic.DocIdBuilder;
  * Simple class that grabs the stringValue() of a specified
  * field to use as a document's unique key for the ConcordanceWindow
  * building process.
- * <p/>
+ * <p>
  * Note that this takes only the first value of the field.
  * If a multi-valued field is selected, surprises might happen.
- * <p/>
+ * <p>
  * Also, note that if the field is not found, this returns
  * a string representation of the ephemeral Lucene docId.
- * <p/>
+ * <p>
  * Some users might want to throw an exception instead of this behavior.
  */
 public class FieldBasedDocIdBuilder implements DocIdBuilder {

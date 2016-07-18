@@ -97,9 +97,10 @@ public class ConcordanceSearcher {
    * @param filterQuery    include a filterQuery mainQuery. Value can be null
    * @param analyzer  analyzer to use for (re)calculating character offsets and for normalizing
    *                  the sort keys
-   * @throws TargetTokenNotFoundException
-   * @throws IllegalArgumentException
-   * @throws java.io.IOException
+   * @param collector collector to use for search
+   * @throws TargetTokenNotFoundException if target token is not found
+   * @throws IllegalArgumentException if the field can't be found in the main query
+   * @throws java.io.IOException if there is an underlying IOException in the reader
    */
   public void search(IndexSearcher searcher, String fieldName, Query mainQuery,
                      Query filterQuery, Analyzer analyzer, AbstractConcordanceWindowCollector collector)
@@ -136,9 +137,9 @@ public class ConcordanceSearcher {
    * @param filter    filter for document retrieval
    * @param analyzer  to re-analyze terms for window calculations and sort key building
    * @param collector to process (and store) the results
-   * @throws TargetTokenNotFoundException
-   * @throws IllegalArgumentException
-   * @throws java.io.IOException
+   * @throws TargetTokenNotFoundException if target token is not found
+   * @throws IllegalArgumentException if the field can't be found in the main query
+   * @throws java.io.IOException if there is an underlying IOException in the reader
    */
   public void searchSpan(IndexSearcher searcher,
                          SpanQuery spanQuery,

@@ -17,6 +17,7 @@
 package org.apache.solr.search.concordance;
 
 import java.util.List;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Filter;
@@ -53,9 +54,9 @@ import org.apache.solr.search.QParser;
  * <str name="df">content_txt</str>
  * <str name="maxWindows">500</str>
  * <str name="wt">xml</str>
- * <p/>
+ * <p>
  * <!--  other parameters:
- * <p/>
+ * <p>
  * <str name="debug">false</str>
  * <str name="fl">metadata field1,metadata field2,metadata field3</str>
  * <str name="targetOverlaps">true</str>
@@ -64,10 +65,10 @@ import org.apache.solr.search.QParser;
  * <str name="tokensAfter">42</str>
  * <str name="tokensBefore">42</str>
  * <str name="sortOrder">TARGET_PRE</str> //TODO: add options here: TARGET_POST, PRE, POST
- * <p/>
+ * <p>
  * -->
  * </lst>
- * <p/>
+ * <p>
  * </requestHandler>
  *
  * @author JRROBINSON

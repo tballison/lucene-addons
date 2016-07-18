@@ -42,7 +42,7 @@ public class IDFCalc {
   /**
    * @param df document freq
    * @return inverse document frequency for @param df.
-   * If df <= 0, returns {@link #UNSEEN_IDF}
+   * If df &lt;= 0, returns {@link #UNSEEN_IDF}
    */
   public double getIDF(int df) {
     if (df < 0)

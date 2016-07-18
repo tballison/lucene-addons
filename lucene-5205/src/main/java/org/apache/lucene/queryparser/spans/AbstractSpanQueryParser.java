@@ -32,11 +32,23 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
 
   private String defaultField;
 
+  /**
+   *
+   * @param field default field
+   * @param analyzer full term analyzer
+   * @param multiTermAnalyzer multiterm analyzer
+     */
   public AbstractSpanQueryParser(String field, Analyzer analyzer, Analyzer multiTermAnalyzer) {
     super(analyzer, multiTermAnalyzer);
     this.defaultField = field;
   }
 
+  /**
+   *
+   * @param s string to parse
+   * @return query
+   * @throws ParseException if an exception was found during parsing
+   */
   abstract public Query parse(String s) throws ParseException;
 
   /**
@@ -45,7 +57,12 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
    * This assumes that there are no FIELD tokens, no BOOLEAN operators,
    * no MatchAllDocsQueries and that {@link #getAnalyzer(String)}
    * will return a non-null value.
-   */
+   * @param tokens list of tokens
+   * @param field default field
+   * @param parentClause the parent clause
+   * @return a SpanQuery
+   * @throws ParseException if a problem was found during parsing
+     */
   protected SpanQuery _parsePureSpanClause(final List<SQPToken> tokens,
                                            String field, SQPClause parentClause)
       throws ParseException {
@@ -155,6 +172,10 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
     return q;
   }
 
+  /**
+   *
+   * @return default field
+     */
   public String getField() {
     return defaultField;
   }

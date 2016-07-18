@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.corpus.stats.IDFCalc;
 import org.apache.lucene.corpus.stats.TermIDF;
@@ -68,7 +69,7 @@ import org.apache.solr.search.SolrIndexSearcher;
  * <str name="maxNGram">2</str>
  * <str name="minTF">3</str>
  * <str name="numResults">50</str>
- * <p/>
+ * <p>
  * <!--  More fields
  * <str name="maxWindows">500</str>
  * <str name="debug">false</str>

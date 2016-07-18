@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
@@ -45,7 +46,6 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.apache.lucene.queryparser.flexible.standard.CommonQueryParserConfiguration;
-import org.apache.lucene.queryparser.xml.builders.BooleanQueryBuilder;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
@@ -103,7 +103,7 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
     CharTermAttribute termAtt;
     OffsetAttribute offsetAtt;
 
-    /**
+    /*
      * Filter which discards the token 'stop' and which expands the
      * token 'phrase' into 'phrase1 phrase2'
      */
@@ -966,6 +966,8 @@ public abstract class QueryParserTestBase extends LuceneTestCase {
 
   /**
    * This test differs from TestPrecedenceQueryParser
+   *
+   * @throws Exception if something goes wrong
    */
   public void testPrecedence() throws Exception {
     CommonQueryParserConfiguration qp = getParserConfig(new MockAnalyzer(random(), MockTokenizer.WHITESPACE, false));

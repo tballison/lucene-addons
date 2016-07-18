@@ -39,7 +39,7 @@ public class IDFIndexCalc extends IDFCalc {
    * @param t term
    * @return idf for a single term or {@link #UNSEEN_IDF} if term is not found in
    * index
-   * @throws java.io.IOException
+   * @throws java.io.IOException if encountered by underlying reader
    */
   public double singleTermIDF(Term t) throws IOException {
     return getIDF(reader.docFreq(t));
@@ -52,7 +52,7 @@ public class IDFIndexCalc extends IDFCalc {
    * upperbound on the actual idf of the phrase. This is fast to
    * compute and yields decent results in practice. For more exact IDF for
    * phrases, consider indexing ngrams.
-   * <p/>
+   * <p>
    * Make sure to remove stop words before calculating the IDF.
    * A stop word will have an actual DF of 0, which will
    * be converted to {@value #DEFAULT_UNSEEN_COUNT}.
@@ -60,7 +60,7 @@ public class IDFIndexCalc extends IDFCalc {
    * @param s string
    * @param t term
    * @return sum of idf for individual terms
-   * @throws java.io.IOException
+   * @throws java.io.IOException if encountered by underlying reader
    */
   public double multiTermIDFSum(String s, Term t) throws IOException {
 
@@ -77,7 +77,7 @@ public class IDFIndexCalc extends IDFCalc {
    * @param t term from which to use field
    * @return double[] of length 2, stats[0] is the sum of the individual term idfs
    * and stats[1] is the minimum idf for the phrase
-   * @throws java.io.IOException
+   * @throws java.io.IOException if encountered by underlying reader
    */
   public double[] multiTermIDF(String s, Term t) throws IOException {
     // be careful: must pre-analyze and divide subterms by whitespace!!!

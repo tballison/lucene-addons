@@ -73,9 +73,15 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   public SpanQueryParserBase(Analyzer analyzer, Analyzer multiTermAnalyzer) {
     super(analyzer, multiTermAnalyzer);
   }
+
   /**
    * Returns new SpanNearQuery.  This is added as parallelism to newPhraseQuery.
    * Not sure it is of any use.
+   *
+   * @param queries subqueries used in the NearQuery
+   * @param slop slop for this NearQuery
+   * @param inOrder whether order is required or not
+   * @return SpanNearQuery
    */
   protected SpanNearQuery newNearQuery(SpanQuery[] queries, int slop, boolean inOrder) {
     return new SpanNearQuery(queries, slop, inOrder);
@@ -85,6 +91,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Currently returns multiTermRewriteMethod no matter the field.
    * This allows for hooks for overriding to handle
    * field-specific MultiTermRewriteMethod handling
+   *
+   * @param field field to use
    * @return RewriteMethod for a given field
    */
   public RewriteMethod getMultiTermRewriteMethod(String field) {
@@ -113,7 +121,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @param fieldName field
    * @param terminal terminal
    * @return Query that was built or <code>null</code> if a stop word
-   * @throws ParseException
+   * @throws ParseException if an exception is encountered
    */
   protected Query buildTerminal(String fieldName, SQPTerminal terminal) throws ParseException {
     Query ret;
@@ -159,7 +167,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @param fieldName field
    * @param terminal terminal
    * @return a SpanQuery
-   * @throws ParseException
+   * @throws ParseException if an exception is encountered
    */
   protected SpanQuery buildSpanTerminal(String fieldName, SQPTerminal terminal) throws ParseException {
     SpanQuery spanQuery = null;
@@ -209,7 +217,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @param quoted whether or not this is quoted
    * @return a SpanQuery that is as close as possible to the Query created by
    *  {@link #newFieldQuery(String, String, boolean, int)}
-   * @throws ParseException
+   * @throws ParseException if encountered during parse
    */
   protected SpanQuery newFieldSpanQuery(String fieldName, String termText, boolean quoted) throws ParseException {
 
@@ -298,8 +306,13 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * If the analyzer is null, this calls {@link #handleNullAnalyzer(String, String)}
    *
    * Can return null!
-   * @param quoted -- is the term quoted
-   * @return query
+
+   * @param fieldName field
+   * @param termText term
+   * @param quoted whether term is quoted
+   * @param phraseSlop what phrase slop to use if this is found to be a phrase
+   * @return Query
+   * @throws ParseException if encountered during parse
    */
   protected Query newFieldQuery(String fieldName, String termText, boolean quoted, int phraseSlop)
       throws ParseException {
@@ -317,7 +330,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    *
    * @param fieldName field for query
    * @param termText text for regex
-   * @return regexquery
+   * @return RegexQuery
+   * @throws ParseException if encountered during parse
    */
   protected Query newRegexpQuery(String fieldName, String termText) throws ParseException{
     Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
@@ -346,7 +360,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @param includeLower include lower
    * @param includeUpper include upper
    * @return RangeQuery
-   * @throws ParseException
+   * @throws ParseException if encountered during parse
    */
   protected Query newRangeQuery(String fieldName, String lowerTerm, String upperTerm,
                                 boolean includeLower, boolean includeUpper) throws ParseException {
@@ -361,6 +375,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
     return wrapMultiTermRewrite(new TermRangeQuery(fieldName, lowerBytesRef, upperBytesRef, includeLower, includeUpper));
   }
+
   protected Query newFuzzyQuery(String fieldName, String termText,
                                 int maxEdits, int prefixLen, int maxExpansions, boolean transpositions) throws ParseException {
     maxEdits = Math.min(maxEdits, getFuzzyMaxEdits());
@@ -412,6 +427,9 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   /**
    * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
    * with no modifications to termText
+   *
+   * @param fieldName field to use
+   * @param termText term
    * @return query
    */
   public Query handleNullAnalyzer(String fieldName, String termText) {
@@ -421,7 +439,10 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
   /**
    * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
    * or prefix with no modifications to termText.
-   * @return query
+   *
+   * @param fieldName field
+   * @param prefix prefix
+   * @return Query
    */
   public Query handleNullAnalyzerPrefix(String fieldName, String prefix) {
     MultiTermQuery mtq = new PrefixQuery(new Term(fieldName, prefix));
@@ -432,6 +453,11 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
    * with no modifications to termText
    *
+   * @param fieldName default field
+   * @param start start term
+   * @param end end term
+   * @param startInclusive is range inclusive of start term
+   * @param endInclusive is range inclusive of end term
    * @return query
    */
   public Query handleNullAnalyzerRange(String fieldName, String start,
@@ -446,8 +472,10 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
   /**
    *
+   * @param clauses list of clauses to process
    * @return {@link org.apache.lucene.search.spans.SpanOrQuery} might be empty if clauses is null or contains
    *         only empty queries
+   * @throws ParseException if an exception is encountered
    */
   protected SpanQuery buildSpanOrQuery(List<SpanQuery> clauses)
       throws ParseException {
@@ -549,12 +577,16 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * of nothing...not the desired outcome
    *
    * @param field field for this query
-   * @param termText this is the sole child of a SpanNearQuery as identified by a whitespace-based tokenizer
-   * @return query
+   * @param termText term
+   * @param ancestralSlop the slop of the parent clause
+   * @param ancestralInOrder whether the parent clause was inOrder or not
+   * @return Query
+   * @throws ParseException if encountered during parse
    */
   protected Query specialHandlingForSpanNearWithOneComponent(String field,
                                                              String termText,
-                                                             int ancestralSlop, Boolean ancestralInOrder) throws ParseException {
+                                                             int ancestralSlop, Boolean ancestralInOrder)
+      throws ParseException {
     Query q = newFieldSpanQuery(field, termText, true);
     if (q instanceof SpanNearQuery) {
       SpanQuery[] childClauses = ((SpanNearQuery)q).getClauses();
@@ -627,7 +659,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
   /**
    *
-   * @param spanNearMaxDistance maximum distance for a SpanNear (phrase) query. If < 0,
+   * @param spanNearMaxDistance maximum distance for a SpanNear (phrase) query. If &lt; 0,
    * there is no limitation on distances in SpanNear queries.
    */
   public void setSpanNearMaxDistance(int spanNearMaxDistance) {
@@ -645,7 +677,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
   /**
    *
-   * @param spanNotNearMaxDistance maximum distance for the previous and post distance for a SpanNotNear query. If < 0,
+   * @param spanNotNearMaxDistance maximum distance for the previous and post distance for a SpanNotNear query. If &lt; 0,
    * there is no limitation on distances in SpanNotNear queries.
    */
   public void setSpanNotNearMaxDistance(int spanNotNearMaxDistance) {

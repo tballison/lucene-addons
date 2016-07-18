@@ -17,6 +17,8 @@ package org.apache.lucene.queryparser.classic;
  * limitations under the License.
  */
 
+import java.io.IOException;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenizer;
@@ -38,8 +40,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.automaton.TooComplexToDeterminizeException;
 import org.junit.Ignore;
-
-import java.io.IOException;
 
 /**
  * Tests QueryParser.
@@ -324,7 +324,7 @@ public class TestQueryParser extends QueryParserTestBase {
 
   // TODO: fold these into QueryParserTestBase
 
-  /** adds synonym of "dog" for "dogs". */
+  /* adds synonym of "dog" for "dogs". */
   static class MockSynonymAnalyzer extends Analyzer {
     @Override
     protected TokenStreamComponents createComponents(String fieldName) {
@@ -333,7 +333,7 @@ public class TestQueryParser extends QueryParserTestBase {
     }
   }
 
-  /** simple synonyms test */
+  /* simple synonyms test */
   public void testSynonyms() throws Exception {
     BooleanQuery.Builder expectedB = new BooleanQuery.Builder();
     expectedB.setDisableCoord(true);
@@ -351,7 +351,7 @@ public class TestQueryParser extends QueryParserTestBase {
     assertEquals(expected, qp.parse("\"dogs\"^2"));
   }
 
-  /** forms multiphrase query */
+  /* forms multiphrase query */
   public void testSynonymsPhrase() throws Exception {
     MultiPhraseQuery.Builder expectedQ = new MultiPhraseQuery.Builder();
     expectedQ.add(new Term("field", "old"));
@@ -366,7 +366,7 @@ public class TestQueryParser extends QueryParserTestBase {
     assertEquals(expected, qp.parse("\"old dogs\"~3^2"));
   }
 
-  /**
+  /*
    * adds synonym of "國" for "国".
    */
   protected static class MockCJKSynonymFilter extends TokenFilter {
@@ -405,7 +405,7 @@ public class TestQueryParser extends QueryParserTestBase {
     }
   }
 
-  /** simple CJK synonym test */
+  /* simple CJK synonym test */
   public void testCJKSynonym() throws Exception {
     BooleanQuery.Builder expectedB = new BooleanQuery.Builder();
     expectedB.setDisableCoord(true);
@@ -420,7 +420,7 @@ public class TestQueryParser extends QueryParserTestBase {
     assertEquals(expected, qp.parse("国^2"));
   }
 
-  /** synonyms with default OR operator */
+  /* synonyms with default OR operator */
   public void testCJKSynonymsOR() throws Exception {
     BooleanQuery.Builder expectedB = new BooleanQuery.Builder();
     expectedB.add(new TermQuery(new Term("field", "中")), BooleanClause.Occur.SHOULD);
@@ -436,7 +436,7 @@ public class TestQueryParser extends QueryParserTestBase {
     assertEquals(expected, qp.parse("中国^2"));
   }
 
-  /** more complex synonyms with default OR operator */
+  /* more complex synonyms with default OR operator */
   public void testCJKSynonymsOR2() throws Exception {
     BooleanQuery.Builder expectedB = new BooleanQuery.Builder();
     expectedB.add(new TermQuery(new Term("field", "中")), BooleanClause.Occur.SHOULD);
@@ -457,7 +457,7 @@ public class TestQueryParser extends QueryParserTestBase {
     assertEquals(expected, qp.parse("中国国^2"));
   }
 
-  /** synonyms with default AND operator */
+  /* synonyms with default AND operator */
   public void testCJKSynonymsAND() throws Exception {
     BooleanQuery.Builder expectedB = new BooleanQuery.Builder();
     expectedB.add(new TermQuery(new Term("field", "中")), BooleanClause.Occur.MUST);
@@ -474,7 +474,7 @@ public class TestQueryParser extends QueryParserTestBase {
     assertEquals(expected, qp.parse("中国^2"));
   }
 
-  /** more complex synonyms with default AND operator */
+  /* more complex synonyms with default AND operator */
   public void testCJKSynonymsAND2() throws Exception {
     BooleanQuery.Builder expectedB = new BooleanQuery.Builder();
     expectedB.add(new TermQuery(new Term("field", "中")), BooleanClause.Occur.MUST);
@@ -496,7 +496,7 @@ public class TestQueryParser extends QueryParserTestBase {
     assertEquals(expected, qp.parse("中国国^2"));
   }
 
-  /** forms multiphrase query */
+  /* forms multiphrase query */
   public void testCJKSynonymsPhrase() throws Exception {
     MultiPhraseQuery.Builder expectedQ = new MultiPhraseQuery.Builder();
     expectedQ.add(new Term("field", "中"));
@@ -510,7 +510,7 @@ public class TestQueryParser extends QueryParserTestBase {
     assertEquals(expected, qp.parse("\"中国\"~3^2"));
   }
 
-  /** LUCENE-6677: make sure wildcard query respects maxDeterminizedStates. */
+  /* LUCENE-6677: make sure wildcard query respects maxDeterminizedStates. */
   public void testWildcardMaxDeterminizedStates() throws Exception {
     QueryParser qp = new QueryParser("field", new MockAnalyzer(random()));
     qp.setMaxDeterminizedStates(10);

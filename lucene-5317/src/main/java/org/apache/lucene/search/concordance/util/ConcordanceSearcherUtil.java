@@ -24,7 +24,7 @@ import org.apache.lucene.search.concordance.charoffsets.TokenCharOffsetRequests;
 /**
  * In other applications with variations on the ConcordanceSearcher, it has been
  * useful to factor out the getCharOffsetRequests.
- * <p/>
+ * <p>
  * This class should be used for functionality that is generally useful for
  * concordance searching.
  */

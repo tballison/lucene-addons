@@ -56,7 +56,7 @@ public abstract class ArrayWindowVisitor<T> {
    *
    * @param docId document id
    * @param window window to visit
-   * @throws java.io.IOException
+   * @throws java.io.IOException if encountered by underlying reader
    */
   abstract public void visit(String docId, ConcordanceArrayWindow window)
       throws IOException;

@@ -20,6 +20,7 @@ package org.apache.lucene.search.concordance.classic;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
 import org.apache.lucene.document.Document;
@@ -34,9 +35,9 @@ import org.apache.lucene.search.concordance.classic.impl.SimpleDocMetadataExtrac
 
 /**
  * Builds a ConcordanceWindow.
- * <p/>
+ * <p>
  * This class includes basic functionality for building a window from token offsets.
- * <p/>
+ * <p>
  * It also calls three other components:
  * <ol>
  * <li>DocIdBuilder - extracts or builds a unique key for each document</li>
@@ -88,6 +89,9 @@ public class WindowBuilder {
   }
 
   /**
+   *
+
+  /**
    * Makes the assumption that the target token start and target token end can
    * be found. If not, this returns a null.
    *
@@ -99,11 +103,15 @@ public class WindowBuilder {
    * @param offsets          TokenOffsetResults from
    * @return ConcordanceWindow or null if character offset information cannot be
    * found for both the targetTokenStart and the targetTokenEnd
+
+   * @throws TargetTokenNotFoundException if target token cannot be found
+   * @throws IllegalArgumentException if the start token comes after the end token, e.g.
    */
   public ConcordanceWindow buildConcordanceWindow(String uniqueDocID,
                                                   int targetTokenStart, int targetTokenEnd,
                                                   String[] fieldValues,
-                                                  RandomAccessCharOffsetContainer offsets, Map<String, String> metadata)
+                                                  RandomAccessCharOffsetContainer offsets,
+                                                  Map<String, String> metadata)
       throws TargetTokenNotFoundException,
       IllegalArgumentException {
 
@@ -206,7 +214,7 @@ public class WindowBuilder {
 
 
   public Set<String> getFieldSelector() {
-    Set<String> set = new HashSet<String>();
+    Set<String> set = new HashSet<>();
     set.addAll(metadataExtractor.getFieldSelector());
     if (docIdBuilder instanceof FieldBasedDocIdBuilder) {
       set.addAll(((FieldBasedDocIdBuilder) docIdBuilder).getFields());
