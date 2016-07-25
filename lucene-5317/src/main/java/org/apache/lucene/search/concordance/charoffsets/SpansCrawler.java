@@ -30,6 +30,9 @@ public class SpansCrawler {
       Weight searcherWeight = searcher.createWeight(filter, false);
       for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
         Scorer leafReaderContextScorer = searcherWeight.scorer(ctx);
+        if (leafReaderContextScorer == null) {
+          continue;
+        }
         //Can we tell from the scorer that there were no hits?
         //in <= 5.x we could stop here if the filter query had no hits.
 
