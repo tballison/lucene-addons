@@ -13,6 +13,9 @@ public class SpansCrawler {
 
   public static void crawl(SpanQuery query, Query filter, IndexSearcher searcher,
                            DocTokenOffsetsVisitor visitor) throws IOException, TargetTokenNotFoundException {
+
+    query = (SpanQuery) query.rewrite(searcher.getIndexReader());
+
     SpanWeight w = query.createWeight(searcher, false);
     if (filter == null) {
       for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
@@ -27,6 +30,7 @@ public class SpansCrawler {
         }
       }
     } else {
+      filter = searcher.rewrite(filter);
       Weight searcherWeight = searcher.createWeight(filter, false);
       for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
         Scorer leafReaderContextScorer = searcherWeight.scorer(ctx);

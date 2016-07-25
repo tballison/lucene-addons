@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.corpus.stats.IDFIndexCalc;
@@ -29,8 +30,11 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.PrefixQuery;
+import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.search.concordance.ConcordanceTestBase;
 import org.apache.lucene.search.concordance.classic.impl.IndexIdDocIdBuilder;
+import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
@@ -111,6 +115,48 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     reader.close();
     directory.close();
   }
+
+  @Test
+  public void testWildcard() throws Exception {
+    String[] docs = new String[]{"aa ba ca da ea fa", "ba ca da ga fa ea"};
+    Analyzer analyzer = getAnalyzer(
+        MockTokenFilter.EMPTY_STOPSET, 50, 100);
+    Directory directory = getDirectory(analyzer, docs);
+    IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
+
+
+    IDFIndexCalc idfCalc = new IDFIndexCalc(reader);
+
+    CooccurVisitor visitor = new CooccurVisitor(
+        FIELD, 10, 10, new WGrammer(1, 1, false), idfCalc, 100, true);
+
+    visitor.setMinTermFreq(0);
+    ConcordanceArrayWindowSearcher searcher = new ConcordanceArrayWindowSearcher();
+    SpanQuery q = new SpanMultiTermQueryWrapper<>(new PrefixQuery(new Term(FIELD, "b")));
+
+    searcher.search(indexSearcher, FIELD, q, new WildcardQuery(new Term(FIELD, "g*")), analyzer, visitor,
+        new IndexIdDocIdBuilder());
+
+    List<TermIDF> results = ((CooccurVisitor) visitor).getResults();
+    Map<String, Integer> truth = new HashMap<String, Integer>();
+    truth.put("ca", 1);
+    truth.put("da", 1);
+    truth.put("ga", 1);
+    truth.put("fa", 1);
+    truth.put("ea", 1);
+    System.out.println(results);
+    assertEquals(truth.size(), results.size());
+
+    for (TermIDF r : results) {
+      assertEquals(r.getTerm(), truth.get(r.getTerm()).intValue(), r.getTermFreq());
+    }
+
+
+    reader.close();
+    directory.close();
+  }
+
 
   @Test
   public void testWithStops() throws Exception {

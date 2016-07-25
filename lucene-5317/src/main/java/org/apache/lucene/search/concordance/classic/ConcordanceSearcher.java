@@ -147,7 +147,6 @@ public class ConcordanceSearcher {
       throws TargetTokenNotFoundException, IllegalArgumentException,
       IOException {
 
-    spanQuery = (SpanQuery) spanQuery.rewrite(searcher.getIndexReader());
     Set<String> fields = new HashSet<>(
         windowBuilder.getFieldSelector());
     fields.add(spanQuery.getField());
