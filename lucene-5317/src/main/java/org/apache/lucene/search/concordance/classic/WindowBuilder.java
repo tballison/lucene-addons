@@ -20,7 +20,6 @@ package org.apache.lucene.search.concordance.classic;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
 import org.apache.lucene.document.Document;
@@ -87,9 +86,6 @@ public class WindowBuilder {
     this.metadataExtractor = metadataExtractor;
     this.docIdBuilder = docIdBuilder;
   }
-
-  /**
-   *
 
   /**
    * Makes the assumption that the target token start and target token end can

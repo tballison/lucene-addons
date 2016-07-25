@@ -31,6 +31,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
@@ -44,6 +45,7 @@ import org.apache.lucene.search.concordance.classic.impl.ConcordanceWindowCollec
 import org.apache.lucene.search.concordance.classic.impl.DedupingConcordanceWindowCollector;
 import org.apache.lucene.search.concordance.classic.impl.DefaultSortKeyBuilder;
 import org.apache.lucene.search.concordance.classic.impl.IndexIdDocIdBuilder;
+import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
@@ -518,6 +520,40 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     directory.close();
   }
 
-    //TODO: add tests with deleted documents
+  @Test
+  public void testRewrites() throws Exception {
+    //test to make sure that queries are rewritten
+    //first test straight prefix queries
+    String[] docs = new String[]{"aa ba ca aa ba ca", "ca ba aa ca ba aa da ea za",
+        "ca ba aa ca ba aa ea aa ba ca za"};
+    Analyzer analyzer = getAnalyzer(MockTokenFilter.EMPTY_STOPSET);
+    Directory directory = getDirectory(analyzer, docs);
+    IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
+    ConcordanceSearcher searcher = new ConcordanceSearcher(
+        new WindowBuilder(10, 10, analyzer.getOffsetGap(FIELD)));
+    BooleanQuery q = new BooleanQuery.Builder()
+        .add(new PrefixQuery(new Term(FIELD, "a")), Occur.MUST)
+        .add(new PrefixQuery(new Term(FIELD, "d")),
+            Occur.MUST_NOT).build();
+
+    //now test straight and span wrapper
+    ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10);
+    searcher.search(indexSearcher,
+        FIELD, q, new PrefixQuery(new Term(FIELD, "z")),
+        analyzer, collector);
+    // shouldn't include document with "da", but must include one with za
+    assertEquals(3, collector.size());
+
+    collector = new ConcordanceWindowCollector(10);
+    searcher.search(indexSearcher,
+        FIELD, q, new SpanMultiTermQueryWrapper<>(new PrefixQuery(new Term(FIELD, "z"))),
+        analyzer, collector);
+    // shouldn't include document with "da", but must include one with za
+    assertEquals(3, collector.size());
+
+    reader.close();
+    directory.close();
+  }
 
 }

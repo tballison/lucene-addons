@@ -98,12 +98,10 @@ public class ConcordanceArrayWindowSearcher {
                          Query filterQuery, Analyzer analyzer,
                          ArrayWindowVisitor visitor, DocIdBuilder docIdBuilder) throws IllegalArgumentException,
       TargetTokenNotFoundException, IOException {
-    String field = query.getField();
     //if nothing is found for e.g. a prefix query, the returned query will
     //be an empty spanquery with a null field.  We need to cache the field
     //in case this is destroyed in the rewrite.
-    query = (SpanQuery) query.rewrite(searcher.getIndexReader());
-
+    String field = query.getField();
     CAWDocTokenOffsetsVisitor docTokenOffsetsVisitor =
         new CAWDocTokenOffsetsVisitor(field, analyzer,
             docIdBuilder, visitor);

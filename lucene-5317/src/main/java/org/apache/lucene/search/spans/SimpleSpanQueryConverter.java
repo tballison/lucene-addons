@@ -48,6 +48,8 @@ public class SimpleSpanQueryConverter {
    * Much of this code is copied directly from
    * oal.search.highlight.WeightedSpanTermExtractor. There are some subtle
    * differences.
+   * <p>
+   * Throws IllegalArgumentException for unknown query types.
    *
    * @param field single field to extract SpanQueries for
    * @param queryToConvert query to convert
