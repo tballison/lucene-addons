@@ -288,11 +288,17 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
       Query bcq = clause.getQuery();
       if (bcq instanceof TermQuery) {
         queries.add(new SpanTermQuery(((TermQuery)bcq).getTerm()));
+      } else if (bcq instanceof SynonymQuery){
+        for (Term t : ((SynonymQuery)bcq).getTerms()) {
+          queries.add(new SpanTermQuery(t));
+        }
       } else if (bcq instanceof BooleanQuery) {
         SpanQuery tmp = convertBooleanOfBooleanOrTermsToSpan((BooleanQuery)bcq);
         if (! isEmptyQuery(tmp)) {
           queries.add(tmp);
         }
+      } else {
+        throw new IllegalArgumentException("Wasn't expecting query of class >"+q.getClass());
       }
     }
     return buildSpanOrQuery(queries);

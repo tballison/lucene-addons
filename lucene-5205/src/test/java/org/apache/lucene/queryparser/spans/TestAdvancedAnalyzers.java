@@ -18,16 +18,23 @@
 package org.apache.lucene.queryparser.spans;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.en.KStemFilterFactory;
+import org.apache.lucene.analysis.miscellaneous.RemoveDuplicatesTokenFilterFactory;
+import org.apache.lucene.analysis.miscellaneous.WordDelimiterFilterFactory;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
@@ -57,6 +64,7 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
   private static Analyzer ucVowelAnalyzer;
   private static Analyzer ucVowelMTAnalyzer;
   private static Analyzer lcMultiTermAnalyzer;
+  private static Analyzer complexAnalyzer;
 
 
   //   private static final CharacterRunAutomaton STOP_WORDS = new CharacterRunAutomaton(
@@ -65,6 +73,24 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
   @BeforeClass
   public static void beforeClass() throws Exception {
     lcMultiTermAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
+    complexAnalyzer = new Analyzer() {
+      @Override
+      public TokenStreamComponents createComponents(String fieldName) {
+        Tokenizer tokenizer = new WhitespaceTokenizer();
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("generateWordParts", "1");
+        attrs.put("generateNumberParts","1");
+        attrs.put("catenateWords","1");
+        attrs.put("catenateNumbers","1");
+        attrs.put("catenateAll","1");
+        attrs.put("splitOnCaseChange", "1");
+        attrs.put("preserveOriginal", "1");
+        TokenFilter filter = new WordDelimiterFilterFactory(attrs).create(tokenizer);
+        filter = new KStemFilterFactory(new HashMap<String, String>()).create(filter);
+        filter = new RemoveDuplicatesTokenFilterFactory(new HashMap<String, String>()).create(filter);
+        return new TokenStreamComponents(tokenizer, filter);
+      }
+    };
 
     synAnalyzer = new Analyzer() {
       @Override
@@ -125,7 +151,12 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
     String[] docs = new String[]{
         "abc_def",
         "lmnop",
-        "abc",
+        "abc one",
+        "abc two",
+        "qrs one",
+        "qrs two",
+        "tuv one",
+        "tuv two",
         "qrs tuv",
         "qrs_tuv"
     };
@@ -159,9 +190,11 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
 
   public void testSynBasic() throws Exception {
     SpanQueryParser p = new SpanQueryParser(FIELD1, synAnalyzer, synAnalyzer);
-    countSpansDocs(p, FIELD1, "tuv", 2, 2);
+    countSpansDocs(p, FIELD1, "tuv", 4, 4);
 
-    countSpansDocs(p, FIELD1, "abc", 6, 4);
+    countSpansDocs(p, FIELD1, "abc", 11, 9);
+
+    countSpansDocs(p, FIELD1, "\"abc one\"", 3, 3 );
   }
 
   @Test
@@ -387,8 +420,7 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
     }
   }
 
-
-  /**
+  /*
    * Mocks what happens in a non-whitespace language. Tokenizes on white space and "_".
    */
   private final static class MockNonWhitespaceFilter extends TokenFilter {
