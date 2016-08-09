@@ -29,9 +29,9 @@
     <relativePath />
   </parent> -->
 
-  <groupId>org.apache.lucene</groupId>
+  <groupId>org.tallison.lucene</groupId>
   <artifactId>lucene-addons-parent</artifactId>
-  <version>6.1-0.1</version>
+  <version>6.1-0.2</version>
   <packaging>pom</packaging>
 
   <name>lucene addons parent</name>

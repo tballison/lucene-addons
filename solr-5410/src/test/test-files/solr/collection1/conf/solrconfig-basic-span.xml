@@ -26,5 +26,5 @@
     <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
     <schemaFactory class="ClassicIndexSchemaFactory"/>
     <requestHandler name="standard" class="solr.StandardRequestHandler" />
-    <queryParser name="span" class="solr.search.SpanQParserPlugin"/>
+    <queryParser name="span" class="org.tallison.solr.search.SpanQParserPlugin"/>
 </config>

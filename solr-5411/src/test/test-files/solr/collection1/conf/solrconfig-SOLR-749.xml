@@ -23,7 +23,7 @@
     <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
     <queryParser name="foo" class="FooQParserPlugin"/>
     <!-- override the default "lucene" qparser -->
-    <queryParser name="lucene" class="org.apache.solr.search.FooQParserPlugin"/>
+    <queryParser name="lucene" class="org.tallison.solr.search.FooQParserPlugin"/>
     <queryParser name="notfoo" class="solr.LuceneQParserPlugin"/>
 
     <valueSourceParser name="boost" class="org.apache.solr.core.DummyValueSourceParser"/>
