@@ -17,6 +17,7 @@
 package org.apache.solr.core;
 
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.handler.RequestHandlerBase;
 import org.apache.solr.request.SolrQueryRequest;

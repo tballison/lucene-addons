@@ -1,0 +1,3 @@
+
+Branch 6.1-02
+8/9/2016 -- Changed namespaces from "org.apache" to "org.tallison" for more straightforward release via maven central.

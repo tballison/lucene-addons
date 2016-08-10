@@ -19,6 +19,7 @@ package org.tallison.solr.search.concordance;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.solr.cloud.RequestThreads;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;

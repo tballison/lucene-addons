@@ -2,6 +2,7 @@ package org.tallison.solr.search.concordance;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.solr.SolrTestCaseJ4;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.request.QueryRequest;

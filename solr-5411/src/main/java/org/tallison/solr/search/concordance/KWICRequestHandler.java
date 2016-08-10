@@ -17,6 +17,7 @@
 package org.tallison.solr.search.concordance;
 
 import java.util.List;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.Filter;
