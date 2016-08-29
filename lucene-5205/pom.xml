@@ -26,14 +26,14 @@
     <parent>
         <groupId>org.tallison.lucene</groupId>
         <artifactId>lucene-addons-parent</artifactId>
-        <version>6.1-0.2</version>
+        <version>6.2-0.1</version>
         <relativePath>../lucene-addons-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>lucene-5205</artifactId>
     <packaging>jar</packaging>
 
-    <version>6.1-0.2</version>
+    <version>6.2-0.1</version>
 
 
     <dependencies>

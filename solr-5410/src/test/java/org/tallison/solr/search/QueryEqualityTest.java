@@ -218,6 +218,23 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
 
   }
 
+  public void testTlogitQuery() throws Exception {
+    SolrQueryRequest req = req("q", "*:*", "feature", "f", "terms","a,b,c", "weights", "100,200,300", "idfs","1,5,7","iteration","1", "outcome","a","positiveLabel","1");
+    try {
+      assertQueryEquals("tlogit", req, "{!tlogit}");
+    } finally {
+      req.close();
+    }
+  }
+
+  public void testIGainQuery() throws Exception {
+    SolrQueryRequest req = req("q", "*:*", "outcome", "b", "positiveLabel", "1", "field", "x", "numTerms","200");
+    try {
+      assertQueryEquals("igain", req, "{!igain}");
+    } finally {
+      req.close();
+    }
+  }
 
   public void testQuerySwitch() throws Exception {
     SolrQueryRequest req = req("myXXX", "XXX",
@@ -1081,6 +1098,23 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     assertFuncEquals("agg_percentile(foo_i,50)", "agg_percentile(foo_i,50)");
     // assertFuncEquals("agg_stdev(foo_i)", "agg_stdev(foo_i)");
     // assertFuncEquals("agg_multistat(foo_i)", "agg_multistat(foo_i)");
+  }
+  public void testCompares() throws Exception {
+    assertFuncEquals("gt(foo_i,2)", "gt(foo_i, 2)");
+    assertFuncEquals("gt(foo_i,2)", "gt(foo_i,2)");
+    assertFuncEquals("lt(foo_i,2)", "lt(foo_i,2)");
+    assertFuncEquals("lte(foo_i,2)", "lte(foo_i,2)");
+    assertFuncEquals("gte(foo_i,2)", "gte(foo_i,2)");
+    assertFuncEquals("eq(foo_i,2)", "eq(foo_i,2)");
+
+    boolean equals = false;
+    try {
+      assertFuncEquals("eq(foo_i,2)", "lt(foo_i,2)");
+      equals = true;
+    } catch (AssertionError e) {
+      //expected
+    }
+    assertFalse(equals);
   }
 
 }

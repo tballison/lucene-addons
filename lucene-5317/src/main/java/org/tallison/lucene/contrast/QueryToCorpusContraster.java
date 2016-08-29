@@ -8,14 +8,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.CharArrayMap;
+import org.apache.lucene.analysis.CharArraySet;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
-import org.apache.lucene.analysis.util.CharArrayMap;
-import org.apache.lucene.analysis.util.CharArraySet;
-import org.tallison.lucene.corpus.stats.IDFIndexCalc;
-import org.tallison.lucene.corpus.stats.TFIDFPriorityQueue;
-import org.tallison.lucene.corpus.stats.TermIDF;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.Term;
@@ -28,6 +26,9 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.Version;
 import org.apache.lucene.util.mutable.MutableValueInt;
+import org.tallison.lucene.corpus.stats.IDFIndexCalc;
+import org.tallison.lucene.corpus.stats.TFIDFPriorityQueue;
+import org.tallison.lucene.corpus.stats.TermIDF;
 
 public class QueryToCorpusContraster {
 
