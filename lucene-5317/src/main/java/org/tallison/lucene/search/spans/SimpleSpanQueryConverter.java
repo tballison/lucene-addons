@@ -68,7 +68,7 @@ public class SimpleSpanQueryConverter {
     Query query = queryToConvert;
     if (queryToConvert instanceof BoostQuery) {
       query = ((BoostQuery)query).getQuery();
-      boost = ((BoostQuery)query).getBoost();
+      boost = ((BoostQuery)queryToConvert).getBoost();
     }
     /*
      * copied nearly verbatim from
