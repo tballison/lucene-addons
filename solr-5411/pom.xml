@@ -7,13 +7,13 @@
     <parent>
         <groupId>org.apache.lucene</groupId>
         <artifactId>lucene-addons-parent</artifactId>
-        <version>6.2-0.2</version>
+        <version>6.3-0.1</version>
         <relativePath>../lucene-addons-parent/pom.xml</relativePath>
     </parent>
 
     <groupId>org.apache.solr</groupId>
     <artifactId>solr-5411</artifactId>
-    <version>6.2-0.2</version>
+    <version>6.3-0.1</version>
 
     <dependencies>
 
