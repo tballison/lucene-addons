@@ -19,6 +19,7 @@ package org.tallison.gramreaper;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,6 +35,8 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.SlowCompositeReaderWrapper;
@@ -48,15 +51,17 @@ public class DumpTerms {
   static {
     Option field = new Option("f", "field",
         true, "Lucene field to process");
-    field.setRequired(true);
 
     Option indexPath = new Option("i", "index",
         true, "Lucene index to process");
-    indexPath.setRequired(true);
+
+    Option indexDirPath = new Option("indexDir", true,
+        "use this if you have a directory with multiple indices");
 
     OPTIONS = new Options()
         .addOption(field)
         .addOption(indexPath)
+        .addOption(indexDirPath)
         .addOption("n", "topN", true, "top n most frequent terms")
         .addOption("min", true, "minimum doc frequency")
         .addOption("max", true, "maximum doc frequency")
@@ -64,6 +69,7 @@ public class DumpTerms {
         .addOption("minP", true, "minimum doc freq percentage")
         .addOption("includeDF", false, "include the document frequency in the output; default is false")
         .addOption("s", true, "stop words file -- UTF-8, one word per row")
+        .addOption("startWords", true, "start words file -- UTF-8, one word per row; every word will be added to the list")
         .addOption("o", true, "output file");
   }
 
@@ -85,8 +91,9 @@ public class DumpTerms {
   }
 
   private static class DumpTermsConfig {
+    Path indexDirPath;
     Path indexPath;
-    String field;
+    String field = null;
     Integer topN = -1;
     Long minDocFreq = -1l;
     Long maxDocFreq = -1l;
@@ -94,6 +101,7 @@ public class DumpTerms {
     Double maxDocPercentage = -1.0d;
     boolean includeDocFreq = false;
     Set<String> stopWords = new HashSet<>();
+    Set<String> startWords = new HashSet<>();
     Path outputFile;
 
     public static DumpTermsConfig build(String[] args) throws IOException {
@@ -127,31 +135,44 @@ public class DumpTerms {
           config.field = commandLine.getOptionValue("f");
         }
         if (commandLine.hasOption("s")) {
-          BufferedReader reader = Files.newBufferedReader(
-              Paths.get(commandLine.getOptionValue("s")),
-              StandardCharsets.UTF_8);
-          String line = reader.readLine();
-          while (line != null) {
-            line = line.trim();
-            if (line.length() == 0 || line.startsWith("#")) {
-              line = reader.readLine();
-              continue;
-            }
-            config.stopWords.add(line);
-            line = reader.readLine();
-          }
-          reader.close();
+          loadSet(commandLine.getOptionValue("s"), config.stopWords);
+        }
+        if (commandLine.hasOption("startWords")) {
+          loadSet(commandLine.getOptionValue("startWords"), config.startWords);
         }
         if (commandLine.hasOption("includeDF")) {
           config.includeDocFreq = true;
         }
-
+        if (commandLine.hasOption("indexDir")) {
+          config.indexDirPath = Paths.get(commandLine.getOptionValue("indexDir"));
+        }
+        if (config.indexDirPath == null && config.indexPath == null) {
+          throw new ParseException("Must specify either an indexDir or an indexPath");
+        }
       } catch (ParseException e) {
         System.err.println(e.getMessage());
         usage();
         return null;
       }
       return config;
+    }
+
+    private static void loadSet(String filePath, Set<String> stopWords) throws IOException {
+      BufferedReader reader = Files.newBufferedReader(
+          Paths.get(filePath),
+          StandardCharsets.UTF_8);
+      String line = reader.readLine();
+      while (line != null) {
+        line = line.trim();
+        if (line.length() == 0 || line.startsWith("#")) {
+          line = reader.readLine();
+          continue;
+        }
+        stopWords.add(line);
+        line = reader.readLine();
+      }
+      reader.close();
+
     }
 
   }
@@ -168,19 +189,45 @@ public class DumpTerms {
   }
 
   private void execute() throws IOException {
-    IndexReader reader = DirectoryReader.open(FSDirectory.open(config.indexPath));
-    LeafReader leafReader = SlowCompositeReaderWrapper.wrap(reader);
-    if (config.topN > -1) {
-      dumpTopN(leafReader);
+    if (config.indexPath != null) {
+      processIndex(config.indexPath);
+    } else {
+      for (File f : config.indexDirPath.toFile().listFiles()) {
+        try {
+          processIndex(f.toPath());
+        } catch (IOException e) {
+          System.err.println("couldn't open index: "+ f.getName());
+        }
+      }
     }
   }
 
+  private void processIndex(Path indexPath) throws IOException {
+      IndexReader reader = DirectoryReader.open(FSDirectory.open(indexPath));
+      LeafReader leafReader = SlowCompositeReaderWrapper.wrap(reader);
+      if (config.topN > -1) {
+        dumpTopN(leafReader);
+      }
+
+  }
+
   private void dumpTopN(LeafReader leafReader) throws IOException {
+    if (config.field == null) {
+      FieldInfos fieldInfos = leafReader.getFieldInfos();
+      for (FieldInfo fieldInfo : fieldInfos) {
+        dumpTopNField(leafReader, fieldInfo.name);
+      }
+    } else {
+      dumpTopNField(leafReader, config.field);
+    }
+  }
+
+  private void dumpTopNField(LeafReader leafReader, String field) throws IOException {
     TokenCountPriorityQueue queue = new TokenCountPriorityQueue(config.topN);
-    Terms terms = leafReader.terms(config.field);
+    Terms terms = leafReader.terms(field);
     TermsEnum termsEnum = terms.iterator();
     BytesRef bytesRef = termsEnum.next();
-    int docsWThisField = leafReader.getDocCount(config.field);
+    int docsWThisField = leafReader.getDocCount(field);
     while (bytesRef != null) {
       int df = termsEnum.docFreq();
       if (config.minDocFreq > -1 && df < config.minDocFreq) {
@@ -196,7 +243,10 @@ public class DumpTerms {
       if (queue.top() == null || queue.size() < config.topN ||
           df >= queue.top().getValue()) {
         String t = bytesRef.utf8ToString();
-        if (! config.stopWords.contains(t)) {
+        if (
+//            ! t.contains(":") && //total hack for wikipedia
+            ! config.stopWords.contains(t) &&
+            ! config.startWords.contains(t)) {
           queue.insertWithOverflow(new TokenIntPair(t, df));
         }
       }
@@ -208,18 +258,31 @@ public class DumpTerms {
             clean(tp.token)+"\t"+tp.value : clean(tp.token);
         System.out.println(row);
       }
+    } else if (Files.isDirectory(config.outputFile)) {
+      writeTopN(config.outputFile.resolve(field), queue);
     } else {
-      BufferedWriter writer =
-          Files.newBufferedWriter(config.outputFile, StandardCharsets.UTF_8);
-      for (TokenIntPair tp : queue.getArray()) {
-        String row = (config.includeDocFreq) ?
-            clean(tp.token)+"\t"+tp.value : clean(tp.token);
-        writer.write(row+"\n");
-
-      }
-      writer.flush();
-      writer.close();
+      writeTopN(config.outputFile, queue);
     }
+  }
+
+  private void writeTopN(Path path, TokenCountPriorityQueue queue) throws IOException {
+    if (Files.isRegularFile(path)) {
+      System.err.println("File "+path.getFileName() + " already exists. Skipping.");
+    }
+    Files.createDirectories(path.getParent());
+    BufferedWriter writer =
+        Files.newBufferedWriter(path, StandardCharsets.UTF_8);
+    for (String t : config.startWords) {
+      writer.write(t+"\n");
+    }
+    for (TokenIntPair tp : queue.getArray()) {
+      String row = (config.includeDocFreq) ?
+          clean(tp.token)+"\t"+tp.value : clean(tp.token);
+      writer.write(row+"\n");
+
+    }
+    writer.flush();
+    writer.close();
   }
 
   private static String clean(String s) {

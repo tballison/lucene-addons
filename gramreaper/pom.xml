@@ -20,14 +20,12 @@
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-core</artifactId>
-            <!-- for personal work, this has to align w/ Tika
-                which hasn't moved to Java 8 yet so, no Lucene 6.x -->
-            <version>5.5.3</version>
+            <version>${lucene.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-misc</artifactId>
-            <version>5.5.3</version>
+            <version>${lucene.version}</version>
         </dependency>
 
     </dependencies>
