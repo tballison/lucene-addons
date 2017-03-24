@@ -96,6 +96,8 @@ public abstract class AnalyzingQueryParserBase extends QueryBuilder {
     try {
       source = multiTermAnalyzer.tokenStream(field, part);
       source.reset();
+    } catch (NullPointerException e) {
+      throw new ParseException("Couldn't find correct analyzer for field ("+field+")");
     } catch (IOException e) {
       throw new ParseException("Unable to initialize TokenStream to analyze multiTerm term: " + part);
     }
