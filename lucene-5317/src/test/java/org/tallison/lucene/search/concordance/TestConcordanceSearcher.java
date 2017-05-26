@@ -22,8 +22,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
+import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -34,6 +39,16 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
+import org.apache.lucene.search.spans.SpanNearQuery;
+import org.apache.lucene.search.spans.SpanOrQuery;
+import org.apache.lucene.search.spans.SpanQuery;
+import org.apache.lucene.search.spans.SpanTermQuery;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.util.automaton.CharacterRunAutomaton;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.tallison.lucene.search.concordance.classic.AbstractConcordanceWindowCollector;
 import org.tallison.lucene.search.concordance.classic.ConcordanceSearcher;
 import org.tallison.lucene.search.concordance.classic.ConcordanceSortOrder;
@@ -45,15 +60,6 @@ import org.tallison.lucene.search.concordance.classic.impl.ConcordanceWindowColl
 import org.tallison.lucene.search.concordance.classic.impl.DedupingConcordanceWindowCollector;
 import org.tallison.lucene.search.concordance.classic.impl.DefaultSortKeyBuilder;
 import org.tallison.lucene.search.concordance.classic.impl.IndexIdDocIdBuilder;
-import org.apache.lucene.search.spans.SpanMultiTermQueryWrapper;
-import org.apache.lucene.search.spans.SpanNearQuery;
-import org.apache.lucene.search.spans.SpanOrQuery;
-import org.apache.lucene.search.spans.SpanQuery;
-import org.apache.lucene.search.spans.SpanTermQuery;
-import org.apache.lucene.store.Directory;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class TestConcordanceSearcher extends ConcordanceTestBase {
 
@@ -93,6 +99,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     Directory directory = getDirectory(analyzer, docs);
     IndexReader reader = DirectoryReader.open(directory);
     IndexSearcher indexSearcher = new IndexSearcher(reader);
+
     WindowBuilder wb = new WindowBuilder(10, 10,
         analyzer.getOffsetGap(FIELD),
         new DefaultSortKeyBuilder(ConcordanceSortOrder.PRE), metadataExtractor, docIdBuilder);
@@ -104,6 +111,7 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
         q, null, analyzer, collector);
 
     assertEquals(3, collector.size());
+
 
     collector = new ConcordanceWindowCollector(ConcordanceWindowCollector.COLLECT_ALL);
     searcher.search(indexSearcher, FIELD, q, null, analyzer, collector);
@@ -556,4 +564,104 @@ public class TestConcordanceSearcher extends ConcordanceTestBase {
     directory.close();
   }
 
+  @Test
+  public void testBigrams() throws Exception {
+    String[] docs = new String[]{"a b c z d e f g h z i j z k l m n o p"};
+    Analyzer analyzer = getBigramAnalyzer(MockTokenFilter.EMPTY_STOPSET, 10,
+        10, true);
+
+    Directory directory = getDirectory(analyzer, docs);
+    IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
+    ConcordanceSearcher searcher = new ConcordanceSearcher(
+        new WindowBuilder(2, 2, analyzer.getOffsetGap(FIELD)));
+    Query q = new TermQuery(new Term(FIELD, "z"));
+    //now test straight and span wrapper
+    ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10);
+    searcher.search(indexSearcher,
+        FIELD, q, q,
+        analyzer, collector);
+    for (ConcordanceWindow w : collector.getWindows()) {
+      System.out.println(w);
+    }
+    reader.close();
+    directory.close();
+  }
+
+  @Test
+  public void testCJKNoUnigrams() throws Exception {
+
+    final CharacterRunAutomaton stops = MockTokenFilter.EMPTY_STOPSET;
+    int posIncGap = 10;
+    final int charOffsetGap = 10;
+    Analyzer analyzer = getCJKBigramAnalyzer(false);
+    TokenStream ts = analyzer.tokenStream(FIELD, "普林斯顿大学");
+    ts.reset();
+    CharTermAttribute charTermAttribute = ts.getAttribute(CharTermAttribute.class);
+    PositionIncrementAttribute positionIncrementAttribute = ts.getAttribute(PositionIncrementAttribute.class);
+    while (ts.incrementToken()) {
+      System.out.println(charTermAttribute.toString() + " : " + positionIncrementAttribute.getPositionIncrement());
+    }
+    ts.end();
+    ts.close();
+    String[] docs = new String[]{"普林斯顿大学"};
+
+    Directory directory = getDirectory(analyzer, docs);
+    IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
+    ConcordanceSearcher searcher = new ConcordanceSearcher(
+        new WindowBuilder(2, 2, analyzer.getOffsetGap(FIELD)));
+    Query q = new TermQuery(new Term(FIELD, "斯顿"));
+    //now test straight and span wrapper
+    ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10);
+    searcher.search(indexSearcher,
+        FIELD, q, q,
+        analyzer, collector);
+    for (ConcordanceWindow w : collector.getWindows()) {
+      System.out.println(w);
+    }
+    reader.close();
+    directory.close();
+
+  }
+  @Test
+  public void testCJKUnigrams() throws Exception {
+
+    final CharacterRunAutomaton stops = MockTokenFilter.EMPTY_STOPSET;
+    int posIncGap = 10;
+    final int charOffsetGap = 10;
+//    Analyzer analyzer = getBigramAnalyzer(stops, 10, 10, true);
+    Analyzer analyzer = getCJKBigramAnalyzer(true);
+    TokenStream ts = analyzer.tokenStream(FIELD, "禽流感病毒");
+    ts.reset();
+    CharTermAttribute charTermAttribute = ts.getAttribute(CharTermAttribute.class);
+    PositionIncrementAttribute positionIncrementAttribute = ts.getAttribute(PositionIncrementAttribute.class);
+    OffsetAttribute offsetAttribute = ts.getAttribute(OffsetAttribute.class);
+    while (ts.incrementToken()) {
+      System.out.println(charTermAttribute.toString() + " : " +
+          positionIncrementAttribute.getPositionIncrement() +
+          " >> " + offsetAttribute.startOffset() + " : " + offsetAttribute.endOffset());
+    }
+    ts.end();
+    ts.close();
+  /*
+    String[] docs = new String[]{"a b c d e f g"};
+
+    Directory directory = getDirectory(analyzer, docs);
+    IndexReader reader = DirectoryReader.open(directory);
+    IndexSearcher indexSearcher = new IndexSearcher(reader);
+    ConcordanceSearcher searcher = new ConcordanceSearcher(
+        new WindowBuilder(2, 2, analyzer.getOffsetGap(FIELD)));
+    Query q = new TermQuery(new Term(FIELD, "c"));
+    //now test straight and span wrapper
+    ConcordanceWindowCollector collector = new ConcordanceWindowCollector(10);
+    searcher.search(indexSearcher,
+        FIELD, q, q,
+        analyzer, collector);
+    for (ConcordanceWindow w : collector.getWindows()) {
+      System.out.println(w);
+    }
+    reader.close();
+    directory.close();*/
+  }
 }

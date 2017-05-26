@@ -15,30 +15,28 @@
  * limitations under the License.
  */
 
-package org.tallison.gramreaper;
+package org.tallison.gramreaper.terms;
 
-import org.apache.lucene.util.PriorityQueue;
+public class TokenDFPriorityQueue extends AbstractTokenTFDFPriorityQueue {
 
-public class TokenCountPriorityQueue extends PriorityQueue<TokenIntPair> {
-
-    TokenCountPriorityQueue(int maxSize) {
+    TokenDFPriorityQueue(int maxSize) {
         super(maxSize);
     }
 
     @Override
-    protected boolean lessThan(TokenIntPair arg0, TokenIntPair arg1) {
-        if (arg0.getValue() < arg1.getValue()) {
+    protected boolean lessThan(TokenDFTF arg0, TokenDFTF arg1) {
+        if (arg0.df < arg1.df) {
             return true;
-        } else if (arg0.getValue() > arg1.getValue()) {
+        } else if (arg0.df > arg1.df) {
             return false;
         }
         return arg1.token.compareTo(arg0.token) < 0;
     }
 
-    public TokenIntPair[] getArray() {
-        TokenIntPair[] topN = new TokenIntPair[size()];
+    public TokenDFTF[] getArray() {
+        TokenDFTF[] topN = new TokenDFTF[size()];
         //now we reverse the queue
-        TokenIntPair term = pop();
+        TokenDFTF term = pop();
         int i = topN.length-1;
         while (term != null && i > -1) {
             topN[i--] = term;

@@ -18,22 +18,29 @@ package org.tallison.lucene.search.concordance;
 
 import java.io.IOException;
 import java.util.List;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.TokenFilter;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.cjk.CJKBigramFilter;
+import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
+import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.index.IndexOptions;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.RandomIndexWriter;
-import org.tallison.lucene.search.concordance.charoffsets.SimpleAnalyzerUtil;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase;
 import org.apache.lucene.util.TestUtil;
 import org.apache.lucene.util.automaton.CharacterRunAutomaton;
+import org.tallison.lucene.search.concordance.charoffsets.SimpleAnalyzerUtil;
 
 public class ConcordanceTestBase extends LuceneTestCase {
 
@@ -67,6 +74,55 @@ public class ConcordanceTestBase extends LuceneTestCase {
     };
     return analyzer;
   }
+
+  public static Analyzer getCJKBigramAnalyzer(final boolean outputUnigrams) {
+    return new Analyzer() {
+
+      @Override
+      public TokenStreamComponents createComponents(String fieldName) {
+        Tokenizer tokenizer = new StandardTokenizer();
+        TokenFilter filter = new CJKBigramFilter(tokenizer, 15, outputUnigrams);
+        return new TokenStreamComponents(tokenizer, filter);
+      }
+
+      @Override
+      public int getPositionIncrementGap(String fieldName) {
+        return 10;
+      }
+
+      @Override
+      public int getOffsetGap(String fieldName) {
+        return 10;
+      }
+    };
+  }
+  public static Analyzer getBigramAnalyzer(final CharacterRunAutomaton stops,
+                                           final int posIncGap,
+                                           final int charOffsetGap,
+                                           final boolean includeUnigrams) {
+    return new Analyzer() {
+
+      @Override
+      public TokenStreamComponents createComponents(String fieldName) {
+        Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE, true);
+        TokenFilter filter = new MockTokenFilter(tokenizer, stops);
+        filter = new MockBigramFilter(filter, includeUnigrams);
+        return new TokenStreamComponents(tokenizer, filter);
+      }
+
+      @Override
+      public int getPositionIncrementGap(String fieldName) {
+        return posIncGap;
+      }
+
+      @Override
+      public int getOffsetGap(String fieldName) {
+        return charOffsetGap;
+      }
+    };
+
+  }
+
 
   public Directory getDirectory(Analyzer analyzer, String[] vals)
       throws IOException {
@@ -196,4 +252,85 @@ public class ConcordanceTestBase extends LuceneTestCase {
 
     return "needle";
   }
+
+  static class MockBigramFilter extends TokenFilter {
+    private static final String JOINER = "_";
+    private static final String STRING_BOUNDARY = "#";
+
+    private final CharTermAttribute termAtt = (CharTermAttribute)this.addAttribute(CharTermAttribute.class);
+    private final PositionIncrementAttribute posIncrAtt = (PositionIncrementAttribute)this.addAttribute(PositionIncrementAttribute.class);
+    private final OffsetAttribute offsetAtt = (OffsetAttribute)this.addAttribute(OffsetAttribute.class);
+
+    private final boolean includeUnigrams;
+
+    private String unigramBuffer = null;
+    private String bigramBuffer = null;
+    private boolean noMore = false;
+    int start = -1;
+    int end = -1;
+    int unigramEnd = -1
+    public MockBigramFilter(TokenStream tokenStream, boolean includeUnigrams) {
+      super(tokenStream);
+      this.includeUnigrams = includeUnigrams;
+    }
+
+    @Override
+    public final boolean incrementToken() throws IOException {
+      if (noMore) {
+        return false;
+      }
+      //if this is the first increment
+      if (unigramBuffer == null) {
+        boolean incremented = super.input.incrementToken();
+        if (! incremented) {
+          return false;
+        }
+        unigramBuffer = this.termAtt.toString();
+        start = offsetAtt.startOffset();
+        unigramEnd = offsetAtt.endOffset();
+      }
+
+      if (includeUnigrams && bigramBuffer != null) {
+        this.termAtt.setEmpty().append(bigramBuffer);
+        if (includeUnigrams) {
+          posIncrAtt.setPositionIncrement(0);
+        }
+        bigramBuffer = null;
+        return true;
+      }
+
+      boolean incremented = this.input.incrementToken();
+      if (! incremented) {
+        noMore = true;
+        if (includeUnigrams) {
+          this.termAtt.setEmpty().append(unigramBuffer);
+          posIncrAtt.setPositionIncrement(1);
+          return true;
+        }
+        return false;
+      }
+      String currentUnigram = this.termAtt.toString();
+      bigramBuffer = unigramBuffer+JOINER+currentUnigram;
+      if (includeUnigrams) {
+        this.termAtt.setEmpty().append(unigramBuffer);
+        posIncrAtt.setPositionIncrement(1);
+        offsetAtt.setOffset(start, end);
+      } else {
+        this.termAtt.setEmpty().append(bigramBuffer);
+        posIncrAtt.setPositionIncrement(1);
+      }
+      unigramBuffer = currentUnigram;
+      return true;
+    }
+
+    @Override
+    public void reset() throws IOException{
+      super.reset();
+      this.unigramBuffer = null;
+      this.bigramBuffer = null;
+      this.noMore = false;
+    }
+
+  }
+
 }

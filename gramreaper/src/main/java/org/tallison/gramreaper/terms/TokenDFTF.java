@@ -14,68 +14,60 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.tallison.gramreaper;
+package org.tallison.gramreaper.terms;
 
 
 
-public class TokenIntPair implements Comparable<TokenIntPair> {
+public class TokenDFTF {
 
     final String token;
-    final int value;
+    final int df;
+    final long tf;
 
-    public TokenIntPair(String token, int value) {
+    public TokenDFTF(String token, int df, long tf) {
         this.token = token;
-        this.value = value;
+        this.df = df;
+        this.tf = tf;
     }
 
-    public long getValue() {
-        return value;
+
+    public long getTF() {
+        return tf;
+    }
+    public int getDF() {
+        return df;
     }
 
     public String getToken() {
         return token;
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TokenIntPair that = (TokenIntPair) o;
+        TokenDFTF tokenDFTF = (TokenDFTF) o;
 
-        if (value != that.value) return false;
-        return token.equals(that.token);
+        if (df != tokenDFTF.df) return false;
+        if (tf != tokenDFTF.tf) return false;
+        return token != null ? token.equals(tokenDFTF.token) : tokenDFTF.token == null;
     }
 
     @Override
     public int hashCode() {
-        int result = token.hashCode();
-        result = 31 * result + value;
+        int result = token != null ? token.hashCode() : 0;
+        result = 31 * result + df;
+        result = 31 * result + (int) (tf ^ (tf >>> 32));
         return result;
-    }
-
-    /**
-     * Descending by value, ascending by token
-     *
-     * @param o other tokenlong pair
-     * @return comparison
-     */
-    @Override
-    public int compareTo(TokenIntPair o) {
-        if (this.value > o.value) {
-            return -1;
-        } else if (this.value < o.value) {
-            return 1;
-        }
-        return this.token.compareTo(o.token);
     }
 
     @Override
     public String toString() {
-        return "TokenIntPair{" +
-                "token='" + token + '\'' +
-                ", value=" + value +
-                '}';
+        return "TokenDFTF{" +
+            "token='" + token + '\'' +
+            ", df=" + df +
+            ", tf=" + tf +
+            '}';
     }
 }

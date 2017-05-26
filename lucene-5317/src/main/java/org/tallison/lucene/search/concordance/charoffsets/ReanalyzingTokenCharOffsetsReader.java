@@ -84,15 +84,24 @@ public class ReanalyzingTokenCharOffsetsReader implements
         .getAttribute(org.apache.lucene.analysis.tokenattributes.OffsetAttribute.class);
     PositionIncrementAttribute incAtt = null;
     if (stream
-        .hasAttribute(org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute.class)) {
+        .hasAttribute(
+            org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute.class)) {
       incAtt = stream
-          .getAttribute(org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute.class);
+          .getAttribute(
+              org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute.class);
     }
 
     while (stream.incrementToken()) {
 
+      //Do we need this?
+      if (incAtt != null && incAtt.getPositionIncrement() == 0) {
+        continue;
+      }
+
       currInd += (incAtt != null) ? incAtt.getPositionIncrement() : defaultInc;
       if (requests.contains(currInd)) {
+        System.out.println(termAtt.toString() + " : "+ offsetAtt.startOffset() + " : "
+            + offsetAtt.endOffset());
         results.add(currInd, offsetAtt.startOffset() + charBase,
             offsetAtt.endOffset() + charBase, termAtt.toString());
       }

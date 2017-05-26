@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.tallison.gramreaper;
+package org.tallison.gramreaper.terms;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -67,10 +67,14 @@ public class DumpTerms {
         .addOption("max", true, "maximum doc frequency")
         .addOption("maxP", true, "maximum doc freq percentage")
         .addOption("minP", true, "minimum doc freq percentage")
-        .addOption("includeDF", false, "include the document frequency in the output; default is false")
+        .addOption("df", false, "include the document frequency in the output; default is false")
+        .addOption("tf", false, "include term frequency in the output; default is false")
+        .addOption("sortDF", false, "sort results by descending document frequency (default)")
+        .addOption("sortTF", false, "sort results by descending term frequency")
         .addOption("s", true, "stop words file -- UTF-8, one word per row")
         .addOption("startWords", true, "start words file -- UTF-8, one word per row; every word will be added to the list")
-        .addOption("o", true, "output file");
+        .addOption("o", true, "output file")
+    ;
   }
 
   public static void usage() {
@@ -91,6 +95,11 @@ public class DumpTerms {
   }
 
   private static class DumpTermsConfig {
+
+    enum SORT {
+        TF,
+        DF
+    }
     Path indexDirPath;
     Path indexPath;
     String field = null;
@@ -100,9 +109,11 @@ public class DumpTerms {
     Double minDocPercentage = -1.0d;
     Double maxDocPercentage = -1.0d;
     boolean includeDocFreq = false;
+    boolean includeTermFreq = false;
     Set<String> stopWords = new HashSet<>();
     Set<String> startWords = new HashSet<>();
     Path outputFile;
+    SORT sort = SORT.DF;
 
     public static DumpTermsConfig build(String[] args) throws IOException {
       DefaultParser parser = new DefaultParser();
@@ -118,6 +129,8 @@ public class DumpTerms {
         }
         if (commandLine.hasOption("n")) {
           config.topN = Integer.parseInt(commandLine.getOptionValue("n"));
+        } else {
+          config.topN = 100;
         }
         if (commandLine.hasOption("min")) {
           config.minDocFreq = Long.parseLong(commandLine.getOptionValue("min"));
@@ -140,14 +153,20 @@ public class DumpTerms {
         if (commandLine.hasOption("startWords")) {
           loadSet(commandLine.getOptionValue("startWords"), config.startWords);
         }
-        if (commandLine.hasOption("includeDF")) {
+        if (commandLine.hasOption("df")) {
           config.includeDocFreq = true;
+        }
+        if (commandLine.hasOption("tf")) {
+          config.includeTermFreq = true;
         }
         if (commandLine.hasOption("indexDir")) {
           config.indexDirPath = Paths.get(commandLine.getOptionValue("indexDir"));
         }
         if (config.indexDirPath == null && config.indexPath == null) {
           throw new ParseException("Must specify either an indexDir or an indexPath");
+        }
+        if (commandLine.hasOption("sortTF")) {
+          config.sort = SORT.TF;
         }
       } catch (ParseException e) {
         System.err.println(e.getMessage());
@@ -174,7 +193,6 @@ public class DumpTerms {
       reader.close();
 
     }
-
   }
 
   public static void main(String[] args) throws Exception {
@@ -184,8 +202,6 @@ public class DumpTerms {
     }
     DumpTerms dumpTerms = new DumpTerms(config);
     dumpTerms.execute();
-
-
   }
 
   private void execute() throws IOException {
@@ -208,7 +224,6 @@ public class DumpTerms {
       if (config.topN > -1) {
         dumpTopN(leafReader);
       }
-
   }
 
   private void dumpTopN(LeafReader leafReader) throws IOException {
@@ -223,13 +238,15 @@ public class DumpTerms {
   }
 
   private void dumpTopNField(LeafReader leafReader, String field) throws IOException {
-    TokenCountPriorityQueue queue = new TokenCountPriorityQueue(config.topN);
+    AbstractTokenTFDFPriorityQueue queue = config.sort.equals(DumpTermsConfig.SORT.DF) ?
+        new TokenDFPriorityQueue(config.topN) : new TokenTFPriorityQueue(config.topN);
     Terms terms = leafReader.terms(field);
     TermsEnum termsEnum = terms.iterator();
     BytesRef bytesRef = termsEnum.next();
     int docsWThisField = leafReader.getDocCount(field);
     while (bytesRef != null) {
       int df = termsEnum.docFreq();
+      long tf = termsEnum.totalTermFreq();
       if (config.minDocFreq > -1 && df < config.minDocFreq) {
         bytesRef = termsEnum.next();
         continue;
@@ -241,22 +258,21 @@ public class DumpTerms {
       }
 
       if (queue.top() == null || queue.size() < config.topN ||
-          df >= queue.top().getValue()) {
+          (config.sort.equals(DumpTermsConfig.SORT.DF) ? df >= queue.top().df: tf > queue.top().tf)) {
         String t = bytesRef.utf8ToString();
         if (
-//            ! t.contains(":") && //total hack for wikipedia
             ! config.stopWords.contains(t) &&
             ! config.startWords.contains(t)) {
-          queue.insertWithOverflow(new TokenIntPair(t, df));
+
+          queue.insertWithOverflow(new TokenDFTF(t, df, tf));
         }
       }
       bytesRef = termsEnum.next();
     }
     if (config.outputFile == null) {
-      for (TokenIntPair tp : queue.getArray()) {
-        String row = (config.includeDocFreq) ?
-            clean(tp.token)+"\t"+tp.value : clean(tp.token);
-        System.out.println(row);
+      StringBuilder sb = new StringBuilder();
+      for (TokenDFTF tp : queue.getArray()) {
+        System.out.println(getRow(sb, tp));
       }
     } else if (Files.isDirectory(config.outputFile)) {
       writeTopN(config.outputFile.resolve(field), queue);
@@ -265,7 +281,19 @@ public class DumpTerms {
     }
   }
 
-  private void writeTopN(Path path, TokenCountPriorityQueue queue) throws IOException {
+  private String getRow(StringBuilder sb, TokenDFTF tp) {
+    sb.setLength(0);
+    sb.append(clean(tp.token));
+    if (config.includeDocFreq) {
+      sb.append("\t").append(tp.df);
+    }
+    if (config.includeTermFreq) {
+      sb.append("\t").append(tp.tf);
+    }
+    return sb.toString();
+  }
+
+  private void writeTopN(Path path, AbstractTokenTFDFPriorityQueue queue) throws IOException {
     if (Files.isRegularFile(path)) {
       System.err.println("File "+path.getFileName() + " already exists. Skipping.");
     }
@@ -275,10 +303,9 @@ public class DumpTerms {
     for (String t : config.startWords) {
       writer.write(t+"\n");
     }
-    for (TokenIntPair tp : queue.getArray()) {
-      String row = (config.includeDocFreq) ?
-          clean(tp.token)+"\t"+tp.value : clean(tp.token);
-      writer.write(row+"\n");
+    StringBuilder sb = new StringBuilder();
+    for (TokenDFTF tp : queue.getArray()) {
+      writer.write(getRow(sb, tp));
 
     }
     writer.flush();
@@ -289,6 +316,6 @@ public class DumpTerms {
     if (s == null) {
       return "";
     }
-    return s.replaceAll("\\s+", " ");
+    return s.replaceAll("\\s+", " ").trim();
   }
 }
