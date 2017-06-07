@@ -145,7 +145,6 @@ public class TestConcordanceArrayWindowSearcher extends ConcordanceTestBase {
     truth.put("ga", 1);
     truth.put("fa", 1);
     truth.put("ea", 1);
-    System.out.println(results);
     assertEquals(truth.size(), results.size());
 
     for (TermIDF r : results) {

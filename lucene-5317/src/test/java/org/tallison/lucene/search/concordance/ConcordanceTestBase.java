@@ -268,7 +268,7 @@ public class ConcordanceTestBase extends LuceneTestCase {
     private boolean noMore = false;
     int start = -1;
     int end = -1;
-    int unigramEnd = -1
+    int unigramEnd = -1;
     public MockBigramFilter(TokenStream tokenStream, boolean includeUnigrams) {
       super(tokenStream);
       this.includeUnigrams = includeUnigrams;

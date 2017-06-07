@@ -100,8 +100,6 @@ public class ReanalyzingTokenCharOffsetsReader implements
 
       currInd += (incAtt != null) ? incAtt.getPositionIncrement() : defaultInc;
       if (requests.contains(currInd)) {
-        System.out.println(termAtt.toString() + " : "+ offsetAtt.startOffset() + " : "
-            + offsetAtt.endOffset());
         results.add(currInd, offsetAtt.startOffset() + charBase,
             offsetAtt.endOffset() + charBase, termAtt.toString());
       }
