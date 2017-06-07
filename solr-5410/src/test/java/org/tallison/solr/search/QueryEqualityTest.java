@@ -14,23 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.tallison.solr.search;
+package org.apache.solr.search;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import junit.framework.AssertionFailedError;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryUtils;
 import org.apache.solr.SolrTestCaseJ4;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.request.SolrRequestInfo;
 import org.apache.solr.response.SolrQueryResponse;
-import org.apache.solr.search.FunctionQParserPlugin;
-import org.apache.solr.search.QParser;
-import org.apache.solr.search.QParserPlugin;
-import org.apache.solr.search.ReRankQParserPlugin;
-import org.apache.solr.search.StrParser;
-import org.apache.solr.search.ValueSourceParser;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -47,8 +43,6 @@ import org.junit.BeforeClass;
  * @see QParserPlugin#standardPlugins
  * @see QueryUtils
  **/
-//need to suppress for now: https://mail-archives.apache.org/mod_mbox/lucene-solr-user/201604.mbox/%3Calpine.DEB.2.11.1604111744560.10181@tray%3E
-@SolrTestCaseJ4.SuppressSSL
 public class QueryEqualityTest extends SolrTestCaseJ4 {
 
   @BeforeClass
@@ -180,42 +174,6 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     } finally {
       req.close();
     }
-  }
-
-  public void testGraphQuery() throws Exception {
-    SolrQueryRequest req = req("from", "node_s",
-        "to","edge_s",
-        "traversalFilter","foo",
-        "returnOnlyLeaf","true",
-        "returnRoot","false",
-        "maxDepth","2",
-        "useAutn","false"
-    );
-    // make sure all param subsitution works for all args to graph query.
-    assertQueryEquals("graph", req,
-        "{!graph from=node_s to=edge_s}*:*",
-        "{!graph from=$from to=$to}*:*");
-
-    assertQueryEquals("graph", req,
-        "{!graph from=node_s to=edge_s traversalFilter=foo}*:*",
-        "{!graph from=$from to=$to traversalFilter=$traversalFilter}*:*");
-
-    assertQueryEquals("graph", req,
-        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true}*:*",
-        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf}*:*");
-
-    assertQueryEquals("graph", req,
-        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true returnRoot=false}*:*",
-        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf returnRoot=$returnRoot}*:*");
-
-    assertQueryEquals("graph", req,
-        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true returnRoot=false maxDepth=2}*:*",
-        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf returnRoot=$returnRoot maxDepth=$maxDepth}*:*");
-
-    assertQueryEquals("graph", req,
-        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true returnRoot=false maxDepth=2 useAutn=false}*:*",
-        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf returnRoot=$returnRoot maxDepth=$maxDepth useAutn=$useAutn}*:*");
-
   }
 
   public void testTlogitQuery() throws Exception {
@@ -519,6 +477,42 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
         "{!parent which=foo_s:parent}dude");
     assertQueryEquals("child", "{!child of=foo_s:parent}dude",
         "{!child of=foo_s:parent}dude");
+  }
+
+  public void testGraphQuery() throws Exception {
+    SolrQueryRequest req = req("from", "node_s",
+        "to","edge_s",
+        "traversalFilter","foo",
+        "returnOnlyLeaf","true",
+        "returnRoot","false",
+        "maxDepth","2",
+        "useAutn","false"
+    );
+    // make sure all param subsitution works for all args to graph query.
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s}*:*",
+        "{!graph from=$from to=$to}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true returnRoot=false}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf returnRoot=$returnRoot}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true returnRoot=false maxDepth=2}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf returnRoot=$returnRoot maxDepth=$maxDepth}*:*");
+
+    assertQueryEquals("graph", req,
+        "{!graph from=node_s to=edge_s traversalFilter=foo returnOnlyLeaf=true returnRoot=false maxDepth=2 useAutn=false}*:*",
+        "{!graph from=$from to=$to traversalFilter=$traversalFilter returnOnlyLeaf=$returnOnlyLeaf returnRoot=$returnRoot maxDepth=$maxDepth useAutn=$useAutn}*:*");
+
   }
 
   public void testQuerySurround() throws Exception {
@@ -974,7 +968,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
         "+apache +solr");
   }
 
-  /*
+  /**
    * this test does not assert anything itself, it simply toggles a static
    * boolean informing an @AfterClass method to assert that every default
    * qparser and valuesource parser configured was recorded by
@@ -1009,7 +1003,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
   }
 
 
-  /*
+  /**
    * NOTE: defType is not only used to pick the parser, but also to record
    * the parser being tested for coverage sanity checking
    * @see #testParserCoverage
@@ -1017,7 +1011,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
    */
   protected void assertQueryEquals(final String defType,
                                    final String... inputs) throws Exception {
-    SolrQueryRequest req = req();
+    SolrQueryRequest req = req(new String[] {"df", "text"});
     try {
       assertQueryEquals(defType, req, inputs);
     } finally {
@@ -1025,7 +1019,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     }
   }
 
-  /*
+  /**
    * NOTE: defType is not only used to pick the parser, but, if non-null it is
    * also to record the parser being tested for coverage sanity checking
    *
@@ -1047,21 +1041,22 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
       for (int i = 0; i < inputs.length; i++) {
         queries[i] = (QParser.getParser(inputs[i], defType, req).getQuery());
       }
-      for (int i = 0; i < queries.length; i++) {
-        QueryUtils.check(queries[i]);
-        // yes starting j=0 is redundent, we're making sure every query
-        // is equal to itself, and that the quality checks work regardless
-        // of which caller/callee is used.
-        for (int j = 0; j < queries.length; j++) {
-          QueryUtils.checkEqual(queries[i], queries[j]);
-        }
-      }
     } finally {
       SolrRequestInfo.clearRequestInfo();
     }
+
+    for (int i = 0; i < queries.length; i++) {
+      QueryUtils.check(queries[i]);
+      // yes starting j=0 is redundent, we're making sure every query
+      // is equal to itself, and that the quality checks work regardless
+      // of which caller/callee is used.
+      for (int j = 0; j < queries.length; j++) {
+        QueryUtils.checkEqual(queries[i], queries[j]);
+      }
+    }
   }
 
-  /*
+  /**
    * the function name for val parser coverage checking is extracted from
    * the first input
    * @see #assertQueryEquals
@@ -1076,7 +1071,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     }
   }
 
-  /*
+  /**
    * the function name for val parser coverage checking is extracted from
    * the first input
    * @see #assertQueryEquals
@@ -1105,9 +1100,11 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     assertFuncEquals("agg_hll(foo_i)", "agg_hll(foo_i)");
     assertFuncEquals("agg_sumsq(foo_i)", "agg_sumsq(foo_i)");
     assertFuncEquals("agg_percentile(foo_i,50)", "agg_percentile(foo_i,50)");
-    // assertFuncEquals("agg_stdev(foo_i)", "agg_stdev(foo_i)");
+    assertFuncEquals("agg_variance(foo_i)", "agg_variance(foo_i)");
+    assertFuncEquals("agg_stddev(foo_i)", "agg_stddev(foo_i)");
     // assertFuncEquals("agg_multistat(foo_i)", "agg_multistat(foo_i)");
   }
+
   public void testCompares() throws Exception {
     assertFuncEquals("gt(foo_i,2)", "gt(foo_i, 2)");
     assertFuncEquals("gt(foo_i,2)", "gt(foo_i,2)");
@@ -1126,4 +1123,59 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     assertFalse(equals);
   }
 
+  public void testChildField() throws Exception {
+    final SolrQueryRequest req = req("q", "{!parent which=type_s1:parent}whatever_s1:foo");
+    try {
+      assertFuncEquals(req,
+          "childfield(name_s1,$q)", "childfield(name_s1,$q)");
+    } finally {
+      req.close();
+    }
+  }
+
+  public void testPayloadScoreQuery() throws Exception {
+    // I don't see a precedent to test query inequality in here, so doing a `try`
+    // There was a bug with PayloadScoreQuery's .equals() method that said two queries were equal with different includeSpanScore settings
+
+    try {
+      assertQueryEquals
+          ("payload_score"
+              , "{!payload_score f=foo_dpf v=query func=min includeSpanScore=false}"
+              , "{!payload_score f=foo_dpf v=query func=min includeSpanScore=true}"
+          );
+      fail("queries should not have been equal");
+    } catch(AssertionFailedError e) {
+      assertTrue("queries were not equal, as expected", true);
+    }
+  }
+
+  public void testPayloadCheckQuery() throws Exception {
+    try {
+      assertQueryEquals
+          ("payload_check"
+              , "{!payload_check f=foo_dpf payloads=2}one"
+              , "{!payload_check f=foo_dpf payloads=2}two"
+          );
+      fail("queries should not have been equal");
+    } catch(AssertionFailedError e) {
+      assertTrue("queries were not equal, as expected", true);
+    }
+  }
+
+  public void testPayloadFunction() throws Exception {
+    SolrQueryRequest req = req("myField","bar_f");
+
+    try {
+      assertFuncEquals(req,
+          "payload(foo_dpf,some_term)",
+          "payload(foo_dpf,some_term)");
+    } finally {
+      req.close();
+    }
+  }
+
+  // Override req to add df param
+  public static SolrQueryRequest req(String... q) {
+    return SolrTestCaseJ4.req(q, "df", "text");
+  }
 }

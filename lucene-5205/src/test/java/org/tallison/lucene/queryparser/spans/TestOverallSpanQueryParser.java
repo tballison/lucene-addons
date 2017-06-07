@@ -336,8 +336,6 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
 
   public void testRegexWCurlyBrackets() throws Exception {
     Query q = PARSER.parse("f1:\"/networ.{0,1}/\" ");
-    System.out.println(q + " : " + q.getClass());
-
     compareHits("f1: /qui.{0,2}/ ", 0,1,2);
   }
 

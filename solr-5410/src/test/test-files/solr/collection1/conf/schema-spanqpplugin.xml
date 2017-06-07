@@ -20,7 +20,6 @@
 <!-- Test schema file for SimpleQParserPlugin. -->
 
 <schema name="spanqp" version="1.6">
-    <defaultSearchField>text0</defaultSearchField>
     <uniqueKey>id</uniqueKey>
 
     <fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>

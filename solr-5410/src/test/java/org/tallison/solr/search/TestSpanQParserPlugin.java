@@ -45,45 +45,45 @@ public class TestSpanQParserPlugin extends SolrTestCaseJ4 {
 
   @Test
   public void testQueryFields() throws Exception {
-    assertJQ(req("defType", "span", "q", "[t0 t2]~>3"), "/response/numFound==2");
+    assertJQ(req("df", "text0", "defType", "span", "q", "[t0 t2]~>3"), "/response/numFound==2");
 
     //test maxedit > 2
-    assertJQ(req("defType", "span", "q", "text1:abcd~3"), "/response/numFound==0");
-    assertJQ(req("defType", "span", "q", "text1:abcd~3", "mfe", "3"), "/response/numFound==1");
+    assertJQ(req("df", "text0", "defType", "span", "q", "text1:abcd~3"), "/response/numFound==0");
+    assertJQ(req("df", "text0", "defType", "span", "q", "text1:abcd~3", "mfe", "3"), "/response/numFound==1");
 
     //test date field is doing the parsing
-    assertJQ(req("defType", "span", "q", "date:'2011-12-01T08:08:08Z/DAY'"), "/response/numFound==1");
+    assertJQ(req("df", "text0", "defType", "span", "q", "date:'2011-12-01T08:08:08Z/DAY'"), "/response/numFound==1");
 
     //test date field for range
-    assertJQ(req("defType", "span", "q", "t0", "fq", "date:[2011-09-01T12:00:00Z TO 2011-11-01T12:00:00Z]"), "/response/numFound==1");
+    assertJQ(req("df", "text0", "defType", "span", "q", "t0", "fq", "date:[2011-09-01T12:00:00Z TO 2011-11-01T12:00:00Z]"), "/response/numFound==1");
 
     //test field specific handling of int
-    assertJQ(req("defType", "span", "q", "id:43"), "/response/numFound==1");
+    assertJQ(req("df", "text0", "defType", "span", "q", "id:43"), "/response/numFound==1");
   }
 
   @Test
   public void testDefaultOperator() throws Exception {
-    assertJQ(req("defType", "span", "fq", "text1", "q", "t1 t3",
+    assertJQ(req("df", "text0", "defType", "span", "fq", "text1", "q", "t1 t3",
         "q.op", "AND"), "/response/numFound==0");
-    assertJQ(req("defType", "span", "q", "t1 t2",
+    assertJQ(req("df", "text0", "defType", "span", "q", "t1 t2",
         "q.op", "OR"), "/response/numFound==2");
-    assertJQ(req("defType", "span", "q", "t1 t2"), "/response/numFound==2");
+    assertJQ(req("df", "text0", "defType", "span", "q", "t1 t2"), "/response/numFound==2");
   }
 
   /*
    * Test that multiterm analysis chain is used for prefix, wildcard and fuzzy
    */
   public void testMultitermAnalysis() throws Exception {
-    assertJQ(req("defType", "span", "q", "FOOBA*"), "/response/numFound==1");
-    assertJQ(req("defType", "span", "q", "f\u00F6\u00F6ba*"), "/response/numFound==1");
-    assertJQ(req("defType", "span", "q", "f\u00F6\u00F6b?r"), "/response/numFound==1");
-    assertJQ(req("defType", "span", "q", "f\u00F6\u00F6bat~1"), "/response/numFound==1");
+    assertJQ(req("df", "text0", "defType", "span", "q", "FOOBA*"), "/response/numFound==1");
+    assertJQ(req("df", "text0", "defType", "span", "q", "f\u00F6\u00F6ba*"), "/response/numFound==1");
+    assertJQ(req("df", "text0", "defType", "span", "q", "f\u00F6\u00F6b?r"), "/response/numFound==1");
+    assertJQ(req("df", "text0", "defType", "span", "q", "f\u00F6\u00F6bat~1"), "/response/numFound==1");
   }
 
   /*
    * Test negative query
    */
   public void testNegativeQuery() throws Exception {
-    assertJQ(req("defType", "span", "q", "-t0"), "/response/numFound==2");
+    assertJQ(req("df", "text0", "defType", "span", "q", "-t0"), "/response/numFound==2");
   }
 }
