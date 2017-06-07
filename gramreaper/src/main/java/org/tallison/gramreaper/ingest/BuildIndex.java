@@ -31,6 +31,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Date;
 import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
@@ -41,6 +42,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -52,6 +54,10 @@ import org.apache.lucene.store.FSDirectory;
 import org.tallison.gramreaper.ingest.schema.IndexSchema;
 
 public class BuildIndex {
+
+  static Logger logger = Logger.getLogger(BuildIndex.class);
+
+
   static Options OPTIONS;
 
   static {
@@ -185,11 +191,6 @@ public class BuildIndex {
         throw new RuntimeException(e);
       }
 
-      try {
-        indexer.close();
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
     }
   }
 
@@ -203,6 +204,8 @@ public class BuildIndex {
 
     private final IndexWriter indexWriter;
     private final Set<String> fields;
+    private int docsIndexed = 0;
+    private final long start = new Date().getTime();
     private Indexer(IndexWriter indexWriter, Set<String> fields) throws Exception {
       this.indexWriter = indexWriter;
       this.fields = fields;
@@ -214,9 +217,15 @@ public class BuildIndex {
         document.add(new TextField(field, content, Field.Store.NO));
       }
       indexWriter.addDocument(document);
+      if (++docsIndexed % 1000 == 0) {
+        logger.info("Processed "+docsIndexed + " docs in "+
+            (new Date().getTime()-start) + " ms");
+      }
     }
 
     void close() throws IOException {
+      indexWriter.flush();
+      indexWriter.commit();
       indexWriter.close();
       indexWriter.getDirectory().close();
 

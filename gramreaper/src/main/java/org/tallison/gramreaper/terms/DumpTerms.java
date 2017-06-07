@@ -37,6 +37,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.FieldInfo;
 import org.apache.lucene.index.FieldInfos;
+import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReader;
 import org.apache.lucene.index.SlowCompositeReaderWrapper;
@@ -241,6 +242,20 @@ public class DumpTerms {
     AbstractTokenTFDFPriorityQueue queue = config.sort.equals(DumpTermsConfig.SORT.DF) ?
         new TokenDFPriorityQueue(config.topN) : new TokenTFPriorityQueue(config.topN);
     Terms terms = leafReader.terms(field);
+    if (terms == null) {
+      StringBuilder sb = new StringBuilder();
+      int i = 0;
+      Fields fields = leafReader.fields();
+
+      for (String fieldName : leafReader.fields()) {
+        if (i++ > 0) {
+          sb.append("\n");
+        }
+        sb.append(fieldName);
+      }
+      throw new RuntimeException("I can't find field \""+field+"\".\n"+
+        "I only see:\n"+sb.toString());
+    }
     TermsEnum termsEnum = terms.iterator();
     BytesRef bytesRef = termsEnum.next();
     int docsWThisField = leafReader.getDocCount(field);
@@ -296,6 +311,7 @@ public class DumpTerms {
   private void writeTopN(Path path, AbstractTokenTFDFPriorityQueue queue) throws IOException {
     if (Files.isRegularFile(path)) {
       System.err.println("File "+path.getFileName() + " already exists. Skipping.");
+      return;
     }
     Files.createDirectories(path.getParent());
     BufferedWriter writer =
@@ -305,7 +321,7 @@ public class DumpTerms {
     }
     StringBuilder sb = new StringBuilder();
     for (TokenDFTF tp : queue.getArray()) {
-      writer.write(getRow(sb, tp));
+      writer.write(getRow(sb, tp)+"\n");
 
     }
     writer.flush();
