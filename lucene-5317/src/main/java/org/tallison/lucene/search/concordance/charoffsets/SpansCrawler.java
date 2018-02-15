@@ -16,7 +16,7 @@ public class SpansCrawler {
 
     query = (SpanQuery) query.rewrite(searcher.getIndexReader());
 
-    SpanWeight w = query.createWeight(searcher, ScoreMode.COMPLETE_NO_SCORES, 1.0f);
+    SpanWeight w = query.createWeight(searcher, false, 1.0f);
     if (filter == null) {
       for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
 
@@ -31,7 +31,7 @@ public class SpansCrawler {
       }
     } else {
       filter = searcher.rewrite(filter);
-      Weight searcherWeight = searcher.createWeight(filter, ScoreMode.COMPLETE_NO_SCORES, 1.0f);
+      Weight searcherWeight = searcher.createWeight(filter, false, 1.0f);
       for (LeafReaderContext ctx : searcher.getIndexReader().leaves()) {
         Scorer leafReaderContextScorer = searcherWeight.scorer(ctx);
         if (leafReaderContextScorer == null) {

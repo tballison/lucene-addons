@@ -17,7 +17,6 @@
 package org.tallison.lucene.sandbox.queries;
 
 import org.apache.lucene.index.FilteredTermsEnum;
-import org.apache.lucene.index.ImpactsEnum;
 import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.index.TermState;
@@ -94,11 +93,6 @@ public final class SlowFuzzyTermsEnum extends TermsEnum {
     @Override
     public PostingsEnum postings(PostingsEnum reuse, int flags) throws IOException {
         return actualEnum.postings(reuse, flags);
-    }
-
-    @Override
-    public ImpactsEnum impacts(Similarity.SimScorer simScorer, int i) throws IOException {
-        return actualEnum.impacts(simScorer, i);
     }
 
     @Override

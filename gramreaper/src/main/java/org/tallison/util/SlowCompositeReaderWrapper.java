@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.tallison.gramreaper;
+package org.tallison.util;
 //copied verbatim from Solr
 
 import java.io.IOException;
