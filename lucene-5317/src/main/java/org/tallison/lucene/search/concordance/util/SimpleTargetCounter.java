@@ -26,6 +26,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.TotalHitCountCollector;
 import org.apache.lucene.search.Weight;
 import org.tallison.lucene.search.concordance.windowvisitor.TargetVisitor;
@@ -50,7 +51,7 @@ public class SimpleTargetCounter {
       throws IOException {
     Query tmpQ = query.rewrite(searcher.getIndexReader());
     Set<Term> terms = new HashSet<>();
-    Weight weight = tmpQ.createWeight(searcher, false);
+    Weight weight = tmpQ.createWeight(searcher, ScoreMode.COMPLETE_NO_SCORES, 1.0f);
     weight.extractTerms(terms);
 
     Map<String, Integer> dfs = new HashMap<>();

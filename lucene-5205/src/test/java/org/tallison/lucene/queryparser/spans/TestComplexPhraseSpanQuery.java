@@ -17,6 +17,8 @@ package org.tallison.lucene.queryparser.spans;
  * limitations under the License.
  */
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser;
 import org.apache.lucene.queryparser.tmpspans.complexPhrase.TestComplexPhraseQuery;
 import org.apache.lucene.search.Query;
 
@@ -27,11 +29,27 @@ import org.apache.lucene.search.Query;
 public class TestComplexPhraseSpanQuery extends TestComplexPhraseQuery {
 
   @Override
-  public Query getQuery(String qString) throws Exception {
+  public Query getQuery(String qString, Analyzer analyzer) throws Exception {
     SpanQueryParser p = new SpanQueryParser(defaultFieldName, analyzer, analyzer);
     return p.parse(qString);
   }
-  
+
+  @Override
+  public void checkBadQuery(String qString) {
+    SpanQueryParser qp = new SpanQueryParser(defaultFieldName, analyzer, analyzer);
+    expectThrows(Throwable.class, () -> {
+      qp.parse(qString);
+    });
+  }
+
+  @Override
+  public void testUnOrderedProximitySearches() throws Exception {
+
+    checkMatches("\"smith jo*\"~>2", ""); // ordered proximity produces empty set
+
+    checkMatches("\"smith jo*\"~2", "1,2,3"); // un-ordered proximity
+
+  }
   @Override  
   public void testParserSpecificSyntax() throws Exception {
     //can't have boolean operators within a SpanNear

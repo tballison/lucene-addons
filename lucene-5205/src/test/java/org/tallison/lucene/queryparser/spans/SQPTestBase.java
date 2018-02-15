@@ -57,7 +57,7 @@ public class SQPTestBase extends LuceneTestCase {
     LeafReaderContext leafReaderContext = ctxs.get(0);
     SpanQuery sq = convert(field, q);
     sq = (SpanQuery) sq.rewrite(reader);
-    SpanWeight sw = sq.createWeight(searcher, false);
+    SpanWeight sw = sq.createWeight(searcher, ScoreMode.COMPLETE_NO_SCORES, 1.0f);
 
     final Spans spans = sw.getSpans(leafReaderContext, SpanWeight.Postings.POSITIONS);
 
@@ -79,7 +79,7 @@ public class SQPTestBase extends LuceneTestCase {
     LeafReaderContext leafReaderContext = ctxs.get(0);
     SpanQuery sq = convert(field, q);
     sq = (SpanQuery) sq.rewrite(reader);
-    SpanWeight sw = sq.createWeight(searcher, false);
+    SpanWeight sw = sq.createWeight(searcher, ScoreMode.COMPLETE_NO_SCORES, 1.0f);
     
     final Spans spans = sw.getSpans(leafReaderContext, SpanWeight.Postings.POSITIONS);
     if (spans != null) {

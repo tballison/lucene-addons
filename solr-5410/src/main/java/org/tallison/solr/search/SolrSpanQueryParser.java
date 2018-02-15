@@ -17,16 +17,22 @@ package org.tallison.solr.search;
  */
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.util.BytesRef;
+import org.apache.solr.common.SolrException;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.schema.TextField;
 import org.apache.solr.search.QParser;
 import org.tallison.lucene.queryparser.spans.SpanQueryParser;
+
+import java.io.IOException;
 
 /**
  * Overrides features of Lucene's SpanQueryParser to enable
@@ -53,39 +59,48 @@ public class SolrSpanQueryParser extends SpanQueryParser {
     this.nonTextParser = nonTextParser;
   }
 
+  @Override
+  protected Query newFieldQuery(String fieldName, String termText, boolean quoted, int phraseSlop) {
+    //lifted from SolrQueryParserBase
+    SchemaField sf = schema.getFieldOrNull(fieldName);
+    if (sf != null) {
+      if (sf.getType() instanceof TextField) {
+        return super.newFieldQuery(fieldName, termText, quoted, phraseSlop);
+      } else {
+        return sf.getType().getFieldQuery(nonTextParser, sf, termText);
+      }
+    }
+    return new TermQuery(new Term(fieldName, termText));
+  }
 
   @Override
-  public Query handleNullAnalyzerRange(String fieldName, String start,
+  public Query newRangeQuery(String fieldName, String start,
                                        String end, boolean startInclusive, boolean endInclusive) {
     //lifted from SolrQueryParserBase
     SchemaField sf = schema.getFieldOrNull(fieldName);
     if (sf != null) {
       FieldType ft = sf.getType();
+      if (ft instanceof  TextField) {
+        return super.newRangeQuery(fieldName, start, end, startInclusive, endInclusive);
+      }
       return ft.getRangeQuery(nonTextParser, sf, start, end, startInclusive, endInclusive);
     }
-    //if sf == null, back off to raw terms as ranges
-    return super.handleNullAnalyzerRange(fieldName, start, end, startInclusive, endInclusive);
+    throw new IllegalArgumentException("Can't create range query on null field: "+fieldName);
   }
 
-  @Override
-  public Query handleNullAnalyzer(String fieldName, String queryText) {
-    //lifted from SolrQueryParserBase
-    SchemaField sf = schema.getFieldOrNull(fieldName);
-    if (sf != null) {
-      return sf.getType().getFieldQuery(nonTextParser, sf, queryText);
-    }
-
-    return new TermQuery(new Term(fieldName, queryText));
-  }
 
   @Override
-  public Query handleNullAnalyzerPrefix(String fieldName, String prefix) {
+  public Query newPrefixQuery(String fieldName, String prefix) {
     //by the time you're here, you know that the analyzer was null and/or
     //this isn't a TextField
     SchemaField sf = schema.getFieldOrNull(fieldName);
     if (sf == null) {
-      return new TermQuery(new Term(fieldName, prefix));
+      throw new IllegalArgumentException("Can't create a prefix query on null field: "+fieldName);
     }
+    if (sf.getType() instanceof  TextField) {
+      return super.newPrefixQuery(fieldName, prefix);
+    }
+
     return sf.getType().getPrefixQuery(nonTextParser, sf, prefix);
 
   }
@@ -144,5 +159,48 @@ public class SolrSpanQueryParser extends SpanQueryParser {
     }
     FieldType type = field.getType();
     return type.getRewriteMethod(nonTextParser, field);
+  }
+
+  /**
+   * Work-around to fix bug in TokenizerChain (SOLR-11976)
+   * @param fieldName
+   * @param term
+   * @return
+   */
+  @Override
+  protected BytesRef normalizeMultiTerm(String fieldName, String term) {
+
+    SchemaField field = schema.getFieldOrNull(fieldName);
+    if (field != null && field.getType() instanceof TextField) {
+      return analyzeMultiTerm(fieldName, term, ((TextField) field.getType()).getMultiTermAnalyzer());
+    }
+
+    Analyzer multiTermAnalyzer = getMultiTermAnalyzer(fieldName);
+    if (multiTermAnalyzer == null) {
+      return new BytesRef(term);
+    } else {
+      return multiTermAnalyzer.normalize(fieldName, term);
+    }
+  }
+
+  private static BytesRef analyzeMultiTerm(String field, String part, Analyzer analyzerIn) {
+    if (part == null || analyzerIn == null) return null;
+
+    try (TokenStream source = analyzerIn.tokenStream(field, part)){
+      source.reset();
+
+      TermToBytesRefAttribute termAtt = source.getAttribute(TermToBytesRefAttribute.class);
+
+      if (!source.incrementToken())
+        throw  new SolrException(SolrException.ErrorCode.BAD_REQUEST,"analyzer returned no terms for multiTerm term: " + part);
+      BytesRef bytes = BytesRef.deepCopyOf(termAtt.getBytesRef());
+      if (source.incrementToken())
+        throw  new SolrException(SolrException.ErrorCode.BAD_REQUEST,"analyzer returned too many terms for multiTerm term: " + part);
+
+      source.end();
+      return bytes;
+    } catch (IOException e) {
+      throw new SolrException(SolrException.ErrorCode.BAD_REQUEST,"error analyzing range part: " + part, e);
+    }
   }
 }

@@ -26,17 +26,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenizer;
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.custom.CustomAnalyzer;
 import org.apache.lucene.analysis.en.KStemFilterFactory;
 import org.apache.lucene.analysis.miscellaneous.RemoveDuplicatesTokenFilterFactory;
 import org.apache.lucene.analysis.miscellaneous.WordDelimiterFilterFactory;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
+import org.apache.lucene.analysis.util.ClasspathResourceLoader;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.TextField;
@@ -73,54 +76,69 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
   @BeforeClass
   public static void beforeClass() throws Exception {
     lcMultiTermAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
-    complexAnalyzer = new Analyzer() {
-      @Override
-      public TokenStreamComponents createComponents(String fieldName) {
-        Tokenizer tokenizer = new WhitespaceTokenizer();
-        Map<String, String> attrs = new HashMap<>();
-        attrs.put("generateWordParts", "1");
-        attrs.put("generateNumberParts","1");
-        attrs.put("catenateWords","1");
-        attrs.put("catenateNumbers","1");
-        attrs.put("catenateAll","1");
-        attrs.put("splitOnCaseChange", "1");
-        attrs.put("preserveOriginal", "1");
-        TokenFilter filter = new WordDelimiterFilterFactory(attrs).create(tokenizer);
-        filter = new KStemFilterFactory(new HashMap<String, String>()).create(filter);
-        filter = new RemoveDuplicatesTokenFilterFactory(new HashMap<String, String>()).create(filter);
-        return new TokenStreamComponents(tokenizer, filter);
-      }
-    };
+
+
+    Map<String, String> attrs = new HashMap<>();
+    attrs.put("generateWordParts", "1");
+    attrs.put("generateNumberParts","1");
+    attrs.put("catenateWords","1");
+    attrs.put("catenateNumbers","1");
+    attrs.put("catenateAll","1");
+    attrs.put("splitOnCaseChange", "1");
+    attrs.put("preserveOriginal", "1");
+    complexAnalyzer = CustomAnalyzer.builder(new ClasspathResourceLoader(TestAdvancedAnalyzers.class))
+            .withTokenizer("whitespace")
+            .addTokenFilter("worddelimiter", attrs)
+            .addTokenFilter("kstem")
+            .addTokenFilter("removeduplicates")
+            .build();
 
     synAnalyzer = new Analyzer() {
       @Override
       public TokenStreamComponents createComponents(String fieldName) {
+
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.SIMPLE,
-            true);
+                true);
         TokenFilter filter = new MockNonWhitespaceFilter(tokenizer);
 
         filter = new MockSynFilter(filter);
         return new TokenStreamComponents(tokenizer, filter);
       }
+
+      @Override
+      protected TokenStream normalize(String fieldName, TokenStream in) {
+        return new MockNonWhitespaceFilter(new MockSynFilter(in));
+      }
+
     };
 
     baseAnalyzer = new Analyzer() {
       @Override
       public TokenStreamComponents createComponents(String fieldName) {
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.SIMPLE,
-            true);
+                true);
         TokenFilter filter = new MockNonWhitespaceFilter(tokenizer);
         return new TokenStreamComponents(tokenizer, filter);
       }
+
+      @Override
+      protected TokenStream normalize(String fieldName, TokenStream in) {
+        return new MockNonWhitespaceFilter(new LowerCaseFilter(in));
+      }
+
     };
 
     ucVowelAnalyzer = new Analyzer() {
       @Override
       public TokenStreamComponents createComponents(String fieldName) {
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.SIMPLE,
-            true);
+                true);
         TokenFilter filter = new MockUCVowelFilter(tokenizer);
         return new TokenStreamComponents(tokenizer, filter);
+      }
+      @Override
+      protected TokenStream normalize(String fieldName, TokenStream in) {
+        return new MockUCVowelFilter(new LowerCaseFilter(in));
       }
     };
 
@@ -128,9 +146,13 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
       @Override
       public TokenStreamComponents createComponents(String fieldName) {
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.KEYWORD,
-            true);
+                true);
         TokenFilter filter = new MockUCVowelFilter(tokenizer);
         return new TokenStreamComponents(tokenizer, filter);
+      }
+      @Override
+      protected TokenStream normalize(String fieldName, TokenStream in) {
+        return new MockUCVowelFilter(new LowerCaseFilter(in));
       }
     };
 
@@ -138,9 +160,13 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
       @Override
       public TokenStreamComponents createComponents(String fieldName) {
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.SIMPLE,
-            true);
+                true);
         TokenFilter filter = new MockUCVowelFilter(tokenizer);
         return new TokenStreamComponents(tokenizer, filter);
+      }
+      @Override
+      protected TokenStream normalize(String fieldName, TokenStream in) {
+        return new MockUCVowelFilter(new LowerCaseFilter(in));
       }
     };
     directory = newDirectory();
@@ -295,11 +321,6 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
     assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":LMNOP")));
     assertEquals(1, countDocs(FIELD2, p.parse(FIELD2+":lm*op")));
 
-    p = new SpanQueryParser(FIELD2, ucVowelAnalyzer, null);
-    assertEquals(1, countDocs(FIELD2, p.parse("lmnop")));
-    //analyzer still used on whole terms; don't forget!
-    assertEquals(1, countDocs(FIELD2, p.parse("LMNOP")));
-    assertEquals(0, countDocs(FIELD2, p.parse("LM*OP")));
 
     p = new SpanQueryParser(FIELD2, ucVowelAnalyzer, lcMultiTermAnalyzer);
     assertEquals(1, countDocs(FIELD2, p.parse("lmnop")));

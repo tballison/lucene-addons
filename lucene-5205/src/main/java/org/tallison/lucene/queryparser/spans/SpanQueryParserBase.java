@@ -25,12 +25,12 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.sandbox.queries.SlowFuzzyQuery;
 import org.apache.lucene.search.*;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
 import org.apache.lucene.search.spans.*;
 import org.apache.lucene.util.BytesRef;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
+import org.tallison.lucene.sandbox.queries.SlowFuzzyQuery;
 
 /**
  * This mimics QueryParserBase.  Instead of extending it, though, this now makes
@@ -309,8 +309,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * it into multiple terms, treat that as a "phrase" or as an "or" depending on
    * the value of {@link #autoGeneratePhraseQueries}.
    *
-   * If the analyzer is null, this calls {@link #handleNullAnalyzer(String, String)}
-   *
    * Can return null!
 
    * @param fieldName field
@@ -318,15 +316,10 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @param quoted whether term is quoted
    * @param phraseSlop what phrase slop to use if this is found to be a phrase
    * @return Query
-   * @throws ParseException if encountered during parse
    */
-  protected Query newFieldQuery(String fieldName, String termText, boolean quoted, int phraseSlop)
-      throws ParseException {
+  protected Query newFieldQuery(String fieldName, String termText, boolean quoted, int phraseSlop) {
     Analyzer analyzer = getAnalyzer(fieldName);
 
-    if (analyzer == null) {
-      return handleNullAnalyzer(fieldName, termText);
-    }
     return createFieldQuery(analyzer, singleTermBooleanOperator, fieldName, termText,
         (quoted || autoGeneratePhraseQueries), phraseSlop);
   }
@@ -340,13 +333,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @throws ParseException if encountered during parse
    */
   protected Query newRegexpQuery(String fieldName, String termText) throws ParseException{
-    Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
-    BytesRef analyzed = null;
-    if (mtAnalyzer != null) {
-      analyzed = analyzeMultitermTermParseEx(mtAnalyzer, fieldName, termText);
-      return wrapMultiTermRewrite(new RegexpQuery(new Term(fieldName, analyzed)));
-    }
-    return wrapMultiTermRewrite(new RegexpQuery(new Term(fieldName,termText)));
+    BytesRef analyzed = normalizeMultiTerm(fieldName, termText);
+    return wrapMultiTermRewrite(new RegexpQuery(new Term(fieldName,analyzed)));
   }
 
   /**
@@ -356,8 +344,6 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * <p>
    * This applies
    * {@link #getMultiTermAnalyzer(String)}'s analyzer to the tokens.
-   * If {@link #getMultiTermAnalyzer(String)} returns null, this calls
-   * {@link #handleNullAnalyzerRange(String, String, String, boolean, boolean)}.
    *
    *
    * @param fieldName field
@@ -366,31 +352,22 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * @param includeLower include lower
    * @param includeUpper include upper
    * @return RangeQuery
-   * @throws ParseException if encountered during parse
    */
   protected Query newRangeQuery(String fieldName, String lowerTerm, String upperTerm,
-                                boolean includeLower, boolean includeUpper) throws ParseException {
-    Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
-    if (mtAnalyzer == null) {
-      return handleNullAnalyzerRange(fieldName, lowerTerm, upperTerm, includeLower, includeUpper);
-    }
+                                boolean includeLower, boolean includeUpper) {
     BytesRef lowerBytesRef = (lowerTerm == null) ? null :
-        analyzeMultitermTermParseEx(mtAnalyzer, fieldName, lowerTerm);
+        normalizeMultiTerm(fieldName, lowerTerm);
     BytesRef upperBytesRef = (upperTerm == null) ? null :
-        analyzeMultitermTermParseEx(mtAnalyzer, fieldName, upperTerm);
+        normalizeMultiTerm(fieldName, upperTerm);
 
     return wrapMultiTermRewrite(new TermRangeQuery(fieldName, lowerBytesRef, upperBytesRef, includeLower, includeUpper));
   }
 
   protected Query newFuzzyQuery(String fieldName, String termText,
-                                int maxEdits, int prefixLen, int maxExpansions, boolean transpositions) throws ParseException {
+                                int maxEdits, int prefixLen, int maxExpansions, boolean transpositions) {
     maxEdits = Math.min(maxEdits, getFuzzyMaxEdits());
-    Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
-    String analyzed = termText;
-    if (mtAnalyzer != null) {
-      BytesRef b = analyzeMultitermTermParseEx(mtAnalyzer, fieldName, termText);
-      analyzed = b.utf8ToString();
-    }
+    BytesRef analyzed = normalizeMultiTerm(fieldName, termText);
+
     //note that this is subtly different from createFieldQuery
     if (maxEdits == 0) {
       return new TermQuery(new Term(fieldName, analyzed));
@@ -416,65 +393,14 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
         (termText.startsWith("*") || termText.startsWith("?")) ) {
       throw new ParseException("'*' or '?' not allowed as first character in WildcardQuery");
     }
-    Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
-    BytesRef analyzed = analyzeMultitermTermParseEx(mtAnalyzer, fieldName, termText);
+    BytesRef analyzed = normalizeMultiTerm(fieldName, termText);
     return wrapMultiTermRewrite(new WildcardQuery(new Term(fieldName, analyzed)));
   }
 
-  protected Query newPrefixQuery(String fieldName, String termText) throws ParseException {
-    Analyzer mtAnalyzer = getMultiTermAnalyzer(fieldName);
-    if (mtAnalyzer == null) {
-      return handleNullAnalyzerPrefix(fieldName, termText);
-    }
-    BytesRef analyzed = analyzeMultitermTermParseEx(mtAnalyzer, fieldName, termText);
+  protected Query newPrefixQuery(String fieldName, String termText) {
+    BytesRef analyzed = normalizeMultiTerm(fieldName, termText);
     return wrapMultiTermRewrite(new PrefixQuery(new Term(fieldName, analyzed)));
   }
-
-  /**
-   * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
-   * with no modifications to termText
-   *
-   * @param fieldName field to use
-   * @param termText term
-   * @return query
-   */
-  public Query handleNullAnalyzer(String fieldName, String termText) {
-    return new SpanTermQuery(new Term(fieldName, termText));
-  }
-
-  /**
-   * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
-   * or prefix with no modifications to termText.
-   *
-   * @param fieldName field
-   * @param prefix prefix
-   * @return Query
-   */
-  public Query handleNullAnalyzerPrefix(String fieldName, String prefix) {
-    MultiTermQuery mtq = new PrefixQuery(new Term(fieldName, prefix));
-    return mtq;
-  }
-
-  /**
-   * Built to be overridden.  In SpanQueryParserBase, this returns SpanTermQuery
-   * with no modifications to termText
-   *
-   * @param fieldName default field
-   * @param start start term
-   * @param end end term
-   * @param startInclusive is range inclusive of start term
-   * @param endInclusive is range inclusive of end term
-   * @return query
-   */
-  public Query handleNullAnalyzerRange(String fieldName, String start,
-                                       String end, boolean startInclusive, boolean endInclusive) {
-    final TermRangeQuery query =
-        TermRangeQuery.newStringRange(fieldName, start, end, startInclusive, endInclusive);
-
-    query.setRewriteMethod(getMultiTermRewriteMethod(fieldName));
-    return new SpanMultiTermQueryWrapper<TermRangeQuery>(query);
-  }
-
 
   /**
    *

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.MockAnalyzer;
 import org.apache.lucene.analysis.MockTokenFilter;
 import org.apache.lucene.analysis.MockTokenizer;
@@ -40,6 +41,7 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.SpanWeight;
@@ -55,6 +57,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
   private static Analyzer stopAnalyzer;
   private static Analyzer noStopAnalyzer;
   private static Analyzer lcMultiTermAnalyzer;
+  private static Analyzer noopMultiTermAnalyzer;
   private static final String FIELD = "f1";
 
   private static final CharacterRunAutomaton STOP_WORDS = new CharacterRunAutomaton(
@@ -75,13 +78,18 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
   public static void beforeClass() throws Exception {
 
     lcMultiTermAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
+    noopMultiTermAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, false);
     noStopAnalyzer = new Analyzer() {
       @Override
       public TokenStreamComponents createComponents(String fieldName) {
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE,
-            true);
+                true);
         TokenFilter filter = new MockStandardTokenizerFilter(tokenizer);
         return new TokenStreamComponents(tokenizer, filter);
+      }
+      @Override
+      protected TokenStream normalize(String fieldName, TokenStream in) {
+        return new LowerCaseFilter(in);
       }
     };
 
@@ -89,10 +97,15 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
       @Override
       public TokenStreamComponents createComponents(String fieldName) {
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE,
-            true);
+                true);
         TokenFilter filter = new MockStandardTokenizerFilter(tokenizer);
         filter = new MockTokenFilter(filter, STOP_WORDS);
         return new TokenStreamComponents(tokenizer, filter);
+      }
+
+      @Override
+      protected TokenStream normalize(String fieldName, TokenStream in) {
+        return new LowerCaseFilter(in);
       }
     };
 
@@ -263,7 +276,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     // lowercasing as default
     testOffsetForSingleSpanMatch(p, "*OG", 1, 5, 6);
 
-    p = new SpanOnlyParser(FIELD, noStopAnalyzer, null);
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, noopMultiTermAnalyzer);
     p.setAllowLeadingWildcard(true);
     countSpansDocs(p, "*OG", 0, 0);
 
@@ -285,7 +298,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
 
     countSpansDocs(p, "br*", 3, 2);
 
-    p = new SpanOnlyParser(FIELD, noStopAnalyzer, null);
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, noopMultiTermAnalyzer);
     countSpansDocs(p, "BR*", 0, 0);
 
     // not actually a prefix query
@@ -313,7 +326,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     //there should be no processing of regexes!
     countSpansDocs(p, "/(?i)B[wor]+n/", 0, 0);
 
-    p = new SpanOnlyParser(FIELD, noStopAnalyzer, null);
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, noopMultiTermAnalyzer);
     countSpansDocs(p, "/B[wor]+n/", 0, 0);
 
     //test special regex escape
@@ -336,7 +349,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
 
     // default lowercasing
     testOffsetForSingleSpanMatch(p, "Abcdefgh~3", 3, 0, 1);
-    p = new SpanOnlyParser(FIELD, noStopAnalyzer, null);
+    p = new SpanOnlyParser(FIELD, noStopAnalyzer, noopMultiTermAnalyzer);
     countSpansDocs(p, "Abcdefgh~3", 0, 0);
 
     countSpansDocs(p, "brwon~1", 3, 2);
@@ -596,12 +609,12 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
 
   private void testOffsetForSingleSpanMatch(SpanOnlyParser p, String s,
       int trueDocID, int trueSpanStart, int trueSpanEnd) throws Exception {
-    SpanQuery q = (SpanQuery)p.parse(s);
+    SpanQuery sq = (SpanQuery)p.parse(s);
     List<LeafReaderContext> ctxs = reader.leaves();
     assert (ctxs.size() == 1);
     LeafReaderContext ctx = ctxs.get(0);
-    q = (SpanQuery) q.rewrite(ctx.reader());
-    SpanWeight sw = q.createWeight(searcher, false);
+    sq = (SpanQuery) sq.rewrite(ctx.reader());
+    SpanWeight sw = sq.createWeight(searcher, ScoreMode.COMPLETE_NO_SCORES, 1.0f);
 
     final Spans spans = sw.getSpans(ctx, SpanWeight.Postings.POSITIONS);
 

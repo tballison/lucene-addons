@@ -67,74 +67,14 @@ public abstract class AnalyzingQueryParserBase extends QueryBuilder {
   //modify to throw only parse exception
 
   /**
-   * Notionally overrides functionality from analyzeMultitermTerm.  Differences
-   * are that this consumes the full tokenstream, and it throws ParseException
-   * if it encounters no content terms or more than one.
-   * <p>
-   * Need to consume full tokenstream even if on exception because otherwise
-   * analyzer could be left in bad state!!!
    *
-   * If getMultitermAnalyzer(String fieldName) returns null,
-   * this returns "part" unaltered.
-   *
-   * @param multiTermAnalyzer analyzer for multiterms
-   * @param field default field
-   * @param part term part to analyze
+   * @param fieldName default field
+   * @param term term part to analyze
    * @return bytesRef to term part
-   * @throws ParseException if there is a failure while parsing
      */
-  protected BytesRef analyzeMultitermTermParseEx(Analyzer multiTermAnalyzer, String field, String part) throws ParseException {
-    //TODO: Modify QueryParserBase, analyzeMultiTerm doesn't currently consume all tokens, and it 
-    //throws RuntimeExceptions and IllegalArgumentExceptions instead of parse.
-    //Otherwise this is copied verbatim.  
-    TokenStream source;
-
-    if (multiTermAnalyzer == null) {
-      return new BytesRef(part);
-    }
-
-    try {
-      source = multiTermAnalyzer.tokenStream(field, part);
-      source.reset();
-    } catch (NullPointerException e) {
-      throw new ParseException("Couldn't find correct analyzer for field ("+field+")");
-    } catch (IOException e) {
-      throw new ParseException("Unable to initialize TokenStream to analyze multiTerm term: " + part);
-    }
-
-    TermToBytesRefAttribute termAtt = source.getAttribute(TermToBytesRefAttribute.class);
-    BytesRef bytes = termAtt.getBytesRef();
-
-    int partCount = 0;
-    try {
-      if (!source.incrementToken()) {
-        //intentionally empty
-      } else {
-        partCount++;
-        bytes = termAtt.getBytesRef();
-        while (source.incrementToken()) {
-          partCount++;
-        }
-
-      }
-    } catch (IOException e1) {
-      throw new RuntimeException("IO error analyzing multiterm: " + part);
-    }
-
-    try {
-      source.end();
-      source.close();
-    } catch (IOException e) {
-      throw new RuntimeException("Unable to end & close TokenStream after analyzing multiTerm term: " + part);
-    }
-    if (partCount < 1) {
-      throw new ParseException("Couldn't find any content in >"+ part+"<");
-    } else if (partCount > 1) {
-      throw new ParseException("Found more than one component in a multiterm:"+part);
-    }
-    return BytesRef.deepCopyOf(bytes);
+  protected BytesRef normalizeMultiTerm(String fieldName, String term) {
+    return getMultiTermAnalyzer(fieldName).normalize(fieldName, term);
   }
-
 
   /**
    * In this base class, this simply returns 

@@ -51,17 +51,4 @@ public class MockQuerySenderListenerReqHandler extends RequestHandlerBase {
     return result;
   }
 
-  @Override
-  public String getSource() {
-    String result = null;
-    return result;
-  }
-
-  @Override
-  public NamedList<Object> getStatistics() {
-    NamedList<Object> lst = super.getStatistics();
-    lst.add("initCount", initCounter.intValue());
-    return lst;
-  }
-
 }

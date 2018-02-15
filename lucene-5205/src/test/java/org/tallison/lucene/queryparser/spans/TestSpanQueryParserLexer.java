@@ -20,6 +20,7 @@ package org.tallison.lucene.queryparser.spans;
 import java.util.List;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.util.LuceneTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -72,6 +73,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
   }
   */
 
+  @Ignore
   public void testRegexWCurlyBrackets() throws Exception {
     String s = "/netwo.{1,2}/";
     for (SQPToken t : lexer.getTokens(s)) {
@@ -1292,7 +1294,7 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
 
   @Test
   public void isolateTest() throws Exception {
-    debug("y@.hoo");
+//    debug("y@.hoo");
     SQPTerm fox = new SQPTerm("fox", false);
     fox.setBoost(10f);
     executeSingleTokenTest(

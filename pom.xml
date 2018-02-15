@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.tallison.lucene</groupId>
     <artifactId>lucene-addons-parent</artifactId>
-    <version>6.6-0.1</version>
+    <version>8.0.0-SNAPSHOT</version>
     <relativePath>lucene-addons-parent/pom.xml</relativePath>
   </parent>
 
@@ -34,7 +34,7 @@
   <name>Lucene Addons</name>
   <description>This package offers standalone
   versions of LUCENE-5205 and LUCENE-5317 (and some others to come: LUCENE-5318)
-  for versions of Lucene 4.x-trunk
+  for versions of Lucene 4.x-master
   </description>
 
 

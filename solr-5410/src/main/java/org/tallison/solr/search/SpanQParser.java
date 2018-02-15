@@ -20,74 +20,84 @@ package org.tallison.solr.search;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.Query;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.SolrParams;
-import org.apache.solr.parser.QueryParser;
 import org.apache.solr.request.SolrQueryRequest;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.QueryParsing;
 import org.apache.solr.search.SyntaxError;
+import org.tallison.solr.search.SolrSpanQueryParser;
 
 /**
  * @see SpanQParserPlugin
  */
 public class SpanQParser extends QParser {
 
+  private final static org.apache.lucene.queryparser.classic.QueryParser.Operator DEFAULT_OPERATOR =
+          org.apache.lucene.queryparser.classic.QueryParser.Operator.OR;
+
   private SolrSpanQueryParser parser;
-  private String defaultFieldName;		
-  private final String MAX_FUZZY_EDITS = "mfe";
-  private final String NEAR_MAX = "nmax";
-  private final String NOT_NEAR_MAX = "nnmax";
-  private final String ALLOW_LEADING_WILDCARD = "ldwc";
-  private final String AUTO_GENERATE_PHRASE = "ap";
-  private final String PHRASE_SLOP = "ps";
-  private final String PREFIX_LENGTH = "pl";
+  private String defaultFieldName;
+  private final static String MAX_FUZZY_EDITS = "mfe";
+  private final static String NEAR_MAX = "nmax";
+  private final static String NOT_NEAR_MAX = "nnmax";
+  private final static String ALLOW_LEADING_WILDCARD = "ldwc";
+  private final static String AUTO_GENERATE_PHRASE = "ap";
+  private final static String PHRASE_SLOP = "ps";
+  private final static String PREFIX_LENGTH = "pl";
 
 
-  public SpanQParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req){
+  public SpanQParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) {
     super(qstr, localParams, params, req);
     IndexSchema schema = req.getSchema();
 
+    //now set the params
+    SolrParams comboParams = SolrParams.wrapDefaults(localParams, params);
+
     //preamble to initializing the parser
-    Analyzer analyzer = null;
+    Analyzer analyzer = schema.getQueryAnalyzer();    //default analyzer?
 
-    defaultFieldName = getDefaultField(schema);
 
-    SchemaField sf = schema.getField(defaultFieldName);
-    if(sf != null && sf.getType() != null)
-      analyzer = sf.getType().getQueryAnalyzer();
-    else
-      analyzer = schema.getQueryAnalyzer();	//default analyzer?
+    defaultFieldName = getParam(CommonParams.DF);
+
+    if (defaultFieldName != null) {
+      SchemaField sf = schema.getField(defaultFieldName);
+      if (sf != null && sf.getType() != null) {
+        analyzer = sf.getType().getQueryAnalyzer();
+      }
+    }
 
     //initialize the parser
     parser = new SolrSpanQueryParser(defaultFieldName, analyzer, schema, this);
 
-    //now set the params
-    SolrParams solrParams = SolrParams.wrapDefaults(localParams, params);
 
-    parser.setAllowLeadingWildcard(solrParams.getBool(ALLOW_LEADING_WILDCARD, true));
+    parser.setAllowLeadingWildcard(comboParams.getBool(ALLOW_LEADING_WILDCARD, true));
 
-//    parser.setAnalyzeRangeTerms(solrParams.getBool(ANALYZE_RANGE_TERMS, true));
-    parser.setAutoGeneratePhraseQueries(solrParams.getBool(AUTO_GENERATE_PHRASE, false));
-    QueryParser.Operator defaultOp = 
-        QueryParsing.getQueryParserDefaultOperator(req.getSchema(), solrParams.get(QueryParsing.OP));
+    parser.setAutoGeneratePhraseQueries(comboParams.getBool(AUTO_GENERATE_PHRASE, false));
 
-    if (defaultOp == QueryParser.Operator.AND) {
-      parser.setDefaultOperator(Operator.AND);
+    org.apache.lucene.queryparser.classic.QueryParser.Operator defaultOp = DEFAULT_OPERATOR;
+    String defaultOpString = comboParams.get(QueryParsing.OP);
+    if (defaultOpString != null) {
+      if (defaultOpString.equalsIgnoreCase("and")) {
+        defaultOp = org.apache.lucene.queryparser.classic.QueryParser.Operator.AND;
+      }
     }
-    parser.setFuzzyMaxEdits(solrParams.getInt(MAX_FUZZY_EDITS, 2));
-    parser.setFuzzyPrefixLength(solrParams.getInt(PREFIX_LENGTH, 0));
-    parser.setPhraseSlop(solrParams.getInt(PHRASE_SLOP, 0));
-    parser.setSpanNearMaxDistance(solrParams.getInt(NEAR_MAX, -1));
-    parser.setSpanNotNearMaxDistance(solrParams.getInt(NOT_NEAR_MAX, -1));
+
+    parser.setDefaultOperator(defaultOp);
+
+    parser.setFuzzyMaxEdits(comboParams.getInt(MAX_FUZZY_EDITS, 2));
+    parser.setFuzzyPrefixLength(comboParams.getInt(PREFIX_LENGTH, 0));
+    parser.setPhraseSlop(comboParams.getInt(PHRASE_SLOP, 0));
+    parser.setSpanNearMaxDistance(comboParams.getInt(NEAR_MAX, -1));
+    parser.setSpanNotNearMaxDistance(comboParams.getInt(NOT_NEAR_MAX, -1));
 
   }
 
-  @Override public Query parse() throws SyntaxError {
+  @Override
+  public Query parse() throws SyntaxError {
     Query query = null;
     try
     {
@@ -100,30 +110,5 @@ public class SpanQParser extends QParser {
     }
 
     return query;
-  }
-
-
-
-  private String getDefaultField(IndexSchema schema){
-
-    String fieldName = getParam(CommonParams.FIELD);
-    if(fieldName == null || fieldName.equalsIgnoreCase("null")){
-
-      if(fieldName == null || fieldName.equalsIgnoreCase("null"))
-        fieldName = getParam(CommonParams.DF);
-
-      if(fieldName == null || fieldName.equalsIgnoreCase("null")){
-        //check field list if not in field
-        fieldName = getParam(CommonParams.FL);
-
-        //TODO: change when/if parser allows for multiple terms
-        if(fieldName != null)
-          fieldName = fieldName.split(",")[0].trim();
-      }
-      if (fieldName == null || fieldName.equals("null")){
-        fieldName = QueryParsing.getDefaultField(schema, null);
-      }
-    }
-    return fieldName;
   }
 }

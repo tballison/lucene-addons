@@ -62,7 +62,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
   public static void beforeClass() throws Exception {
 
     ANALYZER = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, true);
-    ANALYZER = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, true);
+    MULTITERM_ANALYZER = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
 
     DIRECTORY = newDirectory();
 

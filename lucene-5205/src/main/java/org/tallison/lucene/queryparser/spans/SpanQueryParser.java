@@ -43,7 +43,6 @@ import org.apache.lucene.search.spans.SpanQuery;
  * <li> {@link org.apache.lucene.queryparser.complexPhrase.ComplexPhraseQueryParser}: 
  * can handle "near" queries that include multiterms ({@link org.apache.lucene.search.WildcardQuery},
  * {@link org.apache.lucene.search.FuzzyQuery}, {@link org.apache.lucene.search.RegexpQuery}).</li>
- * <li> {@link org.apache.lucene.queryparser.analyzing.AnalyzingQueryParser}: has an option to analyze multiterms.</li>
  * </ul>
  * 
  * <p> 
@@ -158,7 +157,7 @@ import org.apache.lucene.search.spans.SpanQuery;
  * in the sourcecode in the header of SpanQueryParser.
  * <p>
  * <b>NOTE</b> You must add the sandbox jar to your class path to include 
- * the currently deprecated {@link org.apache.lucene.sandbox.queries.SlowFuzzyQuery}.
+ * the currently deprecated {@link org.tallison.lucene.sandbox.queries.SlowFuzzyQuery}.
  * <p> Limitations of SpanQueryParser compared with classic QueryParser:
  * <ol>
  * <li> There is some learning curve to figure out the subtle differences in syntax between

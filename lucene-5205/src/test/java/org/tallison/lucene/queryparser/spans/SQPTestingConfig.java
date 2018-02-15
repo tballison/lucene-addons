@@ -37,8 +37,7 @@ public class SQPTestingConfig implements CommonQueryParserConfiguration {
   }
 
   public SpanQueryParser getConfiguredParser() {
-    Analyzer tmpMTAnalyzer = (getLowercaseExpandedTerms()) ? mtAnalyzer : null;
-    SpanQueryParser p = new SpanQueryParser(defaultField, analyzer, tmpMTAnalyzer);
+    SpanQueryParser p = new SpanQueryParser(defaultField, analyzer, mtAnalyzer);
     p.setDefaultOperator(getDefaultOperator());
     p.setAllowLeadingWildcard(getAllowLeadingWildcard());
     p.setMultiTermRewriteMethod(getMultiTermRewriteMethod());
@@ -48,15 +47,6 @@ public class SQPTestingConfig implements CommonQueryParserConfiguration {
     return p;
   }
 
-  @Override
-  public void setLowercaseExpandedTerms(boolean lowercaseExpandedTerms) {
-    this.lowercaseExpandedTerms = lowercaseExpandedTerms;
-  }
-
-  @Override
-  public boolean getLowercaseExpandedTerms() {
-    return lowercaseExpandedTerms;
-  }
 
   @Override
   public void setAllowLeadingWildcard(boolean allowLeadingWildcard) {

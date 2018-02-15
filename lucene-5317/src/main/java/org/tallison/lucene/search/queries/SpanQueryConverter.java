@@ -26,6 +26,7 @@ import org.apache.lucene.index.Term;
 import org.apache.lucene.queries.CommonTermsQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.Weight;
 import org.tallison.lucene.search.spans.SimpleSpanQueryConverter;
 import org.apache.lucene.search.spans.SpanOrQuery;
@@ -53,7 +54,7 @@ public class SpanQueryConverter extends SimpleSpanQueryConverter {
 
       Set<Term> terms = new HashSet<>();
       try {
-        Weight w = ctq.createWeight(searcher, false);
+        Weight w = ctq.createWeight(searcher, ScoreMode.COMPLETE_NO_SCORES, 1.0f);
         w.extractTerms(terms);
       } catch (IOException e) {
         throw new RuntimeException("IOException on searcher!!!", e);

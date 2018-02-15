@@ -40,11 +40,11 @@ import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReader;
-import org.apache.lucene.index.SlowCompositeReaderWrapper;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
+import org.tallison.gramreaper.SlowCompositeReaderWrapper;
 
 public class DumpTerms {
   static Options OPTIONS;
@@ -245,13 +245,12 @@ public class DumpTerms {
     if (terms == null) {
       StringBuilder sb = new StringBuilder();
       int i = 0;
-      Fields fields = leafReader.fields();
-
-      for (String fieldName : leafReader.fields()) {
+      for (FieldInfo fieldInfo : leafReader.getFieldInfos()) {
         if (i++ > 0) {
           sb.append("\n");
         }
-        sb.append(fieldName);
+        sb.append(fieldInfo.name);
+
       }
       throw new RuntimeException("I can't find field \""+field+"\".\n"+
         "I only see:\n"+sb.toString());
