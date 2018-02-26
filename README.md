@@ -18,6 +18,7 @@ for the latest stable versions of Lucene/Solr.
 Lucene 5.4.0 brought a regression that prevents MultiTermQueries from working
 within SpanNotQueries (LUCENE-6929).  Avoid 5.4.0!
 
+
 ACKNOWLEDGEMENTS
 
 Thank you to Todd Hay and David Smiley for encouraging me to start contributing to
