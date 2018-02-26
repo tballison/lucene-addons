@@ -7,8 +7,6 @@ Main Branches:
 The branches are named for the version of Lucene/Solr then the branch id, e.g.
 lucene5.5-0.2 is the more recent working branch tagged to Lucene 5.5.x.
 
-I haven't had a chance yet to get LUCENE-5317 working with Solr 6.
-
 As of this writing (5/23/2016), LUCENE-5205, SOLR-5410 and LUCENE-5317 are 
 working on all branches.  Still need to update/refactor SOLR-5411.
 
