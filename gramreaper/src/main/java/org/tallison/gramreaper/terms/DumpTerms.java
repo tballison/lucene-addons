@@ -53,7 +53,7 @@ public class DumpTerms {
     Option field = new Option("f", "field",
         true, "Lucene field to process");
 
-    Option indexPath = new Option("i", "index",
+    Option indexPath = new Option("idx", "index",
         true, "Lucene index to process");
 
     Option indexDirPath = new Option("indexDir", true,
@@ -125,8 +125,8 @@ public class DumpTerms {
         if (commandLine.hasOption("o")) {
           config.outputFile = Paths.get(commandLine.getOptionValue("o"));
         }
-        if (commandLine.hasOption("i")) {
-          config.indexPath = Paths.get(commandLine.getOptionValue("i"));
+        if (commandLine.hasOption("idx")) {
+          config.indexPath = Paths.get(commandLine.getOptionValue("idx"));
         }
         if (commandLine.hasOption("n")) {
           config.topN = Integer.parseInt(commandLine.getOptionValue("n"));
