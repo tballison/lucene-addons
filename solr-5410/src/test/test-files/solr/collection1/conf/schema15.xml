@@ -166,7 +166,6 @@
   <fieldType name="teststop" class="solr.TextField">
     <analyzer>
       <tokenizer class="solr.LowerCaseTokenizerFactory"/>
-      <filter class="solr.StandardFilterFactory"/>
       <filter class="solr.StopFilterFactory" words="stopwords.txt"/>
     </analyzer>
   </fieldType>
@@ -212,13 +211,11 @@
   <fieldType name="standardtokfilt" class="solr.TextField">
     <analyzer>
       <tokenizer class="solr.StandardTokenizerFactory"/>
-      <filter class="solr.StandardFilterFactory"/>
     </analyzer>
   </fieldType>
   <fieldType name="standardfilt" class="solr.TextField">
     <analyzer>
       <tokenizer class="solr.MockTokenizerFactory"/>
-      <filter class="solr.StandardFilterFactory"/>
     </analyzer>
   </fieldType>
   <fieldType name="lowerfilt" class="solr.TextField">
@@ -387,7 +384,7 @@
     </analyzer>
   </fieldType>
 
-  <!-- a text field with the stop filter only on the query analyzer 
+  <!-- a text field with the stop filter only on the query analyzer
    -->
   <fieldType name="text_sw" class="solr.TextField" positionIncrementGap="100">
     <analyzer type="index">
@@ -585,7 +582,7 @@
   <dynamicField name="*_i_dvo" multiValued="false" type="int"   docValues="true" indexed="false" stored="false"/>
   <dynamicField name="*_f_dvo" multiValued="false" type="float" docValues="true" indexed="false" stored="false"/>
   <dynamicField name="*_l_dvo" multiValued="false" type="long"  docValues="true" indexed="false" stored="false"/>
-  
+
   <dynamicField name="*_mfacet" type="string" indexed="true" stored="false" multiValued="true"/>
 
   <dynamicField name="*_sw" type="text_sw" indexed="true" stored="true" multiValued="true"/>

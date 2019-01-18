@@ -16,6 +16,11 @@
  */
 package org.tallison.solr.search;
 
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import junit.framework.AssertionFailedError;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryUtils;
@@ -27,14 +32,12 @@ import org.apache.solr.search.FunctionQParserPlugin;
 import org.apache.solr.search.QParser;
 import org.apache.solr.search.QParserPlugin;
 import org.apache.solr.search.ReRankQParserPlugin;
+import org.apache.solr.search.SignificantTermsQParserPlugin;
 import org.apache.solr.search.StrParser;
 import org.apache.solr.search.ValueSourceParser;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 
 /**
@@ -99,6 +102,14 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
             " +apache +solr");
   }
 
+  //@Deprecated
+  /*public void testQueryLucenePlusSort() throws Exception {
+    assertQueryEquals("lucenePlusSort",
+            "apache solr", "apache  solr", "apache solr ; score desc");
+    assertQueryEquals("lucenePlusSort",
+            "+apache +solr", "apache AND solr", " +apache +solr; score desc");
+  }*/
+
   public void testQueryPrefix() throws Exception {
     SolrQueryRequest req = req("myField","foo_s");
     try {
@@ -132,8 +143,8 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
             "start", "0");
     try {
       assertQueryEquals(defType, req,
-              "{!"+defType+" "+ ReRankQParserPlugin.RERANK_QUERY+"=$rqq "+ ReRankQParserPlugin.RERANK_DOCS+"=$rdocs "+ ReRankQParserPlugin.RERANK_WEIGHT+"=$rweight}",
-              "{!"+defType+" "+ ReRankQParserPlugin.RERANK_QUERY+"=$rqq "+ ReRankQParserPlugin.RERANK_DOCS+"=20 "+ ReRankQParserPlugin.RERANK_WEIGHT+"=2}");
+              "{!"+defType+" "+ReRankQParserPlugin.RERANK_QUERY+"=$rqq "+ReRankQParserPlugin.RERANK_DOCS+"=$rdocs "+ReRankQParserPlugin.RERANK_WEIGHT+"=$rweight}",
+              "{!"+defType+" "+ReRankQParserPlugin.RERANK_QUERY+"=$rqq "+ReRankQParserPlugin.RERANK_DOCS+"=20 "+ReRankQParserPlugin.RERANK_WEIGHT+"=2}");
 
     } finally {
       req.close();
@@ -148,8 +159,8 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
             "start", "50");
     try {
       assertQueryEquals(defType, req,
-              "{!"+defType+" mainQuery=$qq "+ ReRankQParserPlugin.RERANK_QUERY+"=$rqq "+ ReRankQParserPlugin.RERANK_DOCS+"=$rdocs "+ ReRankQParserPlugin.RERANK_WEIGHT+"=$rweight}",
-              "{!"+defType+" mainQuery=$qq "+ ReRankQParserPlugin.RERANK_QUERY+"=$rqq "+ ReRankQParserPlugin.RERANK_DOCS+"=20 "+ ReRankQParserPlugin.RERANK_WEIGHT+"=2}");
+              "{!"+defType+" mainQuery=$qq "+ReRankQParserPlugin.RERANK_QUERY+"=$rqq "+ReRankQParserPlugin.RERANK_DOCS+"=$rdocs "+ReRankQParserPlugin.RERANK_WEIGHT+"=$rweight}",
+              "{!"+defType+" mainQuery=$qq "+ReRankQParserPlugin.RERANK_QUERY+"=$rqq "+ReRankQParserPlugin.RERANK_DOCS+"=20 "+ReRankQParserPlugin.RERANK_WEIGHT+"=2}");
 
     } finally {
       req.close();
@@ -195,7 +206,12 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
   public void testSignificantTermsQuery() throws Exception {
     SolrQueryRequest req = req("q", "*:*");
     try {
-      assertQueryEquals("sigificantTerms", req, "{!sigificantTerms}");
+      // for Solr 7.x backcompat only
+      assertQueryEquals(SignificantTermsQParserPlugin.OLD_NAME,
+              req, "{!"+SignificantTermsQParserPlugin.OLD_NAME+"}");
+
+      assertQueryEquals(SignificantTermsQParserPlugin.NAME,
+              req, "{!"+SignificantTermsQParserPlugin.NAME+"}");
     } finally {
       req.close();
     }
@@ -279,7 +295,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
   }
 
   public void testQueryCollapse() throws Exception {
-    SolrQueryRequest req = req("myField","foo_s",
+    SolrQueryRequest req = req("myField","foo_s1",
             "g_sort","foo_s1 asc, foo_i desc");
 
     try {
@@ -477,7 +493,62 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
             "{!parent which=foo_s:parent}dude");
     assertQueryEquals("child", "{!child of=foo_s:parent}dude",
             "{!child of=foo_s:parent}dude");
+    // zero query case
+    assertQueryEquals(null, "{!parent which=foo_s:parent}",
+            "{!parent which=foo_s:parent}");
+    assertQueryEquals(null, "{!child of=foo_s:parent}",
+            "{!child of=foo_s:parent}");
+    assertQueryEquals(null, "{!parent which='+*:* -foo_s:parent'}",
+            "{!child of=foo_s:parent}");
+
+    final SolrQueryRequest req = req(
+            "fq","bar_s:baz","fq","{!tag=fqban}bar_s:ban",
+            "ffq","bar_s:baz","ffq","{!tag=ffqban}bar_s:ban");
+    try {
+      assertQueryEquals("filters", req,
+              "{!parent which=foo_s:parent param=$fq}foo_s:bar",
+              "{!parent which=foo_s:parent param=$ffq}foo_s:bar" // differently named params
+      );
+      assertQueryEquals("filters", req,
+              "{!parent which=foo_s:parent param=$fq excludeTags=fqban}foo_s:bar",
+              "{!parent which=foo_s:parent param=$ffq excludeTags=ffqban}foo_s:bar" // differently named params
+      );
+
+      QueryUtils.checkUnequal(// parent filter is not an equal to child
+              QParser.getParser("{!child of=foo_s:parent}", req).getQuery(),
+              QParser.getParser("{!parent which=foo_s:parent}", req).getQuery());
+
+    } finally {
+      req.close();
+    }
   }
+
+  public void testFilters() throws Exception {
+    final SolrQueryRequest req = req(
+            "fq","bar_s:baz","fq","{!tag=fqban}bar_s:ban",
+            "ffq","{!tag=ffqbaz}bar_s:baz","ffq","{!tag=ffqban}bar_s:ban");
+    try {
+      assertQueryEquals("filters", req,
+              "{!filters param=$fq}foo_s:bar",
+              "{!filters param=$fq}foo_s:bar",
+              "{!filters param=$ffq}foo_s:bar" // differently named params
+      );
+      assertQueryEquals("filters", req,
+              "{!filters param=$fq excludeTags=fqban}foo_s:bar",
+              "{!filters param=$ffq  excludeTags=ffqban}foo_s:bar"
+      );
+      assertQueryEquals("filters", req,
+              "{!filters excludeTags=top}{!tag=top v='foo_s:bar'}",
+              "{!filters param=$ffq excludeTags='ffqban,ffqbaz'}"
+      );
+      QueryUtils.checkUnequal(
+              QParser.getParser("{!filters param=$fq}foo_s:bar", req).getQuery(),
+              QParser.getParser("{!filters param=$fq excludeTags=fqban}foo_s:bar", req).getQuery());
+    } finally {
+      req.close();
+    }
+  }
+
 
   public void testGraphQuery() throws Exception {
     SolrQueryRequest req = req("from", "node_s",
@@ -965,6 +1036,16 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
             "currency(amount,USD)",
             "currency('amount',USD)");
   }
+  public void testFuncRelatedness() throws Exception {
+    SolrQueryRequest req = req("fore","foo_s:front", "back","foo_s:back");
+    try {
+      assertFuncEquals(req,
+              "agg_relatedness({!query v='foo_s:front'}, {!query v='foo_s:back'})",
+              "agg_relatedness($fore, $back)");
+    } finally {
+      req.close();
+    }
+  }
 
   public void testTestFuncs() throws Exception {
     assertFuncEquals("sleep(1,5)", "sleep(1,5)");
@@ -1112,6 +1193,7 @@ public class QueryEqualityTest extends SolrTestCaseJ4 {
     assertFuncEquals("agg_sum(foo_i)", "agg_sum(foo_i)");
     assertFuncEquals("agg_count()", "agg_count()");
     assertFuncEquals("agg_unique(foo_i)", "agg_unique(foo_i)");
+    assertFuncEquals("agg_uniqueBlock(foo_i)", "agg_uniqueBlock(foo_i)");
     assertFuncEquals("agg_hll(foo_i)", "agg_hll(foo_i)");
     assertFuncEquals("agg_sumsq(foo_i)", "agg_sumsq(foo_i)");
     assertFuncEquals("agg_percentile(foo_i,50)", "agg_percentile(foo_i,50)");
