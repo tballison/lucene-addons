@@ -65,15 +65,16 @@ public class BuildIndex {
         true, "json field/analyzer schema");
     schema.setRequired(true);
 
-    Option indexPath = new Option("i", "index",
+    Option indexPath = new Option("idx", "index",
         true, "Lucene index to create");
     indexPath.setRequired(true);
 
+    Option inputFileOrDir = new Option("i", "input", true, "file to ingest (one doc per row, UTF-8); or directory of UTF-8 text files");
+    inputFileOrDir.setRequired(true);
     OPTIONS = new Options()
         .addOption(schema)
         .addOption(indexPath)
-        .addOption("f", "file", true, "file to ingest (one doc per row, UTF-8)")
-        .addOption("d", "directory", true, "directory of files to ingest (files are UTF-8 text)")
+        .addOption(inputFileOrDir)
         .addOption("sql", true, "sql to retrieve 'content' field to index")
         .addOption("jdbc", true, "jdbc connection string");
   }
@@ -98,23 +99,21 @@ public class BuildIndex {
       USAGE();
       return;
     }
-    if (commandLine.hasOption('f') && commandLine.hasOption('d')) {
-      System.err.print("Can only specify an input file _or_ a directory, not both");
-      USAGE();
-      return;
-    }
 
     IndexSchema indexSchema = IndexSchema.load(Paths.get(commandLine.getOptionValue('s')));
     Indexer indexer = Indexer.build(
-        Paths.get(commandLine.getOptionValue('i')),
+        Paths.get(commandLine.getOptionValue("idx")),
         indexSchema.getIndexAnalyzer(),
         indexSchema.getDefinedFields());
 
     Runner runner = null;
-    if (commandLine.hasOption('f')) {
-      runner = new FileReaderRunner(Paths.get(commandLine.getOptionValue('f')));
-    } else if (commandLine.hasOption('d')) {
-      runner = new DirectoryReaderRunner(Paths.get(commandLine.getOptionValue('d')));
+    if (commandLine.hasOption('i')) {
+        Path inputFileOrDir = Paths.get(commandLine.getOptionValue('i'));
+        if (Files.isDirectory(inputFileOrDir)) {
+            runner = new DirectoryReaderRunner(inputFileOrDir);
+        } else {
+            runner = new FileReaderRunner(Paths.get(commandLine.getOptionValue('f')));
+        }
     } else {
       runner = new SQLRunner(commandLine.getOptionValue("jdbc"), commandLine.getOptionValue("sql"));
     }
