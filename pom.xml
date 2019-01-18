@@ -44,6 +44,7 @@
     <module>solr-5410</module>
     <module>lucene-5317</module>
     <module>gramreaper</module>
+    <module>munging</module>
       <!-- turn off for now<module>solr-5411</module>-->
   </modules>
 
@@ -63,5 +64,6 @@
 
   <profiles>
   </profiles>
+
 
 </project>

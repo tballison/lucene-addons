@@ -106,7 +106,7 @@
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
-                <version>4.10</version>
+                <version>4.12</version>
                 <scope>test</scope>
             </dependency>
 
@@ -256,5 +256,10 @@
             </build>
         </profile>
     </profiles>
-
+    <repositories>
+        <repository>
+            <id>apache-snapshot</id>
+            <url>http://repository.apache.org/snapshots/</url>
+        </repository>
+    </repositories>
 </project>

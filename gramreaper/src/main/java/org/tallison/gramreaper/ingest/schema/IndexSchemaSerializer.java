@@ -136,9 +136,7 @@ class IndexSchemaSerializer implements JsonSerializer<IndexSchema> {
         if (fieldDef.getQueryAnalyzerName() != null) {
             jsonFieldDef.add(QUERY_ANALYZER, new JsonPrimitive(fieldDef.getQueryAnalyzerName()));
         }
-        if (fieldDef.getMtQueryAnalyzerName() != null) {
-            jsonFieldDef.add(MT_QUERY_ANALYZER, new JsonPrimitive(fieldDef.getMtQueryAnalyzerName()));
-        }
+
         if (fieldDef.getOffsetAnalyzerName() != null) {
             jsonFieldDef.add(OFFSET_ANALYZER, new JsonPrimitive(fieldDef.getOffsetAnalyzerName()));
         }

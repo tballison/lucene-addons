@@ -97,8 +97,8 @@ public final class SlowFuzzyTermsEnum extends TermsEnum {
     }
 
     @Override
-    public ImpactsEnum impacts(Similarity.SimScorer simScorer, int i) throws IOException {
-        return actualEnum.impacts(simScorer, i);
+    public ImpactsEnum impacts(int i) throws IOException {
+        return actualEnum.impacts(i);
     }
 
     @Override

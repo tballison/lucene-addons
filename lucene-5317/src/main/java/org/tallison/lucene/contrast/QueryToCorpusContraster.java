@@ -51,7 +51,7 @@ public class QueryToCorpusContraster {
 
   public List<TermIDF> contrast(Query query, String fieldName, int numResults)
       throws IOException {
-    TopScoreDocCollector results = TopScoreDocCollector.create(maxDocs);
+    TopScoreDocCollector results = TopScoreDocCollector.create(maxDocs, maxDocs+10000);
     searcher.search(query, results);
 
     ScoreDoc[] scoreDocs = results.topDocs().scoreDocs;

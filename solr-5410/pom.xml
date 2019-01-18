@@ -94,6 +94,12 @@
             <version>1.7.24</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analyzers-icu</artifactId>
+            <version>${lucene.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
 

@@ -119,13 +119,11 @@ class IndexSchemaDeserializer implements JsonDeserializer<IndexSchema> {
                                      IndexSchema schema) {
         NamedAnalyzer indexAnalyzer = getAnalyzer(fieldDef, jsonObject, IndexSchemaSerializer.INDEX_ANALYZER, false, schema);
         NamedAnalyzer queryAnalyzer = getAnalyzer(fieldDef, jsonObject, IndexSchemaSerializer.QUERY_ANALYZER, true, schema);
-        NamedAnalyzer mtQueryAnalyzer = getAnalyzer(fieldDef, jsonObject, IndexSchemaSerializer.MT_QUERY_ANALYZER, true, schema);
         NamedAnalyzer offsetAnalyzer = getAnalyzer(fieldDef, jsonObject, IndexSchemaSerializer.OFFSET_ANALYZER, true, schema);
 
         if (! fieldDef.fieldType.tokenized() && (
                 indexAnalyzer != null ||
                         queryAnalyzer != null ||
-                        mtQueryAnalyzer != null ||
                         offsetAnalyzer != null
                 )){
             throw new IllegalArgumentException("Shouldn't specify an analyzer for a field "+
@@ -137,7 +135,7 @@ class IndexSchemaDeserializer implements JsonDeserializer<IndexSchema> {
                     IndexSchemaSerializer.INDEX_ANALYZER+
             " for this tokenized field:"+fieldDef.fieldName);
         }
-        fieldDef.setAnalyzers(indexAnalyzer, queryAnalyzer, mtQueryAnalyzer, offsetAnalyzer);
+        fieldDef.setAnalyzers(indexAnalyzer, queryAnalyzer, offsetAnalyzer);
     }
 
     private NamedAnalyzer getAnalyzer(FieldDef fieldDef, JsonObject jsonObject, String whichAnalyzer,

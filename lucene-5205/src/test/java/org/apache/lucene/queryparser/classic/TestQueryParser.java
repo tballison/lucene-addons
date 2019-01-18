@@ -50,12 +50,15 @@ import org.apache.lucene.search.PhraseQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.SynonymQuery;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TotalHits;
 import org.apache.lucene.search.spans.SpanNearQuery;
 import org.apache.lucene.search.spans.SpanOrQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.automaton.TooComplexToDeterminizeException;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests QueryParser.
@@ -938,15 +941,16 @@ public class TestQueryParser extends QueryParserTestBase {
     fieldType.setStored(true);
     Field field = new Field(FIELD, content, fieldType);
     doc.add(field);
+
     writer.addDocument(doc);
     writer.close();
     DirectoryReader ir = DirectoryReader.open(ramDir);
     IndexSearcher is = new IndexSearcher(ir);
 
-    long hits = is.search(q, 10).totalHits;
+    TotalHits hits = is.search(q, 10).totalHits;
     ir.close();
     ramDir.close();
-    if (hits == 1){
+    if (hits.value == 1){
       return true;
     } else {
       return false;
