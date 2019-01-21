@@ -10,6 +10,12 @@ import com.optimaize.langdetect.profiles.LanguageProfileReader;
 import com.optimaize.langdetect.text.CommonTextObjectFactories;
 import com.optimaize.langdetect.text.TextObject;
 import com.optimaize.langdetect.text.TextObjectFactory;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.wikiclean.WikiClean;
 import org.wikiclean.WikipediaArticlesDump;
@@ -30,6 +36,39 @@ import java.util.regex.Pattern;
 
 public class WikiToTable {
 
+    static Options OPTIONS;
+
+    static {
+        Option inputDir = new Option("i", "input",
+                true, "directory with *-pages-articles-*.xml.bz2 files");
+        inputDir.setRequired(true);
+
+        Option outputFile = new Option("o", "output",
+                true, "output file");
+        outputFile.setRequired(true);
+
+        Option targetLang = new Option("l", "lang",
+                true, "target language");
+        outputFile.setRequired(true);
+
+        OPTIONS = new Options()
+                .addOption(inputDir)
+                .addOption(outputFile)
+                .addOption(targetLang)
+                .addOption("maxPages", true, "maximum number of pages to process")
+                .addOption("minLength", true, "minimum length of article");
+    }
+
+    public static void USAGE() {
+        HelpFormatter helpFormatter = new HelpFormatter();
+        helpFormatter.printHelp(
+                80,
+                "java -jar munging-q.r-s.t.jar <options>",
+                "GramReaper",
+                OPTIONS,
+                "");
+    }
+
 
     private WikiClean cleaner = new WikiClean.Builder()
             .withLanguage(WikiClean.WikiLanguage.EN).withTitle(false)
@@ -39,27 +78,56 @@ public class WikiToTable {
 
 
     public static void main(String[] args) throws Exception {
-        Path bzip = Paths.get(args[0]);
-        Path tableFile = Paths.get(args[1]);
-        String targLang = args[2];
+        DefaultParser parser = new DefaultParser();
+        CommandLine commandLine = null;
+        try {
+            commandLine = parser.parse(OPTIONS, args);
+        } catch (ParseException e) {
+            USAGE();
+            return;
+        }
+        Path bzip = Paths.get(commandLine.getOptionValue('i'));
+        Path tableFile = Paths.get(commandLine.getOptionValue('o'));
+        String targLang = commandLine.getOptionValue('l');
+
         int maxPages = -1;
-        if (args.length > 3) {
-            maxPages = Integer.parseInt(args[3]);
+        if (commandLine.hasOption("maxPages")) {
+            maxPages = Integer.parseInt(commandLine.getOptionValue("maxPages"));
+        }
+
+        int minPageLength = -1;
+        if (commandLine.hasOption("minLength")) {
+            minPageLength = Integer.parseInt(commandLine.getOptionValue("minLength"));
         }
 
         WikiToTable wikiToTable = new WikiToTable();
-        wikiToTable.execute(bzip, tableFile, targLang, maxPages);
+        wikiToTable.execute(bzip, tableFile, targLang, maxPages, minPageLength);
     }
 
+    private final TextObjectFactory textObjectFactory;
+    private final List<LanguageProfile> languageProfiles;
+    private final LanguageDetector languageDetector;
+
+    public WikiToTable() throws Exception {
+        textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
+        languageProfiles = new LanguageProfileReader().readAllBuiltIn();
+
+        //build language detector:
+        languageDetector = LanguageDetectorBuilder.create(NgramExtractors.standard())
+                .withProfiles(languageProfiles)
+                .build();
+    }
     private void execute(Path bzipDir, Path tableFile,
-                         String targLang, int maxPages) throws Exception {
+                         String targLang, int maxPages, int minPageLength) throws Exception {
 
         int pages = 0;
-
-        int totalReports = countReports(bzipDir, targLang);
-        double samplingRate = (double) (maxPages + 1000) / (double) totalReports;
-        samplingRate = (samplingRate > 1.0) ? -1.0 : samplingRate;
-        System.err.println("finished counting reports: " + totalReports + " with a sampling rate: " + samplingRate);
+        double samplingRate = -1.0;
+        if (maxPages > -1) {
+            int totalReports = countReports(bzipDir, targLang, minPageLength);
+            samplingRate = (double) (maxPages + 1000) / (double) totalReports;
+            samplingRate = (samplingRate > 1.0) ? -1.0 : samplingRate;
+            System.err.println("finished counting reports: " + totalReports + " with a sampling rate: " + samplingRate);
+        }
 
         try (BufferedWriter writer =
                      new BufferedWriter(
@@ -76,43 +144,46 @@ public class WikiToTable {
                 }
                 WikipediaArticlesDump dump = new WikipediaArticlesDump(bzip);
 
-                pages += processDump(pages, maxPages, samplingRate, targLang,
+                pages += processDump(pages, maxPages, minPageLength, samplingRate, targLang,
                         dump, writer);
             }
         }
     }
 
-    private int processDump(int pagesSoFar, int maxPages,
+    private int processDump(int pagesSoFar, int maxPages, int minPageLength,
                             double samplingRate, String targetLang,
                             WikipediaArticlesDump dump, BufferedWriter writer) throws Exception {
-        if (pagesSoFar > maxPages) {
+        if (maxPages > -1 && pagesSoFar > maxPages) {
             return 0;
         }
+
         Random random = new Random();
         int localPages = 0;
         int totalPages = pagesSoFar;
-        TextObjectFactory textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
-        List<LanguageProfile> languageProfiles = new LanguageProfileReader().readAllBuiltIn();
-
-        //build language detector:
-        LanguageDetector languageDetector = LanguageDetectorBuilder.create(NgramExtractors.standard())
-                .withProfiles(languageProfiles)
-                .build();
+        int skipped = 0;
+        long started = System.currentTimeMillis();
         for (String page : dump) {
+            if (minPageLength > -1 && page.trim().length() < minPageLength) {
+                skipped++;
+                continue;
+            }
             if (maxPages > -1 && totalPages > maxPages) {
                 break;
             }
 
             if (page.contains("<ns>") && !page.contains("<ns>0</ns>")) {
+                skipped++;
                 continue;
             }
 
             if (redirectMatcher.reset(page).find()) {
+                skipped++;
                 continue;
             }
 
             if (samplingRate > -1.0 &&
                     random.nextDouble() > samplingRate) {
+                skipped++;
                 continue;
             }
             String s = cleaner.clean(page).replaceAll("[\\r\\n]+", " ");
@@ -124,24 +195,37 @@ public class WikiToTable {
             if (detectedLang.isPresent()) {
                 detectedLangString = detectedLang.get().toString();
             } else {
+                skipped++;
                 continue;
             }
             detectedLangString = detectedLangString.toLowerCase(Locale.US);
             if (!detectedLangString.equals(targetLang) &&
                     !detectedLangString.startsWith(targetLang + "-")) {
+                int len = Math.min(100, s.length());
+                if (len < s.length()) {
+                    s = s.substring(0, len);
+                }
+                skipped++;
                 System.out.println("skipping: " + detectedLangString + " : " + s);
                 continue;
             }
+
             writer.write(s);
             writer.write("\n");
             localPages++;
             totalPages++;
+            if (totalPages %1000 == 0) {
+                long elapsed = System.currentTimeMillis()-started;
+                System.out.println("wrote "+totalPages+
+                        " pages total and skipped "+skipped +
+                        " (for this file) in "+elapsed + "ms (for this bzip file)");
+            }
 
         }
         return localPages;
     }
 
-    private int countReports(Path bzipDir, String fieldName) throws IOException {
+    private int countReports(Path bzipDir, String fieldName, int minPageLength) throws IOException {
         int total = 0;
         long start = System.currentTimeMillis();
         int maxPFileName = -1;
@@ -176,13 +260,6 @@ public class WikiToTable {
 
             WikipediaArticlesDump dump = new WikipediaArticlesDump(bzip);
             for (String page : dump) {
-                total++;
-
-                if (total % 1000 == 0) {
-                    double elapsed = (System.currentTimeMillis()- start) / 1000;
-                    System.err.println("still counting: " + total + " : with " + skipped +
-                            " skipped in " + elapsed + " seconds");
-                }
                 if (page.contains("<ns>") && !page.contains("<ns>0</ns>")) {
                     skipped++;
                     continue;
@@ -192,6 +269,16 @@ public class WikiToTable {
                 if (redirectMatcher.reset(s).find()) {
                     skipped++;
                     continue;
+                }
+                if (minPageLength > -1 && page.trim().length() < minPageLength) {
+                    continue;
+                }
+                total++;
+
+                if (total % 1000 == 0) {
+                    double elapsed = (System.currentTimeMillis()- start) / 1000;
+                    System.err.println("still counting: " + total + " : with " + skipped +
+                            " skipped in " + elapsed + " seconds");
                 }
             }
         }
