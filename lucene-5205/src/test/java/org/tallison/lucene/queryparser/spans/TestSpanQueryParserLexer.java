@@ -73,13 +73,16 @@ public class TestSpanQueryParserLexer extends LuceneTestCase {
   }
   */
 
-  @Ignore
-  public void testRegexWCurlyBrackets() throws Exception {
-    String s = "/netwo.{1,2}/";
-    for (SQPToken t : lexer.getTokens(s)) {
-      System.out.println(t);
-    }
 
+  public void testRegexWCurlyBrackets() throws Exception {
+    String q = "/netwo.{1,2}/";
+    SQPRegexTerm truth = new SQPRegexTerm("netwo.{1,2}");
+
+    executeSingleTokenTest(
+            q,
+            0,
+            truth
+    );
   }
 
   public void testLargeNumberOfORs() throws Exception {
