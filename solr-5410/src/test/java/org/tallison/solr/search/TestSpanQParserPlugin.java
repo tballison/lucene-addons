@@ -16,7 +16,17 @@
  */
 package org.tallison.solr.search;
 
+import java.util.Collections;
+
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.KeywordTokenizerFactory;
+import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilterFactory;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.util.TokenFilterFactory;
 import org.apache.solr.SolrTestCaseJ4;
+import org.apache.solr.analysis.MockTokenizerFactory;
+import org.apache.solr.analysis.TokenizerChain;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

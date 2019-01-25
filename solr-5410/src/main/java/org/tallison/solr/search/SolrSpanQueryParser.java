@@ -16,12 +16,15 @@
  */
 package org.tallison.solr.search;
 
+import javax.xml.soap.Text;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.BytesRef;
+import org.apache.solr.analysis.TokenizerChain;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
@@ -92,7 +95,7 @@ public class SolrSpanQueryParser extends SpanQueryParser {
     if (sf == null) {
       throw new IllegalArgumentException("Can't create a prefix query on null field: "+fieldName);
     }
-    if (sf.getType() instanceof  TextField) {
+    if (sf.getType() instanceof TextField) {
       return super.newPrefixQuery(fieldName, prefix);
     }
 
@@ -137,6 +140,11 @@ public class SolrSpanQueryParser extends SpanQueryParser {
     FieldType type = field.getType();
 
     if (type instanceof TextField) {
+      //TODO: temporary workaround until TokenizerChain's normalize is fixed
+      Analyzer qAnalyzer = ((TextField)type).getQueryAnalyzer();
+      if (qAnalyzer instanceof TokenizerChain) {
+        return qAnalyzer;
+      }
       return ((TextField) type).getMultiTermAnalyzer();
     }
     return null;

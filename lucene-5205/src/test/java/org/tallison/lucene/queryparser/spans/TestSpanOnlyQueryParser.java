@@ -41,6 +41,7 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreMode;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.SpanWeight;
@@ -613,7 +614,7 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     assert (ctxs.size() == 1);
     LeafReaderContext ctx = ctxs.get(0);
     sq = (SpanQuery) sq.rewrite(ctx.reader());
-    SpanWeight sw = sq.createWeight(searcher, false, 1.0f);
+    SpanWeight sw = sq.createWeight(searcher, ScoreMode.COMPLETE_NO_SCORES, 1.0f);
 
     final Spans spans = sw.getSpans(ctx, SpanWeight.Postings.POSITIONS);
 
