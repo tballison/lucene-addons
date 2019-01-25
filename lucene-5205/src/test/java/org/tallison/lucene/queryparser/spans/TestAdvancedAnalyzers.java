@@ -140,6 +140,11 @@ public class TestAdvancedAnalyzers extends SQPTestBase {
 
     ucVowelMTAnalyzer = new Analyzer() {
       @Override
+      public TokenStream normalize(String fieldName, TokenStream in) {
+        return new MockUCVowelFilter(new LowerCaseFilter(in));
+      }
+
+      @Override
       public TokenStreamComponents createComponents(String fieldName) {
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.KEYWORD,
                 true);
