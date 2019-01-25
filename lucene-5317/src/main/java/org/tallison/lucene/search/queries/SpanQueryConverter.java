@@ -1,5 +1,3 @@
-package org.tallison.lucene.search.queries;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.tallison.lucene.search.queries;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.tallison.lucene.search.queries;
 
 import java.io.IOException;
 import java.util.HashSet;
