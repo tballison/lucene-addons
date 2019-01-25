@@ -104,7 +104,7 @@ public class SpanQParser extends QParser {
 
       query = parser.parse(qstr);
 
-    } catch (ParseException e){
+    } catch (IllegalArgumentException|ParseException e){
       throw new SyntaxError(e.toString());
     }
 

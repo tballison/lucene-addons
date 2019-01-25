@@ -16,7 +16,18 @@
  */
 package org.tallison.solr.search;
 
+import java.util.Collections;
+
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.KeywordTokenizerFactory;
+import org.apache.lucene.analysis.core.LowerCaseFilterFactory;
+import org.apache.lucene.analysis.miscellaneous.ASCIIFoldingFilterFactory;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.util.TokenFilterFactory;
 import org.apache.solr.SolrTestCaseJ4;
+import org.apache.solr.analysis.MockTokenizerFactory;
+import org.apache.solr.analysis.TokenizerChain;
+import org.apache.solr.common.SolrException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -84,5 +95,20 @@ public class TestSpanQParserPlugin extends SolrTestCaseJ4 {
    */
   public void testNegativeQuery() throws Exception {
     assertJQ(req("df", "text0", "defType", "span", "q", "-t0"), "/response/numFound==2");
+  }
+
+  public void testMatchAllDocs() throws Exception {
+    assertJQ(req("df", "text0", "defType", "span", "q", "*"), "/response/numFound==3");
+    assertJQ(req("defType", "span", "q", "*"), "/response/numFound==4");
+    assertJQ(req("defType", "span", "q", "*:*"), "/response/numFound==4");
+    assertJQ(req("df", "text0", "defType", "span", "q", "*:*"), "/response/numFound==4");
+    assertJQ(req("df", "text0", "defType", "span", "q", "NOT *"), "/response/numFound==1");
+    assertJQ(req("defType", "span", "q", "NOT *"), "/response/numFound==0");
+    assertQEx("need to have a field specified in schema",
+            req("defType", "span", "q", "nofield:*"),
+            SolrException.ErrorCode.BAD_REQUEST);
+    assertQEx("need to have a field specified in schema",
+            req("df", "nofield","defType", "span", "q", "*"),
+            SolrException.ErrorCode.BAD_REQUEST);
   }
 }
