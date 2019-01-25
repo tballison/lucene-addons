@@ -1,5 +1,3 @@
-package org.tallison.lucene.corpus.stats;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,13 +14,14 @@ package org.tallison.lucene.corpus.stats;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.tallison.lucene.corpus.stats;
 
 public class IDFCalc {
 
-  private final static int DEFAULT_UNSEEN_COUNT = 2;
+  public final static int DEFAULT_UNSEEN_COUNT = 2;
   private final static int MAX_BUFF = 50;
 
-  private final double UNSEEN_IDF;
+  public final double UNSEEN_IDF;
   private final double[] buffered = new double[MAX_BUFF];
 
   private final int D;
