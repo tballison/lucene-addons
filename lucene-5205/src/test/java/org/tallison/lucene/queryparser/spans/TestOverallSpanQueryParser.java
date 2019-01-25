@@ -466,6 +466,34 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     dir.close();
   }
 
+  //https://github.com/tballison/lucene-addons/issues/34
+  //this shows that this is now fixed in >= 7.3
+  public void testSingleAnalyzerMultitermNorm() throws Exception {
+    Analyzer analyzer = new MockAnalyzer(random(), MockTokenizer.SIMPLE, true);
+    Directory dir = newDirectory();
+    RandomIndexWriter w = new RandomIndexWriter(random(), dir,
+            newIndexWriterConfig(analyzer)
+                    .setMaxBufferedDocs(TestUtil.nextInt(random(), 100, 1000))
+                    .setMergePolicy(newLogMergePolicy()));
+    String[] docs = new String[]{
+            "foobarbaz",
+    };
+    for (int i = 0; i < docs.length; i++) {
+      Document doc = new Document();
+      doc.add(newTextField(FIELD1, docs[i], Field.Store.YES));
+      w.addDocument(doc);
+    }
+    IndexReader r = w.getReader();
+    IndexSearcher s = newSearcher(r);
+    w.close();
+
+    compareHits(PARSER, "foo*baz", s, 0);
+    SpanQueryParser parser = new SpanQueryParser(FIELD1, analyzer, analyzer);
+    compareHits(parser, "foo*baz", s, 0);
+    r.close();
+    dir.close();
+  }
+
   private void assertHits(String qString, SpanQueryParser p, IndexSearcher s, int expected) throws Exception {
     Query q = p.parse(qString);
     TopScoreDocCollector results = TopScoreDocCollector.create(1000);
