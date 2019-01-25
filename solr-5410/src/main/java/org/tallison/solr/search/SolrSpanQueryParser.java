@@ -1,4 +1,3 @@
-package org.tallison.solr.search;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,24 +14,20 @@ package org.tallison.solr.search;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.tallison.solr.search;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.tokenattributes.TermToBytesRefAttribute;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.util.BytesRef;
-import org.apache.solr.common.SolrException;
 import org.apache.solr.schema.FieldType;
 import org.apache.solr.schema.IndexSchema;
 import org.apache.solr.schema.SchemaField;
 import org.apache.solr.schema.TextField;
 import org.apache.solr.search.QParser;
 import org.tallison.lucene.queryparser.spans.SpanQueryParser;
-
-import java.io.IOException;
 
 /**
  * Overrides features of Lucene's SpanQueryParser to enable
@@ -162,7 +157,7 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   }
 
   /**
-   * Work-around to fix bug in TokenizerChain (SOLR-11976)
+   *
    * @param fieldName
    * @param term
    * @return

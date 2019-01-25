@@ -41,7 +41,6 @@ import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.RandomIndexWriter;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.join.ScoreMode;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.search.spans.SpanWeight;
@@ -86,10 +85,6 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
                 true);
         TokenFilter filter = new MockStandardTokenizerFilter(tokenizer);
         return new TokenStreamComponents(tokenizer, filter);
-      }
-      @Override
-      protected TokenStream normalize(String fieldName, TokenStream in) {
-        return new LowerCaseFilter(in);
       }
     };
 
