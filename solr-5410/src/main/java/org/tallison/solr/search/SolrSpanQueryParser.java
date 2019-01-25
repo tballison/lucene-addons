@@ -20,6 +20,8 @@ import javax.xml.soap.Text;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MultiTermQuery.RewriteMethod;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
@@ -89,8 +91,6 @@ public class SolrSpanQueryParser extends SpanQueryParser {
 
   @Override
   public Query newPrefixQuery(String fieldName, String prefix) {
-    //by the time you're here, you know that the analyzer was null and/or
-    //this isn't a TextField
     SchemaField sf = schema.getFieldOrNull(fieldName);
     if (sf == null) {
       throw new IllegalArgumentException("Can't create a prefix query on null field: "+fieldName);
@@ -100,6 +100,22 @@ public class SolrSpanQueryParser extends SpanQueryParser {
     }
 
     return sf.getType().getPrefixQuery(nonTextParser, sf, prefix);
+  }
+
+  @Override
+  public Query newWildcardQuery(String fieldName, String wildcard) throws ParseException {
+    if ((fieldName == null || "*".equals(fieldName))
+            && "*".equals(wildcard)) {
+      return new MatchAllDocsQuery();
+    }
+    SchemaField sf = schema.getFieldOrNull(fieldName);
+    if (sf == null) {
+      throw new IllegalArgumentException("Can't create a wildcard query on null field: "+fieldName);
+    }
+    if (sf.getType() instanceof TextField) {
+      return super.newWildcardQuery(fieldName, wildcard);
+    }
+    throw new IllegalArgumentException("Can't create a wildcard query on a field that is not a TextField: "+fieldName);
 
   }
 
