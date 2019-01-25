@@ -80,6 +80,10 @@ public class TestSpanOnlyQueryParser extends SQPTestBase {
     noopMultiTermAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, false);
     noStopAnalyzer = new Analyzer() {
       @Override
+      public TokenStream normalize(String fieldName, TokenStream in) {
+        return new MockStandardTokenizerFilter(new LowerCaseFilter(in));
+      }
+      @Override
       public TokenStreamComponents createComponents(String fieldName) {
         Tokenizer tokenizer = new MockTokenizer(MockTokenizer.WHITESPACE,
                 true);
