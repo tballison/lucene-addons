@@ -5,7 +5,7 @@
     <parent>
         <artifactId>lucene-addons</artifactId>
         <groupId>org.tallison.lucene</groupId>
-        <version>7.6-0.1</version>
+        <version>7.6-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
