@@ -38,7 +38,7 @@ public class NGrammer extends Grammer {
     if (getMinGram() == 1 && getMaxGram() == 1) {
       return strings;
     }
-    List<String> ret = new ArrayList<String>();
+    List<String> ret = new ArrayList<>();
     List<OffsetAttribute> offsets = getGramOffsets(strings);
     for (OffsetAttribute offset : offsets) {
       ret.add(join(delimiter, strings, offset.startOffset(), offset.endOffset()));
@@ -48,7 +48,7 @@ public class NGrammer extends Grammer {
   }
 
   private List<OffsetAttribute> getGramOffsets(List<String> strings) {
-    List<OffsetAttribute> ret = new ArrayList<OffsetAttribute>();
+    List<OffsetAttribute> ret = new ArrayList<>();
     for (int i = 0; i < strings.size(); i++) {
       for (int j = i + getMinGram() - 1; j < i + getMaxGram() && j < strings.size(); j++) {
         OffsetAttribute off = new OffsetAttributeImpl();
