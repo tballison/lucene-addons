@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttributeImpl;
+import org.apache.lucene.index.Term;
+import org.tallison.lucene.search.concordance.util.TokenBlackList;
 
 /**
  * A wgram is similar to a token ngram except...
@@ -52,20 +54,30 @@ public class WGrammer extends Grammer {
   //should you build the wgram across that separator...probably not
   private final boolean allowFieldSeparators;
 
+  private final TokenBlackList tokenBlackList;
+  private final String fieldName;
+  //TODO: fix this api...ugh...consider swapping out String for Term
+  //generally
   /**
    * @param minGram              minimum gram
    * @param maxGram              maximum gram
+   * @param fieldName            name of field (needed by tokenblacklist)
+   * @param tokenBlackList       list of tokens to skip
    * @param allowFieldSeparators generate a gram that contains tokens
    *                             in different indices within a multivalued field?
    */
-  public WGrammer(int minGram, int maxGram, boolean allowFieldSeparators) {
+  public WGrammer(int minGram, int maxGram, String fieldName,
+                  TokenBlackList tokenBlackList,
+                  boolean allowFieldSeparators) {
     super(minGram, maxGram);
     this.allowFieldSeparators = allowFieldSeparators;
+    this.fieldName = fieldName;
+    this.tokenBlackList = tokenBlackList;
   }
 
   @Override
   public List<String> getGrams(List<String> strings, String delimiter) {
-    List<String> ret = new ArrayList<String>();
+    List<String> ret = new ArrayList<>();
     List<OffsetAttribute> offsets = getGramOffsets(strings, getMinGram(),
         getMaxGram());
     for (OffsetAttribute offset : offsets) {
@@ -76,16 +88,25 @@ public class WGrammer extends Grammer {
   }
 
   private List<OffsetAttribute> getGramOffsets(List<String> strings, int min, int max) {
+    //for now, copy strings to terms
+    List<Term> terms = new ArrayList<>();
+    for (String s : strings) {
+      terms.add(new Term(fieldName, s));
+    }
 
-    List<OffsetAttribute> ret = new ArrayList<OffsetAttribute>();
+    List<OffsetAttribute> ret = new ArrayList<>();
     for (int i = 0; i < strings.size(); i++) {
       if (ConcordanceArrayWindow.isStopOrFieldSeparator(strings.get(i))) {
         continue;
+      } else if (! tokenBlackList.accept(terms.get(i))) {
+        continue;
       }
+
       int nonStops = 0;
       for (int j = i; nonStops < max && j < strings.size(); j++) {
         String tmp = strings.get(j);
         if (ConcordanceArrayWindow.isStop(tmp) ||
+                !tokenBlackList.accept(terms.get(j)) ||
             (allowFieldSeparators == true && ConcordanceArrayWindow.isFieldSeparator(tmp))) {
           continue;
         } else if (allowFieldSeparators == false && ConcordanceArrayWindow.isFieldSeparator(tmp)) {

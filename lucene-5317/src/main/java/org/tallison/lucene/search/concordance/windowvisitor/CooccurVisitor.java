@@ -137,7 +137,7 @@ public class CooccurVisitor extends ArrayWindowVisitor<List<TermIDF>> {
 
       queue.insertWithOverflow(r);
     }
-    List<TermIDF> results = new LinkedList<TermIDF>();
+    List<TermIDF> results = new LinkedList<>();
 
     while (queue.size() > 0) {
       results.add(0, queue.pop());

@@ -53,12 +53,12 @@ class ConcordanceArrayWindow {
 
   private final int positionIncrementGap;
   private final StringBuilder sb = new StringBuilder();
-  private List<String> pres = new ArrayList<String>();
-  private List<String> targs = new ArrayList<String>();
-  private List<String> posts = new ArrayList<String>();
+  private List<String> pres = new ArrayList<>();
+  private List<String> targs = new ArrayList<>();
+  private List<String> posts = new ArrayList<>();
   private int preSize = 0;
   private int postSize = 0;
-  private Map<String, MutableValueInt> tokens = new HashMap<String, MutableValueInt>();
+  private Map<String, MutableValueInt> tokens = new HashMap<>();
   private String target = EMPTY_STRING;
 
   /**
