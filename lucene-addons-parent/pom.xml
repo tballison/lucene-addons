@@ -57,9 +57,8 @@
         <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
         <maven.compile.source>1.8</maven.compile.source>
         <maven.compile.target>1.8</maven.compile.target>
-        <lucene.version>9.0.0-SNAPSHOT</lucene.version>
-        <log4j.version>2.11.1</log4j.version>
         <lucene.version>8.0.0-SNAPSHOT</lucene.version>
+        <log4j.version>2.11.2</log4j.version>
         <slf4j.version>1.7.25</slf4j.version>
     </properties>
     <!--test-->
