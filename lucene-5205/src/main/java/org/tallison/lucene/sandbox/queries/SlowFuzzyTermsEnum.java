@@ -117,6 +117,11 @@ public final class SlowFuzzyTermsEnum extends TermsEnum {
     }
 
     @Override
+    public AttributeSource attributes() {
+        return atts;
+    }
+
+    @Override
     public boolean seekExact(BytesRef text) throws IOException {
         return actualEnum.seekExact(text);
     }
