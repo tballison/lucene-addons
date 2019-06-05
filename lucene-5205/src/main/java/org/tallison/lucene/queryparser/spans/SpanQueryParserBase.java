@@ -52,6 +52,7 @@ import org.apache.lucene.search.spans.SpanPositionRangeQuery;
 import org.apache.lucene.search.spans.SpanQuery;
 import org.apache.lucene.search.spans.SpanTermQuery;
 import org.apache.lucene.util.BytesRef;
+import org.apache.lucene.util.QueryBuilder;
 import org.apache.lucene.util.automaton.LevenshteinAutomata;
 import org.tallison.lucene.sandbox.queries.SlowFuzzyQuery;
 
@@ -93,8 +94,8 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
 
   private boolean analyzeRangeTerms = true;
 
-  public SpanQueryParserBase(Analyzer analyzer, Analyzer multiTermAnalyzer) {
-    super(analyzer, multiTermAnalyzer);
+  public SpanQueryParserBase(Analyzer analyzer) {
+    super(analyzer);
   }
 
   /**
@@ -366,7 +367,7 @@ abstract class SpanQueryParserBase extends AnalyzingQueryParserBase {
    * Unlike classic QueryParser, this performs no date parsing.
    * <p>
    * This applies
-   * {@link #getMultiTermAnalyzer(String)}'s analyzer to the tokens.
+   * {@link #getAnalyzer(String)}'s analyzer to the tokens.
    *
    *
    * @param fieldName field

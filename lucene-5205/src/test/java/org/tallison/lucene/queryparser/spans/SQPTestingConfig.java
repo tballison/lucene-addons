@@ -46,14 +46,13 @@ public class SQPTestingConfig implements CommonQueryParserConfiguration {
   private QueryParser.Operator defaultOperator = QueryParser.Operator.OR;
   private boolean autoGeneratePhraseQueries = false;
 
-  public SQPTestingConfig(String field, Analyzer analyzer, Analyzer mtAnalyzer) {
+  public SQPTestingConfig(String field, Analyzer analyzer) {
     this.defaultField = field;
     this.analyzer = analyzer;
-    this.mtAnalyzer = mtAnalyzer;
   }
 
   public SpanQueryParser getConfiguredParser() {
-    SpanQueryParser p = new SpanQueryParser(defaultField, analyzer, mtAnalyzer);
+    SpanQueryParser p = new SpanQueryParser(defaultField, analyzer);
     p.setDefaultOperator(getDefaultOperator());
     p.setAllowLeadingWildcard(getAllowLeadingWildcard());
     p.setMultiTermRewriteMethod(getMultiTermRewriteMethod());

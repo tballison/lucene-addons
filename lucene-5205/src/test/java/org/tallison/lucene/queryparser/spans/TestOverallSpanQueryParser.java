@@ -62,7 +62,6 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
   public static void beforeClass() throws Exception {
 
     ANALYZER = new MockAnalyzer(random(), MockTokenizer.WHITESPACE, true);
-    MULTITERM_ANALYZER = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
 
     DIRECTORY = newDirectory();
 
@@ -122,7 +121,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     SEARCHER = newSearcher(READER);
     writer.close();
 
-    PARSER = new SpanQueryParser(FIELD1, ANALYZER, MULTITERM_ANALYZER);
+    PARSER = new SpanQueryParser(FIELD1, ANALYZER);
   }
 
   @AfterClass
@@ -215,7 +214,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     compareHits("f1:brown f2:(three four) f2:five", 0, 1, 2, 3, 4, 5);
     compareHits("f1:brown f2:(f1:three four) f2:five", 0, 1, 2, 4, 5);
 
-    SpanQueryParser p = new SpanQueryParser(FIELD2, ANALYZER, MULTITERM_ANALYZER);
+    SpanQueryParser p = new SpanQueryParser(FIELD2, ANALYZER);
     compareHits(p, "f1:brown three four", 0, 1, 2, 3, 4);
     compareHits(p, "f1:brown (three four)", 0, 1, 2, 3, 4);
     compareHits(p, "f1:brown (three four) five", 0, 1, 2, 3, 4, 5);
@@ -247,7 +246,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
   }
   
   private void compareHits(String s, int ... docids ) throws Exception{
-    compareHits(new SpanQueryParser(FIELD1, ANALYZER, MULTITERM_ANALYZER), s, docids);
+    compareHits(new SpanQueryParser(FIELD1, ANALYZER), s, docids);
   }
 
   private void compareHits(SpanQueryParser p, String s, int ... docids) throws Exception {
@@ -361,7 +360,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     IndexReader r = w.getReader();
     IndexSearcher s = newSearcher(r);
     w.close();
-    SpanQueryParser p = new SpanQueryParser(FIELD1, stopsAnalyzer, MULTITERM_ANALYZER);
+    SpanQueryParser p = new SpanQueryParser(FIELD1, stopsAnalyzer);
     assertHits( "-ab +the +cd", p, s, 0);
     assertHits( "+ab +the +cd", p, s, 2);
     assertHits( "+the", p, s, 0);
@@ -488,7 +487,7 @@ public class TestOverallSpanQueryParser extends LuceneTestCase {
     w.close();
 
     compareHits(PARSER, "foo*baz", s, 0);
-    SpanQueryParser parser = new SpanQueryParser(FIELD1, analyzer, analyzer);
+    SpanQueryParser parser = new SpanQueryParser(FIELD1, analyzer);
     compareHits(parser, "foo*baz", s, 0);
     r.close();
     dir.close();

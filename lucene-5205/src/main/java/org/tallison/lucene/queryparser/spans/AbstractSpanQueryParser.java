@@ -35,10 +35,9 @@ abstract class AbstractSpanQueryParser extends SpanQueryParserBase {
    *
    * @param field default field
    * @param analyzer full term analyzer
-   * @param multiTermAnalyzer multiterm analyzer
      */
-  public AbstractSpanQueryParser(String field, Analyzer analyzer, Analyzer multiTermAnalyzer) {
-    super(analyzer, multiTermAnalyzer);
+  public AbstractSpanQueryParser(String field, Analyzer analyzer) {
+    super(analyzer);
     this.defaultField = field;
   }
 

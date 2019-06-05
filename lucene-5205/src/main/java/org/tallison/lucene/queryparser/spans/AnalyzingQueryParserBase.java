@@ -33,8 +33,6 @@ import org.apache.lucene.util.QueryBuilder;
  */
 public abstract class AnalyzingQueryParserBase extends QueryBuilder {
 
-  private Analyzer multiTermAnalyzer;
-  
   /**
    * Default initialization. The analyzer is used for both whole terms and multiTerms.
    *
@@ -42,24 +40,8 @@ public abstract class AnalyzingQueryParserBase extends QueryBuilder {
      */
   public AnalyzingQueryParserBase(Analyzer analyzer) {
     super(analyzer);
-    this.multiTermAnalyzer = analyzer;
   }
 
-  /**
-   * Expert.  Set a different analyzer for whole terms vs. multiTerm subcomponents.
-   * <p>
-   * Warning: this initializer has a side effect of setting normMultiTerms = NORM_MULTI_TERMS.ANALYZE
-   *
-   * @param analyzer analyzer for full terms
-   * @param multiTermAnalyzer analyzer for multiterms
-     */
-  public AnalyzingQueryParserBase(Analyzer analyzer, Analyzer multiTermAnalyzer) {
-    super(analyzer);
-    this.multiTermAnalyzer = multiTermAnalyzer;
-  }
-
-  //TODO: make this protected in QueryParserBase and then override it
-  //modify to throw only parse exception
 
   /**
    *
@@ -68,19 +50,7 @@ public abstract class AnalyzingQueryParserBase extends QueryBuilder {
    * @return bytesRef to term part
      */
   protected BytesRef normalizeMultiTerm(String fieldName, String term) {
-    return getMultiTermAnalyzer(fieldName).normalize(fieldName, term);
-  }
-
-  /**
-   * In this base class, this simply returns 
-   * the {@link #multiTermAnalyzer} no matter the value of fieldName.
-   * This is useful as a hook for overriding.
-   *
-   * @param fieldName which field's analyzer to use for multiterms
-   * @return analyzer to use for multiTerms
-   */
-  public Analyzer getMultiTermAnalyzer(String fieldName) {
-    return multiTermAnalyzer;
+    return getAnalyzer(fieldName).normalize(fieldName, term);
   }
 
   /**

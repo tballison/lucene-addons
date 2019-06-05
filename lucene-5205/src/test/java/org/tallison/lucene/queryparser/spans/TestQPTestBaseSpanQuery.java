@@ -78,23 +78,14 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     
   }
 
-
   @Override
   public CommonQueryParserConfiguration getParserConfig(Analyzer a)
-      throws Exception {
-    return getParserConfig(a, null);
-  }
-
-  public CommonQueryParserConfiguration getParserConfig(Analyzer a, Analyzer mtAnalyzer)
       throws Exception {
     if (a == null) {
       a = new MockAnalyzer(random(), MockTokenizer.SIMPLE, true);
     }
-    if (mtAnalyzer == null) {
-      mtAnalyzer = new MockAnalyzer(random(), MockTokenizer.KEYWORD, true);
-    }
 
-    SQPTestingConfig qp = new SQPTestingConfig(getDefaultField(), a, mtAnalyzer);
+    SQPTestingConfig qp = new SQPTestingConfig(getDefaultField(), a);
     qp.setDefaultOperator(QueryParserBase.OR_OPERATOR);
     qp.setAnalyzeRangeTerms(true);
     return qp;
@@ -292,7 +283,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
 
   @Override
   public void testCollatedRange() throws Exception {
-    CommonQueryParserConfiguration qp = getParserConfig(new MockCollationAnalyzer(), new MockCollationAnalyzer());
+    CommonQueryParserConfiguration qp = getParserConfig(new MockCollationAnalyzer());
     Query expected = TermRangeQuery.newStringRange(getDefaultField(), "collatedabc", "collateddef", true, true);
     Query actual = getQuery("[abc TO def]", qp);
     assertQueryEquals(expected, actual);
@@ -408,7 +399,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
         new Term("field", "dog"),
         new Term("field", "dogs")
     );
-    SpanQueryParser qp = new SpanQueryParser("field", new MockSynonymAnalyzer(), null);
+    SpanQueryParser qp = new SpanQueryParser("field", new MockSynonymAnalyzer());
     assertEquals(expected, qp.parse("dogs"));
     assertEquals(expectedSpan, qp.parse("\"dogs\""));
     qp.setDefaultOperator(Operator.AND);
@@ -436,7 +427,7 @@ public class TestQPTestBaseSpanQuery extends QueryParserTestBase {
     );
 
 
-    SpanQueryParser qp = new SpanQueryParser("field", new MockSynonymAnalyzer(), null);
+    SpanQueryParser qp = new SpanQueryParser("field", new MockSynonymAnalyzer());
     assertEquals(expected, qp.parse("\"old dogs\""));
     qp.setDefaultOperator(QueryParser.Operator.AND);
     assertEquals(expected, qp.parse("\"old dogs\""));

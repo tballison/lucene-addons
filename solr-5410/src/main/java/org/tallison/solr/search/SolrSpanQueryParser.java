@@ -52,7 +52,7 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   //  private static Logger log = LoggerFactory.getLogger(SolrCore.class);
 
   public SolrSpanQueryParser(String f, Analyzer a, IndexSchema schema, QParser nonTextParser) {
-    super(f, a, null);
+    super(f, a);
     this.schema = schema;
     this.nonTextParser = nonTextParser;
   }
@@ -124,33 +124,6 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   }
 
   /**
-   * Returns the multiterm analyzer to be used on a specific field.
-   * Override to modify behavior.
-   *
-   * @param fieldName field name
-   * @return analyzer to use on a requested field for multiTerm terms.  Returns getMultiTermAnalyzer()
-   * if field is not found in multiTermAnalyzers
-   */
-  @Override
-  public Analyzer getMultiTermAnalyzer(String fieldName) {
-    SchemaField field = schema.getFieldOrNull(fieldName);
-    if (field == null) {
-      return null;
-    }
-    FieldType type = field.getType();
-
-    if (type instanceof TextField) {
-      //TODO: temporary workaround until TokenizerChain's normalize is fixed
-      Analyzer qAnalyzer = ((TextField)type).getQueryAnalyzer();
-      if (qAnalyzer instanceof TokenizerChain) {
-        return qAnalyzer;
-      }
-      return ((TextField) type).getMultiTermAnalyzer();
-    }
-    return null;
-  }
-
-  /**
    * @param fieldName field name
    * @return RewriteMethod for a given field
    */
@@ -173,11 +146,11 @@ public class SolrSpanQueryParser extends SpanQueryParser {
   @Override
   protected BytesRef normalizeMultiTerm(String fieldName, String term) {
 
-    Analyzer multiTermAnalyzer = getMultiTermAnalyzer(fieldName);
-    if (multiTermAnalyzer == null) {
+    Analyzer analyzer = getAnalyzer(fieldName);
+    if (analyzer == null) {
       return new BytesRef(term);
     } else {
-      return multiTermAnalyzer.normalize(fieldName, term);
+      return analyzer.normalize(fieldName, term);
     }
   }
 }

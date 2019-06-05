@@ -29,13 +29,13 @@ public class TestComplexPhraseSpanQuery extends TestComplexPhraseQuery {
 
   @Override
   public Query getQuery(String qString, Analyzer analyzer) throws Exception {
-    SpanQueryParser p = new SpanQueryParser(defaultFieldName, analyzer, analyzer);
+    SpanQueryParser p = new SpanQueryParser(defaultFieldName, analyzer);
     return p.parse(qString);
   }
 
   @Override
   public void checkBadQuery(String qString) {
-    SpanQueryParser qp = new SpanQueryParser(defaultFieldName, analyzer, analyzer);
+    SpanQueryParser qp = new SpanQueryParser(defaultFieldName, analyzer);
     expectThrows(Throwable.class, () -> {
       qp.parse(qString);
     });

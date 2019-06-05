@@ -44,10 +44,9 @@ public class SpanOnlyParser extends AbstractSpanQueryParser {
    * Initializes SpanOnlyParser.
    * @param f default field
    * @param a analyzer to use for full terms
-   * @param multitermAnalyzer analyzer to use for multiterm analysis
    */
-  public SpanOnlyParser(String f, Analyzer a, Analyzer multitermAnalyzer) {
-    super(f, a, multitermAnalyzer);
+  public SpanOnlyParser(String f, Analyzer a) {
+    super(f, a);
   }
 
   @Override

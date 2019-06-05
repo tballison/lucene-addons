@@ -211,8 +211,8 @@ public class SpanQueryParser extends AbstractSpanQueryParser implements QueryPar
   private String topLevelQueryString;
 
 
-  public SpanQueryParser(String f, Analyzer a, Analyzer multitermAnalyzer) {
-    super(f, a, multitermAnalyzer);
+  public SpanQueryParser(String f, Analyzer a) {
+    super(f, a);
   }
 
   @Override
